@@ -1,0 +1,8 @@
+**/.git
+**/__pycache__
+**/node_modules
+**/.venv
+**/dist
+**/.pytest_cache
+**/env/.env
+**/env/service-account.json

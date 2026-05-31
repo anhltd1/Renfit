@@ -1,0 +1,40 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: renfit-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount secrets/config (not baked into image)
+      - ./backend/env/.env:/app/env/.env:ro
+      - ./backend/env/service-account.json:/app/env/service-account.json:ro
+    environment:
+      API_HOST: "0.0.0.0"
+      API_PORT: "8000"
+      # Allow browser + frontend container origins
+      CORS_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: renfit-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      # Vite dev server proxies /api and /chat to backend service
+      VITE_BACKEND_URL: "http://backend:8000"
+      VITE_API_URL: "http://localhost:8000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
