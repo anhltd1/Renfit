@@ -8,7 +8,7 @@ from typing import Any
 import anthropic
 
 from src.config.settings import Settings, get_settings
-from src.schemas.chat import ChatResponse
+from src.schema.chat import ChatResponse
 from src.services.ai.memory import get_conversation_memory
 from src.constants import CUSTOMER_PROFILE_FORM_MESSAGE, PROFILE_SAVED_MESSAGE
 from src.services.ai.prompts import (

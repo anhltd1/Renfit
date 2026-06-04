@@ -34,5 +34,6 @@ def health():
         "status": "ok",
         "env": settings.api_env,
         "model": settings.anthropic_model,
-        "sheets_configured": settings.sheets_configured,
+        "mongodb_configured": settings.mongodb_configured,
+        "db_name": settings.db_name,
     }

@@ -1,17 +1,19 @@
 # Renfit Backend
 
-Prep workspace for the AI Coach API (Claude Haiku) and MVP data in **Google Sheets** (Customers + Bookings).
+FastAPI API: **AI Fitness Coach** (Claude Haiku) and **MongoDB** data store.
 
-```
-backend/
-├── env/          # API keys & config — copy .env.example → .env
-├── docs/         # Documentation → see docs/README.md
-└── src/          # Python source code
-```
+## Setup
 
-**Quick start**
+1. `cp env/.env.example env/.env` — set `ANTHROPIC_API_KEY`, `MONGODB_URI`
+2. `python -m venv .venv` and activate
+3. `pip install -r requirements.txt`
+4. `python -m src.init_db.reset_database` — initialize MongoDB (first time / reset)
+5. `uvicorn src.main:app --reload`
 
-1. Configure: [env/README.md](env/README.md) (Anthropic + Google Sheets URLs)
-2. Docs: [docs/README.md](docs/README.md) · Data model: [docs/data-model.md](docs/data-model.md)
-3. Install: `pip install -r requirements.txt`
-4. Run (stub): `uvicorn src.main:app --reload` from `backend/`
+## Layout
+
+- `src/schema/` — MongoDB document models and collection validators
+- `src/init_db/` — database reset script
+- `src/services/` — AI agent, customer/booking services
+- `src/api/` — HTTP routes
+- `env/` — `.env` configuration

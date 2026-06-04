@@ -1,118 +1,109 @@
-# MVP Data Model (Google Sheets)
+# Data model (MongoDB)
 
-At MVP stage, Renfit uses **two separate Google Spreadsheet files** (not a database). Each object maps to one file configured in `backend/env/.env`.
+Database name: `renfit` (configured via `DB_NAME` in `env/.env`).
 
-| Object | Env variable | Spreadsheet purpose |
-|--------|--------------|---------------------|
-| **Customers** | `GOOGLE_CUSTOMERS_SHEET_URL` | Gym customer profiles |
-| **Bookings** | `GOOGLE_BOOKINGS_SHEET_URL` | Training session bookings |
+All document schemas live in `src/schema/`. Initialize or reset the database with:
 
-Authentication: `GOOGLE_API_KEY` (Google Cloud, Sheets API enabled).
-
-Python models: `backend/src/models/customer.py`, `backend/src/models/booking.py`.
-
----
-
-## Sheet 1: Customers
-
-Manage gym customer information.
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `customer_name` | Text | Customer full name |
-| `phone` | Text | Customer phone number |
-| `goal` | Text | Customer fitness goal (free text) |
-| `trainer` | Text | Assigned personal trainer |
-| `health_note` | Text | Health condition or injury notes |
-| `note` | Text | Additional notes |
-| `height` | Text | Height in centimeters (optional) |
-| `weight` | Text | Weight in kilograms (optional) |
-
-Sheets with only the first 6 columns are still supported; the API can auto-append `height` and `weight` headers on first access.
-
-### Example values for `goal`
-
-- weight loss
-- muscle gain
-- body recomposition
-- improve health
-- rehabilitation
-
-**Header row (row 1)** in the sheet should use these exact column names for API mapping.
-
----
-
-## Sheet 2: Bookings
-
-Manage training session bookings between customers and trainers.
-
-| Field | Type | Description | Options |
-|-------|------|-------------|---------|
-| `customer_name` | Text | Customer who booked the session | |
-| `trainer` | Text | Personal trainer for the session | |
-| `date` | Date | Training date | |
-| `time` | Time | Training start time | |
-| `status` | Category | Booking status | `pending`, `confirmed`, `cancelled`, `no_show` |
-| `note` | Text | Additional booking notes | |
-
-### Status definitions
-
-| Status | Meaning |
-|--------|---------|
-| `pending` | Waiting for confirmation |
-| `confirmed` | Booking confirmed |
-| `cancelled` | Booking cancelled |
-| `no_show` | Customer did not attend |
-
-**Header row (row 1)** should match field names above.
-
----
-
-## Google Sheets setup recommendations
-
-### Dropdown for `status` (Bookings sheet)
-
-Options:
-
-- pending
-- confirmed
-- cancelled
-- no_show
-
-### Formatting
-
-- `date` → Date format
-- `time` → Time format
-
-### Sharing
-
-- Share both spreadsheet files with the Google Cloud project / API key access model you use (service account email or public read if using API key constraints per your GCP setup).
-
----
-
-## Suggested workflow
-
-```
-Create customer in Customers sheet
-        ↓
-Customer requests booking (app / AI / staff)
-        ↓
-Create new row in Bookings sheet (status: pending)
-        ↓
-Trainer updates booking status → confirmed | cancelled | no_show
+```bash
+cd backend
+python -m src.init_db.reset_database
 ```
 
+> **Warning:** `reset_database` drops the entire database before recreating it. Use only for first-time setup or a clean reset.
+
 ---
 
-## Environment
+## Collections
 
-```env
-GOOGLE_API_KEY=...
-GOOGLE_CUSTOMERS_SHEET_URL=https://docs.google.com/spreadsheets/d/.../edit
-GOOGLE_BOOKINGS_SHEET_URL=https://docs.google.com/spreadsheets/d/.../edit
-# Optional tab names (default: first worksheet in each file)
-GOOGLE_CUSTOMERS_SHEET_TAB=
-GOOGLE_BOOKINGS_SHEET_TAB=
-```
+### `Customer`
 
-See [env/README.md](../env/README.md) for setup steps.
+Gym customers. `id` is the application-assigned identifier (typically the customer's full name until auth is added).
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | string | Unique, case-insensitive lookup key |
+| `phone_number` | string | Unique |
+| `goal` | string | Fitness goal |
+| `health_note` | string | Health conditions / notes |
+| `height` | string | cm |
+| `weight` | string | kg |
+| `address` | string | |
+| `password` | string | bcrypt hash (empty until auth is implemented) |
+| `age` | int/float | Optional |
+
+---
+
+### `Personal_Trainer`
+
+Gym trainers.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | string | Unique |
+| `name` | string | |
+| `age` | int/float | |
+| `address` | string | |
+| `phone_number` | string | Unique |
+| `password` | string | bcrypt hash |
+
+---
+
+### `Bookings`
+
+Training session bookings. Unique compound index on `(customer_id, trainer_id)`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `customer_id` | string | References `Customer.id` |
+| `trainer_id` | string | References `Personal_Trainer.id`; default `"Chưa chỉ định"` |
+| `time` | string/date | ISO-like date + time string |
+| `status` | enum | `pending` \| `approved` \| `rejected` |
+| `note` | string | Optional session note |
+
+---
+
+### `Inbody`
+
+Body composition measurement records (from InBody machines or manual input).
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | string | Unique |
+| `customer_id` | string | References `Customer.id` |
+| `height` | float | cm |
+| `weight` | float | kg |
+| `date_recorded` | string/date | |
+| `SMM` | float | Skeletal muscle mass (kg) |
+| `BFM` | float | Body fat mass (kg) |
+
+---
+
+### `ChatSession`
+
+One AI conversation thread (customer coach or trainer assistant).
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | string | Unique session id |
+| `participant_type` | enum | `customer` \| `trainer` |
+| `participant_id` | string | References `Customer.id` or `Personal_Trainer.id` |
+| `agent_type` | enum | `customer_coach` \| `trainer_coach` |
+| `title` | string | Optional display title |
+| `status` | enum | `active` \| `archived` |
+| `created_at` | string/date | |
+| `updated_at` | string/date | |
+
+---
+
+### `ChatMessage`
+
+Individual message turn within a `ChatSession`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | string | Unique message id |
+| `session_id` | string | References `ChatSession.id` |
+| `role` | enum | `user` \| `assistant` \| `system` |
+| `content` | string/object | Plain text or structured Anthropic message blocks |
+| `sequence` | int | 0-based monotonic order within session |
+| `created_at` | string/date | |

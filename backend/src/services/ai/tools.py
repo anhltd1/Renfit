@@ -116,7 +116,7 @@ ANTHROPIC_TOOLS: list[dict[str, Any]] = [
                 "time": {"type": "string", "description": "HH:MM"},
                 "status": {
                     "type": "string",
-                    "enum": ["pending", "confirmed", "cancelled", "no_show"],
+                    "enum": ["pending", "approved", "rejected"],
                 },
                 "note": {"type": "string"},
             },

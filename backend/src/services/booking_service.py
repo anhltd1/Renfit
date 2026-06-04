@@ -1,93 +1,37 @@
-"""Booking operations backed by Google Sheets."""
+"""Booking operations backed by MongoDB."""
 
 from src.config.settings import Settings, get_settings
 from src.constants import MVP_DEFAULT_TRAINER_LABEL
-from src.models.booking import Booking, BookingStatus
-from src.services.customer_service import _normalize_name, find_customer_by_name
-from src.services.sheets.bookings import get_bookings_repository
+from src.db.mongo import bookings_collection
+from src.schema.booking import Booking, BookingStatus
+from src.services.customer_service import find_customer_by_name
 
 
-def _normalize_slot(date: str, time: str) -> tuple[str, str]:
-    return date.strip(), time.strip()
+def _combine_time(date: str, time: str) -> str:
+    d, t = date.strip(), time.strip()
+    if d and t:
+        return f"{d}T{t}" if "T" not in t else f"{d} {t}"
+    return d or t
 
 
-def find_booking_by_customer_name(
-    customer_name: str,
-    settings: Settings | None = None,
-) -> Booking | None:
-    """First booking row matching customer name (case-insensitive)."""
-    settings = settings or get_settings()
-    target = _normalize_name(customer_name)
-    if not target:
-        return None
-    repo = get_bookings_repository(settings)
-    for booking in repo.list_all():
-        if _normalize_name(booking.customer_name) == target:
-            return booking
-    return None
+def _parse_status(status: str) -> BookingStatus:
+    raw = status.strip().lower() or "pending"
+    legacy = {
+        "confirmed": BookingStatus.APPROVED,
+        "cancelled": BookingStatus.REJECTED,
+        "no_show": BookingStatus.REJECTED,
+    }
+    if raw in legacy:
+        return legacy[raw]
+    try:
+        return BookingStatus(raw)
+    except ValueError:
+        return BookingStatus.PENDING
 
 
-def _find_booking_row_index(
-    customer_name: str,
-    date: str,
-    time: str,
-    settings: Settings,
-) -> int | None:
-    repo = get_bookings_repository(settings)
-    target_name = _normalize_name(customer_name)
-    slot_date, slot_time = _normalize_slot(date, time)
-
-    def matches(record: Booking) -> bool:
-        return (
-            _normalize_name(record.customer_name) == target_name
-            and record.date.strip() == slot_date
-            and record.time.strip() == slot_time
-        )
-
-    return repo.find_row_index(matches)
-
-
-def _find_booking_row_by_name_only(
-    customer_name: str,
-    settings: Settings,
-) -> int | None:
-    repo = get_bookings_repository(settings)
-    target_name = _normalize_name(customer_name)
-
-    def matches(record: Booking) -> bool:
-        return _normalize_name(record.customer_name) == target_name
-
-    return repo.find_row_index(matches)
-
-
-def _merge_booking(
-    existing: Booking | None,
-    *,
-    customer_name: str,
-    trainer: str,
-    date: str,
-    time: str,
-    status: BookingStatus,
-    note: str,
-) -> Booking:
-    base = existing or Booking(
-        customer_name=customer_name,
-        trainer=trainer,
-        date=date,
-        time=time,
-        status=status,
-        note=note,
-    )
-    trainer_name = trainer.strip() or (
-        base.trainer.strip() or MVP_DEFAULT_TRAINER_LABEL
-    )
-    return Booking(
-        customer_name=customer_name,
-        trainer=trainer_name,
-        date=date.strip() or base.date,
-        time=time.strip() or base.time,
-        status=status,
-        note=note.strip() if note.strip() else base.note,
+def _find_booking(customer_id: str, trainer_id: str) -> dict | None:
+    return bookings_collection().find_one(
+        {"customer_id": customer_id, "trainer_id": trainer_id}
     )
 
 
@@ -101,29 +45,17 @@ def upsert_booking(
     note: str = "",
     settings: Settings | None = None,
 ) -> dict:
-    """
-    Create or update booking by customer name.
-    If date+time match an existing row for that name → update that row.
-    Else if any row exists for that name → update the first match.
-    Else append a new row (customer must exist in Customers sheet).
-    """
     name = customer_name.strip()
     if not name:
         return {"success": False, "message": "customer_name is required"}
 
-    settings = settings or get_settings()
-    customer = find_customer_by_name(name, settings)
-    if customer is None:
+    _ = settings
+    if find_customer_by_name(name) is None:
         return {
             "success": False,
             "requires_customer_info": True,
             "message": "Customer information must be saved before booking",
         }
-
-    try:
-        booking_status = BookingStatus(status.strip().lower() or "pending")
-    except ValueError:
-        booking_status = BookingStatus.PENDING
 
     if not date.strip() or not time.strip():
         return {
@@ -132,53 +64,49 @@ def upsert_booking(
             "message": "date and time are required",
         }
 
-    trainer_name = trainer.strip() or MVP_DEFAULT_TRAINER_LABEL
-    repo = get_bookings_repository(settings)
+    customer_id = name
+    trainer_id = trainer.strip() or MVP_DEFAULT_TRAINER_LABEL
+    slot_time = _combine_time(date, time)
+    booking_status = _parse_status(status)
+    coll = bookings_collection()
 
-    row_index = _find_booking_row_index(name, date, time, settings)
-    if row_index is None:
-        row_index = _find_booking_row_by_name_only(name, settings)
-
-    existing: Booking | None = None
-    if row_index is not None:
-        data_index = row_index - 2
-        all_bookings = repo.list_all()
-        if 0 <= data_index < len(all_bookings):
-            existing = all_bookings[data_index]
-
-    booking = _merge_booking(
-        existing,
-        customer_name=name,
-        trainer=trainer_name,
-        date=date,
-        time=time,
+    existing_doc = _find_booking(customer_id, trainer_id)
+    booking = Booking(
+        customer_id=customer_id,
+        trainer_id=trainer_id,
+        time=slot_time,
         status=booking_status,
-        note=note,
+        note=note.strip(),
     )
+    payload = booking.model_dump()
+    payload["status"] = booking_status.value
 
-    if row_index is not None:
-        repo.update_row(row_index, booking)
+    if existing_doc is not None:
+        coll.replace_one(
+            {"_id": existing_doc["_id"]},
+            payload,
+        )
         return {
             "success": True,
             "upserted": True,
             "created": False,
             "updated": True,
             "message": "Booking updated successfully",
-            "customer_name": name,
-            "date": booking.date,
-            "time": booking.time,
+            "customer_name": customer_id,
+            "date": date.strip(),
+            "time": time.strip(),
         }
 
-    repo.append(booking)
+    coll.insert_one(payload)
     return {
         "success": True,
         "upserted": True,
         "created": True,
         "updated": False,
         "message": "Booking created successfully",
-        "customer_name": name,
-        "date": booking.date,
-        "time": booking.time,
+        "customer_name": customer_id,
+        "date": date.strip(),
+        "time": time.strip(),
     }
 
 
@@ -192,7 +120,6 @@ def create_booking(
     note: str = "",
     settings: Settings | None = None,
 ) -> dict:
-    """Alias for upsert_booking."""
     return upsert_booking(
         customer_name=customer_name,
         trainer=trainer,

@@ -3,7 +3,7 @@
 import anthropic
 from fastapi import APIRouter, HTTPException
 
-from src.schemas.chat import ChatRequest, ChatResponse
+from src.schema.chat import ChatRequest, ChatResponse
 from src.services.ai.agent import ChatAgent
 
 router = APIRouter(tags=["chat"])

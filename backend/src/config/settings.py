@@ -1,6 +1,6 @@
 """
 Load configuration from backend/env/.env
-Prep only — used by future API, Anthropic, and Google Sheets layers.
+Used by API, Anthropic chat, and MongoDB layers.
 """
 
 from functools import lru_cache
@@ -8,7 +8,6 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# backend/env/.env (two levels up from this file: src/config -> backend)
 _ENV_DIR = Path(__file__).resolve().parents[2] / "env"
 _ENV_FILE = _ENV_DIR / ".env"
 
@@ -25,14 +24,9 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-3-5-haiku-20241022"
     anthropic_max_tokens: int = 1024
 
-    # Google Sheets (MVP — one spreadsheet file per object)
-    google_api_key: str = ""
-    # Service account JSON path (relative to backend/ or absolute) — required for read/write
-    google_service_account_file: str = "env/service-account.json"
-    google_customers_sheet_url: str = ""
-    google_bookings_sheet_url: str = ""
-    google_customers_sheet_tab: str = ""
-    google_bookings_sheet_tab: str = ""
+    # MongoDB
+    mongodb_uri: str = ""
+    db_name: str = "renfit"
 
     # Server
     api_host: str = "0.0.0.0"
@@ -54,19 +48,9 @@ class Settings(BaseSettings):
     def is_development(self) -> bool:
         return self.api_env.lower() == "development"
 
-    def service_account_path(self) -> Path:
-        path = Path(self.google_service_account_file)
-        if not path.is_absolute():
-            path = Path(__file__).resolve().parents[2] / path
-        return path
-
     @property
-    def sheets_configured(self) -> bool:
-        return bool(
-            self.service_account_path().is_file()
-            and self.google_customers_sheet_url
-            and self.google_bookings_sheet_url
-        )
+    def mongodb_configured(self) -> bool:
+        return bool(self.mongodb_uri.strip())
 
 
 @lru_cache
