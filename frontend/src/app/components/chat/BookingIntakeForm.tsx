@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { InlineField } from './InlineField';
 import type { IntakeFormData } from './types';
+import { getAuthUser } from '../../../lib/auth';
 
 interface BookingIntakeFormProps {
   onSubmit: (data: IntakeFormData) => void;
@@ -8,9 +9,10 @@ interface BookingIntakeFormProps {
 }
 
 export function BookingIntakeForm({ onSubmit, disabled }: BookingIntakeFormProps) {
+  const loggedIn = getAuthUser();
   const [form, setForm] = useState<IntakeFormData>({
-    customer_name: '',
-    phone: '',
+    customer_name: loggedIn?.id ?? '',
+    phone: loggedIn?.phone_number ?? '',
     date: '',
     time: '',
   });
@@ -41,23 +43,31 @@ export function BookingIntakeForm({ onSubmit, disabled }: BookingIntakeFormProps
 
   return (
     <form onSubmit={handleSubmit} className="mt-3 space-y-3">
-      <InlineField
-        label="Tên bạn là:"
-        required
-        value={form.customer_name}
-        onChange={(v) => setForm({ ...form, customer_name: v })}
-        placeholder="Nguyễn Văn An"
-        disabled={disabled}
-      />
-      <InlineField
-        label="Số điện thoại của bạn:"
-        required
-        value={form.phone}
-        onChange={(v) => setForm({ ...form, phone: v })}
-        placeholder="0901234567"
-        type="tel"
-        disabled={disabled}
-      />
+      {loggedIn ? (
+        <p className="text-xs text-white/50 bg-white/5 rounded-xl px-3 py-2">
+          Đặt lịch cho: <span className="text-white/80 font-medium">{loggedIn.id}</span>
+        </p>
+      ) : (
+        <>
+          <InlineField
+            label="Tên bạn là:"
+            required
+            value={form.customer_name}
+            onChange={(v) => setForm({ ...form, customer_name: v })}
+            placeholder="Nguyễn Văn An"
+            disabled={disabled}
+          />
+          <InlineField
+            label="Số điện thoại của bạn:"
+            required
+            value={form.phone}
+            onChange={(v) => setForm({ ...form, phone: v })}
+            placeholder="0901234567"
+            type="tel"
+            disabled={disabled}
+          />
+        </>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <InlineField
           label="Ngày tập:"

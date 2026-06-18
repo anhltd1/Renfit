@@ -7,9 +7,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # Mount secrets/config (not baked into image)
       - ./backend/env/.env:/app/env/.env:ro
-      - ./backend/env/service-account.json:/app/env/service-account.json:ro
     environment:
       API_HOST: "0.0.0.0"
       API_PORT: "8000"

@@ -1,8 +1,27 @@
+# ── Python artefacts ──────────────────────────────────────────────
 __pycache__
 *.py[cod]
+*.pyo
 .venv
 venv
 .pytest_cache
+.coverage
+htmlcov
+
+# ── Secrets ───────────────────────────────────────────────────────
+env/.env
+env/.env.local
+env/*.local
+
+# ── Dev / docs (not needed at runtime) ───────────────────────────
 test
-*.md
 docs
+*.md
+.cursor
+.idea
+.vscode
+
+# ── Logs / OS ─────────────────────────────────────────────────────
+*.log
+.DS_Store
+Thumbs.db

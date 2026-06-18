@@ -4,17 +4,8 @@ import type { ChatFormType } from './types';
 /** Detect when AI asks for customer/booking info but forgot form_request type */
 export function inferFormFromResponse(res: ChatResponse): ChatFormType | undefined {
   const form = res.form;
-  if (
-    form === 'intake' ||
-    form === 'customer' ||
-    form === 'booking' ||
-    form === 'customer_profile' ||
-    form === 'body_metrics'
-  ) {
-    return form === 'body_metrics' ? 'customer_profile' : form;
-  }
-  if (res.type === 'booking_success' && (form === 'body_metrics' || form === 'customer_profile')) {
-    return 'customer_profile';
+  if (form === 'intake' || form === 'customer' || form === 'booking') {
+    return form;
   }
 
   const text = res.message.toLowerCase();
@@ -55,12 +46,6 @@ export function introForForm(content: string, form: ChatFormType): string {
 
   if (form === 'intake') {
     return 'Để đặt lịch tập, bạn điền thông tin ngay tại đây nhé:';
-  }
-  if (form === 'customer_profile' || form === 'body_metrics') {
-    return (
-      'Chúng tôi đã ghi nhận thông tin của bạn và sẽ liên hệ với bạn sớm nhất. ' +
-      'Trước mắt, bạn hãy cho chúng tôi biết thêm một chút về bản thân và mục tiêu tập luyện của bạn nhé!'
-    );
   }
   return form === 'customer'
     ? 'Để lưu thông tin, bạn điền ngay tại đây nhé:'

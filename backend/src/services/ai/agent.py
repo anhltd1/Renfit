@@ -10,10 +10,8 @@ import anthropic
 from src.config.settings import Settings, get_settings
 from src.schema.chat import ChatResponse
 from src.services.ai.memory import get_conversation_memory
-from src.constants import CUSTOMER_PROFILE_FORM_MESSAGE, PROFILE_SAVED_MESSAGE
 from src.services.ai.prompts import (
     BOOKING_FORM_FIELDS,
-    CUSTOMER_PROFILE_FORM_FIELDS,
     INTAKE_FORM_FIELDS,
     INTAKE_FORM_MESSAGE,
     SYSTEM_PROMPT,
@@ -21,6 +19,7 @@ from src.services.ai.prompts import (
 from src.services.ai.tools import ANTHROPIC_TOOLS, execute_tool, tool_result_content
 from src.services.booking_service import upsert_booking
 from src.services.customer_service import find_customer_by_name, upsert_customer_info
+
 
 _BOOKING_INTENT_KEYWORDS = (
     "đặt lịch",
@@ -182,34 +181,6 @@ class ChatAgent:
             "user_requested_booking_without_details",
         )
 
-    def _profile_form_response(
-        self,
-        conversation_id: str,
-        user_content: str,
-        customer_name: str,
-        tool_results_log: list[dict[str, Any]],
-    ) -> ChatResponse:
-        profile_result = execute_tool(
-            "request_customer_profile",
-            {"customer_name": customer_name},
-        )
-        tool_results_log.append(
-            {"tool": "request_customer_profile", "result": profile_result}
-        )
-        message = CUSTOMER_PROFILE_FORM_MESSAGE
-        self._persist_turn(conversation_id, user_content, message)
-        return ChatResponse(
-            conversation_id=conversation_id,
-            type="booking_success",
-            message=message,
-            form="customer_profile",
-            fields=CUSTOMER_PROFILE_FORM_FIELDS,
-            metadata={
-                "customer_name": customer_name,
-                "tool_result": profile_result,
-            },
-        )
-
     def _form_field(self, form_data: dict[str, Any], *keys: str) -> str:
         for key in keys:
             val = form_data.get(key)
@@ -221,48 +192,6 @@ class ChatAgent:
         return bool(
             self._form_field(form_data, "date")
             and self._form_field(form_data, "time")
-        )
-
-    def _try_direct_customer_profile(
-        self,
-        message: str,
-        form_data: dict[str, Any],
-        conversation_id: str,
-    ) -> ChatResponse | None:
-        if self._is_intake_submission(form_data):
-            return None
-
-        name = self._form_field(form_data, "customer_name")
-        height = self._form_field(form_data, "height", "height_cm")
-        weight = self._form_field(form_data, "weight", "weight_kg")
-        goal = self._form_field(form_data, "goal")
-        health_note = self._form_field(form_data, "health_note")
-        note = self._form_field(form_data, "note")
-
-        has_profile = bool(height or weight or goal or health_note or note)
-        if not name or not has_profile:
-            return None
-
-        result = upsert_customer_info(
-            customer_name=name,
-            height=height,
-            weight=weight,
-            goal=goal,
-            health_note=health_note,
-            note=note,
-        )
-        user_content = self._build_user_message(message, form_data)
-        assistant_text = (
-            PROFILE_SAVED_MESSAGE
-            if result.get("success")
-            else result.get("message", "Không thể cập nhật thông tin. Bạn thử lại nhé.")
-        )
-        self._persist_turn(conversation_id, user_content, assistant_text)
-        return ChatResponse(
-            conversation_id=conversation_id,
-            type="text",
-            message=assistant_text,
-            metadata={"tool_result": result},
         )
 
     def _try_direct_intake_booking(
@@ -326,8 +255,13 @@ class ChatAgent:
             )
 
         if booking_result.get("success"):
-            return self._profile_form_response(
-                conversation_id, user_content, name, tool_results_log
+            message = f"Đặt lịch thành công! Renfit sẽ xác nhận lịch tập của {name} sớm nhất. Bạn có thể hỏi thêm về chương trình tập hoặc dinh dưỡng nhé!"
+            self._persist_turn(conversation_id, user_content, message)
+            return ChatResponse(
+                conversation_id=conversation_id,
+                type="booking_success",
+                message=message,
+                metadata={"tool_results": tool_results_log},
             )
 
         response = self._response_type_from_tools(
@@ -402,25 +336,13 @@ class ChatAgent:
         conversation_id: str,
     ) -> ChatResponse:
         last_intake_request: dict[str, Any] | None = None
-        last_profile_request: dict[str, Any] | None = None
         last_booking: dict[str, Any] | None = None
 
         for entry in tool_results_log:
             if entry["tool"] == "request_booking_intake":
                 last_intake_request = entry["result"]
-            elif entry["tool"] in (
-                "request_customer_profile",
-                "request_body_metrics",
-            ):
-                last_profile_request = entry["result"]
             elif entry["tool"] in ("upsert_booking", "create_booking"):
                 last_booking = entry["result"]
-            elif entry["tool"] in (
-                "upsert_customer_info",
-                "save_customer_info",
-                "update_customer_info",
-            ):
-                last_customer_save = entry["result"]
 
         if last_intake_request and last_intake_request.get("show_form"):
             return ChatResponse(
@@ -430,22 +352,6 @@ class ChatAgent:
                 form="intake",
                 fields=INTAKE_FORM_FIELDS,
                 metadata={"tool_result": last_intake_request},
-            )
-
-        if last_profile_request and last_profile_request.get("show_form"):
-            customer_name = str(
-                last_profile_request.get("customer_name", "")
-            ).strip()
-            return ChatResponse(
-                conversation_id=conversation_id,
-                type="form_request",
-                message=assistant_text or CUSTOMER_PROFILE_FORM_MESSAGE,
-                form="customer_profile",
-                fields=CUSTOMER_PROFILE_FORM_FIELDS,
-                metadata={
-                    "tool_result": last_profile_request,
-                    "customer_name": customer_name,
-                },
             )
 
         if last_booking:
@@ -470,20 +376,10 @@ class ChatAgent:
                 )
             if last_booking.get("success"):
                 name = str(last_booking.get("customer_name", "")).strip() or "Khách"
-                profile_result = execute_tool(
-                    "request_customer_profile",
-                    {"customer_name": name},
-                )
                 return ChatResponse(
                     conversation_id=conversation_id,
                     type="booking_success",
-                    message=CUSTOMER_PROFILE_FORM_MESSAGE,
-                    form="customer_profile",
-                    fields=CUSTOMER_PROFILE_FORM_FIELDS,
-                    metadata={
-                        "customer_name": name,
-                        "tool_result": profile_result,
-                    },
+                    message=f"Đặt lịch thành công! Renfit sẽ xác nhận lịch tập của {name} sớm nhất. Bạn có thể hỏi thêm về chương trình tập hoặc dinh dưỡng nhé!",
                 )
 
         return ChatResponse(
@@ -502,12 +398,6 @@ class ChatAgent:
         form_data = form_data or {}
 
         if form_data:
-            profile = self._try_direct_customer_profile(
-                message, form_data, conversation_id
-            )
-            if profile is not None:
-                return profile
-
             direct = self._try_direct_intake_booking(
                 message, form_data, conversation_id
             )

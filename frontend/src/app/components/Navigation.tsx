@@ -1,11 +1,21 @@
 import { Link } from './Link';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import logoImage from '../../imports/image.png';
-import { Menu, X } from 'lucide-react';
+import { LayoutDashboard, LogIn, LogOut, Menu, User, X } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { getAuthUser, clearAuthUser } from '../../lib/auth';
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const user = getAuthUser();
+
+  const handleLogout = () => {
+    clearAuthUser();
+    navigate('/');
+    setIsOpen(false);
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md border-b border-white/10">
@@ -34,12 +44,46 @@ export function Navigation() {
             <a href="#pricing" className="text-white/80 hover:text-[#0F6B3E] transition-colors">
               Bảng Giá
             </a>
-            <Link
-              to="/booking"
-              className="bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white px-6 py-2 rounded-full transition-all duration-300 hover:scale-105"
-            >
-              Đặt Lịch Ngay
-            </Link>
+            {user ? (
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/dashboard"
+                  className="bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white px-5 py-2 rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
+                </Link>
+                <Link
+                  to="/dashboard"
+                  className="flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm group"
+                >
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={user.id}
+                      className="w-[42px] h-[42px] rounded-full object-cover border border-white/20 group-hover:border-[#0F6B3E] transition-colors" />
+                  ) : (
+                    <div className="w-[42px] h-[42px] rounded-full bg-white/10 border border-white/20 group-hover:border-[#0F6B3E] transition-colors flex items-center justify-center">
+                      <User className="w-5 h-5 text-white/50" />
+                    </div>
+                  )}
+                </Link>
+                <button onClick={handleLogout}
+                  className="flex items-center gap-1.5 text-white/40 hover:text-red-400 transition-colors text-sm">
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Link to="/booking"
+                  className="bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white px-6 py-2 rounded-full transition-all duration-300 hover:scale-105">
+                  Đặt Lịch Ngay
+                </Link>
+                <Link to="/login"
+                  className="flex items-center gap-1.5 text-white/70 hover:text-white transition-colors text-sm">
+                  <LogIn className="w-4 h-4" />
+                  Đăng nhập
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -82,13 +126,42 @@ export function Navigation() {
             >
               Bảng Giá
             </a>
-            <Link
-              to="/booking"
-              className="w-full bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white px-6 py-2 rounded-full transition-all duration-300 text-center"
-              onClick={() => setIsOpen(false)}
-            >
-              Đặt Lịch Ngay
-            </Link>
+            {user ? (
+              <>
+                <Link to="/dashboard" onClick={() => setIsOpen(false)}
+                  className="w-full bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white px-6 py-2 rounded-full transition-all duration-300 text-center flex items-center justify-center gap-2">
+                  <LayoutDashboard className="w-4 h-4" /> Dashboard
+                </Link>
+                <div className="flex items-center gap-3">
+                  <Link to="/dashboard" onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.id} className="w-9 h-9 rounded-full object-cover border border-white/20" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                        <User className="w-4 h-4 text-white/50" />
+                      </div>
+                    )}
+                    {user.id}
+                  </Link>
+                  <button onClick={handleLogout}
+                    className="flex items-center gap-2 text-white/40 hover:text-red-400 transition-colors">
+                    <LogOut className="w-4 h-4" /> Đăng xuất
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <Link to="/booking" onClick={() => setIsOpen(false)}
+                  className="w-full bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white px-6 py-2 rounded-full transition-all duration-300 text-center">
+                  Đặt Lịch Ngay
+                </Link>
+                <Link to="/login" onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
+                  <LogIn className="w-4 h-4" /> Đăng nhập
+                </Link>
+              </>
+            )}
           </div>
         )}
       </div>

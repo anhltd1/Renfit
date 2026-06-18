@@ -1,4 +1,21 @@
+# ── Dependencies / build output ───────────────────────────────────
 node_modules
 dist
-.git
+dist-ssr
+
+# ── Vite / tooling cache ──────────────────────────────────────────
+.vite
+*.tsbuildinfo
+coverage
+
+# ── Dev / docs ────────────────────────────────────────────────────
 *.md
+.cursor
+.idea
+.vscode
+
+# ── Logs / OS ─────────────────────────────────────────────────────
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini

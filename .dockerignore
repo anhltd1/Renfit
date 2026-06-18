@@ -1,8 +1,40 @@
+# ── Version control ───────────────────────────────────────────────
 **/.git
+**/.gitignore
+
+# ── Python artefacts ──────────────────────────────────────────────
 **/__pycache__
-**/node_modules
+**/*.py[cod]
+**/*.pyo
 **/.venv
-**/dist
+**/venv
 **/.pytest_cache
-**/env/.env
-**/env/service-account.json
+**/.coverage
+**/htmlcov
+
+# ── Node artefacts ────────────────────────────────────────────────
+**/node_modules
+**/dist
+**/dist-ssr
+**/.vite
+**/*.tsbuildinfo
+**/coverage
+
+# ── Secrets ───────────────────────────────────────────────────────
+backend/env/.env
+backend/env/.env.local
+backend/env/*.local
+
+# ── Docs / dev-only files ─────────────────────────────────────────
+**/*.md
+**/docs
+DOCKER.md
+**/test
+**/.cursor
+**/.idea
+**/.vscode
+
+# ── Logs / OS ─────────────────────────────────────────────────────
+**/*.log
+**/.DS_Store
+**/Thumbs.db

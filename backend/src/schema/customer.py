@@ -13,5 +13,6 @@ class Customer(BaseModel):
     address: str = ""
     height: str = ""
     weight: str = ""
+    avatar: str = ""
     password: str = Field(..., description="bcrypt hash string")
     age: int | float | None = None

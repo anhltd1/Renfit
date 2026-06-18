@@ -10,6 +10,7 @@ from pymongo.errors import PyMongoError
 
 from src.config.settings import get_settings
 from src.init_db.database import DEFAULT_DB_NAME, get_mongo_client
+from src.init_db.seed import seed_admin_trainer
 from src.schema.mongo import COLLECTION_SPECS, VALIDATION_OPTIONS
 
 
@@ -51,6 +52,10 @@ def reset_database() -> None:
         print("Connected.\n")
 
         drop_and_create_collections(client, db_name)
+
+        print('Seeding default admin coach into "Personal_Trainer"...')
+        seed_admin_trainer()
+        print("  admin coach seeded (username: admin / password: 123).\n")
 
         print("SUCCESS: Renfit database initialized.")
         print(f"  Database: {db_name}")

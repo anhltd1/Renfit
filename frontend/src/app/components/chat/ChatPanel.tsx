@@ -2,19 +2,18 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Bot, Loader2, Send } from 'lucide-react';
 import { sendChatMessage } from '../../../lib/api/chat';
 import type { ChatResponse } from '../../../lib/api/chat';
-import { CustomerProfileForm } from './CustomerProfileForm';
 import { BookingForm } from './BookingForm';
 import { BookingIntakeForm } from './BookingIntakeForm';
 import { ChatMessageContent } from './ChatMessageContent';
 import { CustomerInfoForm } from './CustomerInfoForm';
 import type {
-  CustomerProfileFormData,
   BookingFormData,
   ChatMessage,
   CustomerFormData,
   IntakeFormData,
 } from './types';
 import { inferFormFromResponse, introForForm } from './formUtils';
+import { getAuthUser } from '../../../lib/auth';
 
 const WELCOME_MESSAGE: ChatMessage = {
   id: 'welcome',
@@ -145,38 +144,25 @@ export function ChatPanel({
     await sendToAgent('Tôi đã gửi thông tin đặt lịch qua biểu mẫu.', data);
   };
 
-  const handleCustomerProfileSubmit = async (
-    messageId: string,
-    data: CustomerProfileFormData
-  ) => {
-    disableFormOnMessage(messageId);
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `user-${Date.now()}`,
-        role: 'user',
-        content: `Đã gửi hồ sơ: ${data.customer_name}`,
-      },
-    ]);
-    await sendToAgent(
-      'Tôi đã gửi thông tin cá nhân (chiều cao, cân nặng, mục tiêu) qua biểu mẫu.',
-      data
-    );
-  };
-
   const handleIntakeFormSubmit = async (messageId: string, data: IntakeFormData) => {
     disableFormOnMessage(messageId);
+    const loggedIn = getAuthUser();
+    const enriched = {
+      ...data,
+      customer_name: data.customer_name || loggedIn?.id || '',
+      phone: data.phone || loggedIn?.phone_number || '',
+    };
     setMessages((prev) => [
       ...prev,
       {
         id: `user-${Date.now()}`,
         role: 'user',
-        content: `Đặt lịch: ${data.customer_name} — ${data.date} ${data.time}`,
+        content: `Đặt lịch: ${enriched.customer_name} — ${enriched.date} ${enriched.time}`,
       },
     ]);
     await sendToAgent(
       'Tôi đã gửi đầy đủ thông tin đặt lịch (tên, SĐT, ngày giờ) qua biểu mẫu.',
-      data
+      enriched
     );
   };
 
@@ -268,14 +254,6 @@ export function ChatPanel({
                 <BookingForm
                   disabled={loading}
                   onSubmit={(data) => handleBookingFormSubmit(msg.id, data)}
-                />
-              )}
-              {(msg.form === 'customer_profile' || msg.form === 'body_metrics') &&
-                !msg.formDisabled && (
-                <CustomerProfileForm
-                  defaultCustomerName={msg.formCustomerName}
-                  disabled={loading}
-                  onSubmit={(data) => handleCustomerProfileSubmit(msg.id, data)}
                 />
               )}
             </div>

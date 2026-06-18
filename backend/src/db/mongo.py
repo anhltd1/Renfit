@@ -12,3 +12,11 @@ def customers_collection() -> Collection:
 
 def bookings_collection() -> Collection:
     return get_renfit_database()[col.BOOKINGS]
+
+
+def personal_trainers_collection() -> Collection:
+    return get_renfit_database()[col.PERSONAL_TRAINER]
+
+
+def inbody_collection() -> Collection:
+    return get_renfit_database()[col.INBODY]

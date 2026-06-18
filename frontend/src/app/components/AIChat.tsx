@@ -88,7 +88,7 @@ export function AIChat() {
 
             <div className="p-6 border-t border-white/10 flex justify-center">
               <Link
-                to="/ai-coach"
+                to="/dashboard"
                 className="inline-flex items-center gap-2 bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white font-semibold px-8 py-3 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(15,107,62,0.5)]"
               >
                 Chat với AI coach ngay

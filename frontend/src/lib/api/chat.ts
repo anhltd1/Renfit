@@ -10,7 +10,7 @@ export interface ChatResponse {
   conversation_id: string;
   type: ChatResponseType;
   message: string;
-  form?: 'customer' | 'booking' | 'intake' | 'customer_profile' | 'body_metrics' | null;
+  form?: 'customer' | 'booking' | 'intake' | null;
   fields?: string[] | null;
   metadata?: Record<string, unknown>;
 }
@@ -34,10 +34,9 @@ export async function sendChatMessage(payload: ChatRequest): Promise<ChatRespons
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      (err as { detail?: string }).detail ?? 'Không thể kết nối AI Coach. Vui lòng thử lại.'
-    );
+    const err = await res.json().catch(() => ({})) as { detail?: unknown };
+    if (typeof err.detail === 'string') throw new Error(err.detail);
+    throw new Error('Không thể kết nối AI Coach. Vui lòng thử lại.');
   }
 
   return res.json();

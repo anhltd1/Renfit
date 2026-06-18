@@ -1,18 +1,4 @@
-export type ChatFormType =
-  | 'customer'
-  | 'booking'
-  | 'intake'
-  | 'customer_profile'
-  | 'body_metrics';
-
-export interface CustomerProfileFormData {
-  customer_name: string;
-  height: string;
-  weight: string;
-  goal: string;
-  health_note: string;
-  note: string;
-}
+export type ChatFormType = 'customer' | 'booking' | 'intake';
 
 /** Thu thập đủ thông tin đặt lịch trong một bước (tên, SĐT, ngày giờ) */
 export interface IntakeFormData {

@@ -4,7 +4,7 @@ import json
 from typing import Any
 
 from src.constants import MVP_DEFAULT_TRAINER_LABEL
-from src.services.ai.prompts import CUSTOMER_PROFILE_FORM_MESSAGE, INTAKE_FORM_MESSAGE
+from src.services.ai.prompts import INTAKE_FORM_MESSAGE
 from src.services.booking_service import upsert_booking
 from src.services.customer_service import get_customer_info, upsert_customer_info
 
@@ -15,16 +15,6 @@ def _field(tool_input: dict[str, Any], *keys: str) -> str:
         if val is not None and str(val).strip():
             return str(val).strip()
     return ""
-
-
-def _customer_profile_tool_result(customer_name: str) -> dict[str, Any]:
-    return {
-        "success": True,
-        "show_form": True,
-        "form": "customer_profile",
-        "message": CUSTOMER_PROFILE_FORM_MESSAGE,
-        "customer_name": customer_name,
-    }
 
 
 def _customer_tool_payload(tool_input: dict[str, Any]) -> dict[str, str]:
@@ -53,19 +43,6 @@ ANTHROPIC_TOOLS: list[dict[str, Any]] = [
                 "reason": {"type": "string", "description": "Lý do (tuỳ chọn)"},
             },
             "required": [],
-        },
-    },
-    {
-        "name": "request_customer_profile",
-        "description": (
-            "Hiện biểu mẫu hồ sơ khách sau đặt lịch. Gọi sau khi đặt lịch thành công."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "customer_name": {"type": "string"},
-            },
-            "required": ["customer_name"],
         },
     },
     {
@@ -136,9 +113,6 @@ def execute_tool(name: str, tool_input: dict[str, Any]) -> dict[str, Any]:
             "message": INTAKE_FORM_MESSAGE,
             "reason": (tool_input.get("reason") or "").strip(),
         }
-    if name in ("request_customer_profile", "request_body_metrics"):
-        customer_name = (tool_input.get("customer_name") or "").strip()
-        return _customer_profile_tool_result(customer_name)
     if name == "find_customer":
         return get_customer_info(tool_input.get("customer_name", ""))
 

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from '../components/Link';
 import { ChatPanel } from '../components/chat/ChatPanel';
-import { Bot, Plus, Sparkles } from 'lucide-react';
+import { Bot, LogOut, Plus, Sparkles, User } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { getAuthUser, clearAuthUser } from '../../lib/auth';
 
 const conversationHistory = [
   { id: 1, title: 'Tư vấn giảm cân', date: 'Hôm nay' },
@@ -11,6 +13,13 @@ const conversationHistory = [
 
 export function AIChatPage() {
   const [chatKey, setChatKey] = useState(0);
+  const navigate = useNavigate();
+  const user = getAuthUser();
+
+  const handleLogout = () => {
+    clearAuthUser();
+    navigate('/');
+  };
 
   return (
     <div className="h-[100dvh] w-full flex overflow-hidden bg-[#0B0B0B] text-white">
@@ -52,13 +61,43 @@ export function AIChatPage() {
           </div>
         </div>
 
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-white/10 space-y-2">
+          {user && (
+            <Link
+              to="/profile"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 hover:border-[#0F6B3E]/40 border border-white/10 transition-all group"
+            >
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.id}
+                  className="w-[42px] h-[42px] rounded-full object-cover shrink-0 border border-white/20"
+                />
+              ) : (
+                <div className="w-[42px] h-[42px] rounded-full bg-[#0F6B3E]/20 border border-[#0F6B3E]/30 flex items-center justify-center shrink-0">
+                  <User className="w-5 h-5 text-[#0F6B3E]" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-white/80 text-xs font-medium truncate group-hover:text-white transition-colors">{user.id}</p>
+                <p className="text-white/30 text-[10px]">Xem hồ sơ</p>
+              </div>
+            </Link>
+          )}
           <Link
             to="/"
             className="w-full flex items-center justify-center bg-white/5 hover:bg-[#0F6B3E]/20 border border-white/10 hover:border-[#0F6B3E] text-white hover:text-[#0F6B3E] py-3 rounded-2xl transition-all duration-300"
           >
             Trở về trang chủ
           </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 text-white/40 hover:text-red-400 py-2 text-sm transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Đăng xuất
+          </button>
         </div>
       </aside>
 

@@ -45,6 +45,7 @@ COLLECTION_SPECS: list[CollectionSpec] = [
                     "address": {"bsonType": "string"},
                     "height": {"bsonType": "string"},
                     "weight": {"bsonType": "string"},
+                    "avatar": {"bsonType": "string"},
                     "password": {"bsonType": "string"},
                     "age": {"bsonType": NUMBER_BSON},
                 },
@@ -90,6 +91,7 @@ COLLECTION_SPECS: list[CollectionSpec] = [
             "$jsonSchema": {
                 "bsonType": "object",
                 "required": [
+                    "id",
                     "customer_id",
                     "trainer_id",
                     "time",
@@ -97,6 +99,7 @@ COLLECTION_SPECS: list[CollectionSpec] = [
                     "note",
                 ],
                 "properties": {
+                    "id": {"bsonType": "string"},
                     "customer_id": {"bsonType": "string"},
                     "trainer_id": {"bsonType": "string"},
                     "time": {"bsonType": DATE_OR_STRING},
@@ -106,11 +109,12 @@ COLLECTION_SPECS: list[CollectionSpec] = [
             }
         },
         [
+            {"keys": [("id", 1)], "unique": True, "name": "booking_id_unique"},
+            {"keys": [("time", 1)], "name": "booking_time"},
             {
-                "keys": [("customer_id", 1), ("trainer_id", 1)],
-                "unique": True,
-                "name": "booking_customer_trainer_unique",
-            }
+                "keys": [("customer_id", 1), ("time", 1)],
+                "name": "booking_customer_time",
+            },
         ],
     ),
     _spec(

@@ -2,12 +2,19 @@ import { Routes, Route, useLocation, useNavigate } from 'react-router';
 import { LandingPage } from './pages/LandingPage';
 import { AIChatPage } from './pages/AIChatPage';
 import { BookingPage } from './pages/BookingPage';
-import { DashboardPage } from './pages/DashboardPage';
+import { UserDashboardPage } from './pages/UserDashboardPage';
+import { LoginPage } from './pages/LoginPage';
+import { SignupPage } from './pages/SignupPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { AdminLoginPage } from './pages/AdminLoginPage';
+import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { AdminGuard } from './components/AdminGuard';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { AuthGuard } from './components/AuthGuard';
 
-export type Page = '/' | '/ai-coach' | '/booking' | '/dashboard';
+export type Page = '/' | '/ai-coach' | '/booking' | '/dashboard' | '/login' | '/signup' | '/profile' | '/admin' | '/admin/dashboard';
 
-const VALID_PAGES: Page[] = ['/', '/ai-coach', '/booking', '/dashboard'];
+const VALID_PAGES: Page[] = ['/', '/ai-coach', '/booking', '/dashboard', '/login', '/signup', '/profile', '/admin', '/admin/dashboard'];
 
 function isPage(path: string): path is Page {
   return VALID_PAGES.includes(path as Page);
@@ -32,13 +39,34 @@ function AppRoutes() {
       <Route
         path="/ai-coach"
         element={
-          <ErrorBoundary>
-            <AIChatPage />
-          </ErrorBoundary>
+          <AuthGuard>
+            <ErrorBoundary>
+              <AIChatPage />
+            </ErrorBoundary>
+          </AuthGuard>
         }
       />
-      <Route path="/booking" element={<BookingPage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
+      <Route
+        path="/booking"
+        element={
+          <AuthGuard>
+            <BookingPage />
+          </AuthGuard>
+        }
+      />
+      <Route path="/dashboard" element={<AuthGuard><UserDashboardPage /></AuthGuard>} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/admin" element={<AdminLoginPage />} />
+      <Route
+        path="/admin/dashboard"
+        element={
+          <AdminGuard>
+            <AdminDashboardPage />
+          </AdminGuard>
+        }
+      />
       <Route path="*" element={<LandingPage />} />
     </Routes>
   );

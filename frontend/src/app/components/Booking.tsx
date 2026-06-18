@@ -75,7 +75,7 @@ export function Booking() {
 
             {/* Booking CTA */}
             <Link
-              to="/booking"
+              to="/dashboard"
               className="w-full bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white py-4 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(15,107,62,0.5)] flex items-center justify-center gap-2"
             >
               <CheckCircle className="w-5 h-5" />

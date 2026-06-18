@@ -1,27 +1,31 @@
-# ── Secrets / environment ────────────────────────────────────────
+# ── Secrets / environment ─────────────────────────────────────────
+# Only the example file and README inside env/ are tracked.
+# All real .env files are ignored here and at the root.
 env/.env
 env/.env.local
 env/*.local
 *.env
 
-# ── Python ───────────────────────────────────────────────────────
+# ── Python bytecode ───────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-.Python
 *.egg
 *.egg-info/
-dist/
-build/
+
+# ── Virtual environments ──────────────────────────────────────────
 .venv/
 venv/
-env/
+.Python
 
 # ── Testing / coverage ───────────────────────────────────────────
 .pytest_cache/
 .coverage
 htmlcov/
+
+# ── Logs ──────────────────────────────────────────────────────────
+*.log
 
 # ── IDE / OS ─────────────────────────────────────────────────────
 .idea/

@@ -36,15 +36,6 @@ def test_upsert_customer_info_tool():
         mock_upsert.assert_called_once()
 
 
-def test_request_customer_profile_tool():
-    result = execute_tool(
-        "request_customer_profile", {"customer_name": "Nguyen Van A"}
-    )
-    assert result["success"] is True
-    assert result["form"] == "customer_profile"
-    assert result["customer_name"] == "Nguyen Van A"
-
-
 @pytest.fixture
 def mock_settings():
     return MagicMock()

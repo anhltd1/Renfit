@@ -1,64 +1,85 @@
 # Docker — Renfit
 
-Run frontend + backend together with Docker Compose.
+Run the full stack (frontend + backend) with Docker Compose.
 
 ## Prerequisites
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose)
-- `backend/env/.env` filled in (Anthropic key, Google Sheets URLs)
-- `backend/env/service-account.json` (Google service account key)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose plugin)
+- `backend/env/.env` filled in — at minimum `ANTHROPIC_API_KEY` and `MONGODB_URI`
 
-## Quick start
-
-From project root:
+## Quick Start
 
 ```bash
+# From the repository root:
 docker compose up --build
 ```
 
-First run downloads base images and installs npm/pip dependencies (may take several minutes).
+First run pulls base images and installs dependencies — allow a few minutes.
 
-## Endpoints (host machine)
+## Service URLs
 
-| Service   | URL |
-|-----------|-----|
-| Frontend  | http://localhost:5173 |
-| Backend   | http://localhost:8000 |
-| Health    | http://localhost:8000/api/v1/health |
-| Chat API  | http://localhost:8000/chat |
-| Chat API  | http://localhost:8000/api/v1/chat |
+| Service | URL |
+|---|---|
+| Frontend (Vite) | http://localhost:5173 |
+| Backend (FastAPI) | http://localhost:8000 |
+| Health check | http://localhost:8000/api/v1/health |
+| Interactive API docs | http://localhost:8000/docs |
 
-From the browser, the frontend dev server proxies:
+The Vite dev server proxies `/api/*` and `/chat` to the backend container, so the browser only talks to port 5173.
 
-- `/api/*` → backend
-- `/chat` → backend
-
-So the app can call `fetch('/chat', ...)` without CORS issues.
-
-## Commands
+## Common Commands
 
 ```bash
-# Build and start (foreground)
+# Start in foreground (rebuild images)
 docker compose up --build
 
-# Detached
+# Start detached (background)
 docker compose up --build -d
 
-# Stop
+# View logs
+docker compose logs -f
+docker compose logs -f backend
+
+# Stop and remove containers
 docker compose down
 
-# Rebuild one service
+# Rebuild a single service
 docker compose build backend
-docker compose up backend
+docker compose up backend --no-deps
+
+# Shell into a running container
+docker compose exec backend bash
+docker compose exec frontend sh
 ```
 
-## Layout
+## Resetting the Database
+
+```bash
+# Run the reset script inside the backend container:
+docker compose exec backend python -m src.init_db.reset_database
+```
+
+> **Warning:** This drops and recreates the entire `renfit` database. All data is lost. The default trainer account is re-seeded automatically.
+
+## File Layout
 
 ```
 Renfit/
-├── docker-compose.yml
-├── Dockerfile.backend    # build context: repo root
-├── Dockerfile.frontend
-├── backend/Dockerfile      # alternate (same image, backend/ context)
-└── frontend/Dockerfile
+├── docker-compose.yml       # Orchestration (backend + frontend)
+├── Dockerfile.backend       # Backend image (build context: repo root)
+├── Dockerfile.frontend      # Frontend image (build context: repo root)
+├── backend/.dockerignore
+└── frontend/.dockerignore
 ```
+
+## Environment Variables (Docker-specific)
+
+These are set directly in `docker-compose.yml` and override `env/.env`:
+
+| Variable | Value in Compose | Purpose |
+|---|---|---|
+| `API_HOST` | `0.0.0.0` | Bind on all interfaces inside container |
+| `API_PORT` | `8000` | FastAPI port |
+| `CORS_ORIGINS` | `http://localhost:5173,...` | Allow browser and frontend container |
+| `VITE_BACKEND_URL` | `http://backend:8000` | Internal service-to-service URL |
+| `VITE_API_URL` | `http://localhost:8000` | Public URL used by the browser |

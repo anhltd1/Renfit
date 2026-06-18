@@ -2,8 +2,10 @@ import { Link } from './Link';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import logoImage from '../../imports/image.png';
 import { Dumbbell, Users, Star } from 'lucide-react';
+import { getAuthUser } from '../../lib/auth';
 
 export function Hero() {
+  const user = getAuthUser();
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -48,16 +50,16 @@ export function Hero() {
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20">
           <Link
-            to="/booking"
+            to={user ? '/dashboard' : '/booking'}
             className="px-8 py-4 bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white rounded-full transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(15,107,62,0.5)] text-center"
           >
-            Đặt Lịch Tư Vấn
+            {user ? 'Vào Dashboard' : 'Đặt Lịch Tư Vấn'}
           </Link>
           <Link
-            to="/ai-coach"
+            to={user ? '/dashboard' : '/ai-coach'}
             className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-sm border border-white/20 transition-all duration-300 hover:scale-105 text-center"
           >
-            Chat Với AI Coach
+            {user ? `Xin chào, ${user.id}` : 'Chat Với AI Coach'}
           </Link>
         </div>
 
