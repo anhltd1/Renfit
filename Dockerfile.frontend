@@ -1,5 +1,13 @@
 # Frontend image — build from repo root: docker build -f Dockerfile.frontend -t renfit-frontend .
-FROM node:20-alpine
+#
+# Multi-stage (U9 Deployment): stage 1 builds the production SPA bundle with
+# Vite; stage 2 serves it with Caddy, which also reverse-proxies /api and
+# /chat to the backend service and automatically provisions/renews a Let's
+# Encrypt TLS certificate for DOMAIN (see Caddyfile). Replaces the previous
+# single-stage image that ran the Vite *dev server* in production.
+
+# ── Stage 1: build ───────────────────────────────────────────────────────
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
@@ -7,7 +15,12 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 
 COPY frontend/ .
+RUN npm run build
 
-EXPOSE 5173
+# ── Stage 2: serve ───────────────────────────────────────────────────────
+FROM caddy:2-alpine
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+COPY --from=build /app/dist /usr/share/caddy
+COPY Caddyfile /etc/caddy/Caddyfile
+
+EXPOSE 80 443

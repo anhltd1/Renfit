@@ -2,7 +2,7 @@
  * Shared booking calendar — 5-day sliding window.
  * Used by both the customer dashboard tab and the standalone /booking page.
  */
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   CalendarCheck,
   Check,
@@ -13,7 +13,18 @@ import {
   RefreshCw,
   X,
 } from 'lucide-react';
-import type { Availability, Slot } from '../../lib/api/bookings';
+import type { Availability, Slot, DayAvailability } from '../../lib/api/bookings';
+import { useFocusTrap } from '../shared/primitives/useFocusTrap';
+
+/** U8 Accessibility — see AdminBookings.tsx's identical helper for rationale. */
+function useEscapeToClose(open: boolean, onClose: () => void) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+}
 
 const WINDOW = 5;
 const VIET_DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -41,6 +52,28 @@ interface Pending {
   slot: Slot;
 }
 
+type RenderDay =
+  | { kind: 'sunday'; date: string }
+  | { kind: 'working'; day: DayAvailability };
+
+function withSundays(days: DayAvailability[]): RenderDay[] {
+  const result: RenderDay[] = [];
+  for (let i = 0; i < days.length; i++) {
+    if (i > 0) {
+      const prev = new Date(days[i - 1].date);
+      const curr = new Date(days[i].date);
+      const diff = Math.round((curr.getTime() - prev.getTime()) / 86400000);
+      if (diff === 2 && prev.getDay() === 6) {
+        const sun = new Date(prev);
+        sun.setDate(sun.getDate() + 1);
+        result.push({ kind: 'sunday', date: sun.toISOString().slice(0, 10) });
+      }
+    }
+    result.push({ kind: 'working', day: days[i] });
+  }
+  return result;
+}
+
 export function BookingCalendar({
   data,
   loading,
@@ -51,6 +84,8 @@ export function BookingCalendar({
 }: BookingCalendarProps) {
   const todayIso = new Date().toISOString().slice(0, 10);
   const [offset, setOffset] = useState(0);
+  const [slideDir, setSlideDir] = useState<'left' | 'right' | null>(null);
+  const [slideKey, setSlideKey] = useState(0);
   const [pending, setPending] = useState<Pending | null>(null);
   const [acting, setActing] = useState(false);
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
@@ -58,11 +93,14 @@ export function BookingCalendar({
   // Ref for scroll-into-view on first load
   const calendarRef = useRef<HTMLDivElement>(null);
   const didAutoScroll = useRef(false);
+  const confirmDialogRef = useRef<HTMLDivElement>(null);
 
   // Snap to today's index when data arrives, then scroll into view.
   // If today is Sunday (not in the window), jump to the nearest future day instead.
+  // Guard with didAutoScroll so silent background refreshes don't reset the user's position.
   useEffect(() => {
-    if (!data) return;
+    if (!data || didAutoScroll.current) return;
+    didAutoScroll.current = true;
     const idx = data.days.findIndex((d) => d.date === todayIso);
     if (idx >= 0) {
       setOffset(idx);
@@ -71,12 +109,9 @@ export function BookingCalendar({
       const futureIdx = data.days.findIndex((d) => new Date(d.date) > todayDate);
       setOffset(futureIdx >= 0 ? futureIdx : Math.max(0, data.days.length - WINDOW));
     }
-    if (!didAutoScroll.current) {
-      didAutoScroll.current = true;
-      setTimeout(() => {
-        calendarRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    }
+    setTimeout(() => {
+      calendarRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   }, [data, todayIso]);
 
   useEffect(() => {
@@ -85,7 +120,11 @@ export function BookingCalendar({
     return () => clearTimeout(t);
   }, [toast]);
 
+  useEscapeToClose(!!pending, () => setPending(null));
+  useFocusTrap(!!pending, confirmDialogRef);
+
   const visibleDays = data?.days.slice(offset, offset + WINDOW) ?? [];
+  const renderDays = withSundays(visibleDays);
   const hours = data?.days[0]?.slots.map((s) => s.hour) ?? [];
   const canLeft = offset > 0;
   const canRight = data ? offset + WINDOW < data.days.length : false;
@@ -123,11 +162,12 @@ export function BookingCalendar({
         </div>
         {/* Navigation */}
         <div className="flex items-center gap-2">
-          <button type="button" onClick={onRefresh} title="Làm mới"
+          <button type="button" onClick={onRefresh} title="Làm mới" aria-label="Làm mới"
             className="p-2 rounded-xl text-white/50 hover:text-white hover:bg-white/5 transition-all">
             <RefreshCw className={`w-4 h-4 ${loading && !data ? 'animate-spin' : ''}`} />
           </button>
-          <button type="button" disabled={!canLeft} onClick={() => setOffset((o) => o - 1)}
+          <button type="button" disabled={!canLeft} onClick={() => { setSlideDir('right'); setSlideKey((k) => k + 1); setOffset((o) => o - 1); }}
+            aria-label="Xem ngày trước"
             className="p-2 rounded-xl border border-white/15 text-white/60 hover:text-white hover:border-[#0F6B3E]/60 disabled:opacity-25 disabled:cursor-not-allowed transition-all">
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -136,7 +176,8 @@ export function BookingCalendar({
               ? `${fmtDayLabel(visibleDays[0].date)} → ${fmtDayLabel(visibleDays[visibleDays.length - 1].date)}`
               : '—'}
           </span>
-          <button type="button" disabled={!canRight} onClick={() => setOffset((o) => o + 1)}
+          <button type="button" disabled={!canRight} onClick={() => { setSlideDir('left'); setSlideKey((k) => k + 1); setOffset((o) => o + 1); }}
+            aria-label="Xem ngày sau"
             className="p-2 rounded-xl border border-white/15 text-white/60 hover:text-white hover:border-[#0F6B3E]/60 disabled:opacity-25 disabled:cursor-not-allowed transition-all">
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -152,22 +193,37 @@ export function BookingCalendar({
       ) : error ? (
         <div className="bg-red-400/10 border border-red-400/25 text-red-300 rounded-2xl px-5 py-4 text-base">{error}</div>
       ) : data ? (
-        <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#0D0D0D]">
-          <div style={{ minWidth: `${72 + visibleDays.length * 160}px` }}>
+        <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#0D0D0D] pb-1">
+          <div
+            key={slideKey}
+            className={slideDir === 'left' ? 'animate-slide-in-left' : slideDir === 'right' ? 'animate-slide-in-right' : ''}
+            style={{ minWidth: `${72 + renderDays.length * 160}px` }}
+          >
             {/* Day header row */}
-            <div className="grid" style={{ gridTemplateColumns: `72px repeat(${visibleDays.length}, 1fr)` }}>
+            <div className="grid" style={{ gridTemplateColumns: `72px repeat(${renderDays.length}, 1fr)` }}>
               <div className="bg-[#0A0A0A] border-b border-r border-white/10 p-3 flex items-center justify-center">
                 <Clock className="w-4 h-4 text-white/30" />
               </div>
-              {visibleDays.map((day) => {
+              {renderDays.map((entry) => {
+                if (entry.kind === 'sunday') {
+                  return (
+                    <div key={entry.date} className="border-b border-white/10 p-3 text-center bg-[#0A0A0A] relative overflow-hidden">
+                      <div className="absolute inset-0 opacity-[0.07]" style={{ background: 'repeating-linear-gradient(-45deg, #fff 0px, #fff 1px, transparent 1px, transparent 8px)' }} />
+                      <p className="font-bold text-base leading-tight text-red-400/50">CN</p>
+                      <p className="text-sm mt-0.5 font-medium text-white/25">{fmtDayLabel(entry.date)}</p>
+                      <span className="inline-block mt-1 text-[11px] bg-red-500/10 text-red-400/60 px-2 py-0.5 rounded-full font-semibold border border-red-500/15">
+                        Nghỉ
+                      </span>
+                    </div>
+                  );
+                }
+                const day = entry.day;
                 const isToday = day.date === todayIso;
                 const dowIdx = new Date(day.date).getDay();
                 return (
                   <div key={day.date}
                     className={`border-b border-white/10 p-3 text-center transition-colors ${
-                      isToday
-                        ? 'bg-[#0F6B3E] border-b-[#0F6B3E]'
-                        : 'bg-[#0A0A0A]'
+                      isToday ? 'bg-[#0F6B3E] border-b-[#0F6B3E]' : 'bg-[#0A0A0A]'
                     }`}>
                     <p className={`font-bold text-base leading-tight ${isToday ? 'text-white' : 'text-white/90'}`}>
                       {VIET_DAYS[dowIdx]}
@@ -187,13 +243,22 @@ export function BookingCalendar({
 
             {/* Hour rows */}
             {hours.map((hour, rowIdx) => (
-              <div key={hour} className="grid" style={{ gridTemplateColumns: `72px repeat(${visibleDays.length}, 1fr)` }}>
+              <div key={hour} className="grid" style={{ gridTemplateColumns: `72px repeat(${renderDays.length}, 1fr)` }}>
                 {/* Hour label */}
                 <div className={`border-r border-white/10 px-3 py-0 flex items-center justify-center text-sm font-semibold text-white/70 ${rowIdx % 2 === 0 ? 'bg-white/[0.02]' : ''}`}>
                   {String(hour).padStart(2, '0')}:00
                 </div>
                 {/* Slot cells */}
-                {visibleDays.map((day) => {
+                {renderDays.map((entry) => {
+                  if (entry.kind === 'sunday') {
+                    return (
+                      <div key={entry.date + hour}
+                        className={`h-[72px] border-b border-r border-white/8 relative overflow-hidden ${rowIdx % 2 === 0 ? 'bg-white/[0.01]' : ''}`}>
+                        <div className="absolute inset-0" style={{ background: 'repeating-linear-gradient(-45deg, transparent 0px, transparent 6px, rgba(255,255,255,0.03) 6px, rgba(255,255,255,0.03) 7px)' }} />
+                      </div>
+                    );
+                  }
+                  const day = entry.day;
                   const slot = day.slots[rowIdx];
                   const isToday = day.date === todayIso;
                   return (
@@ -215,12 +280,14 @@ export function BookingCalendar({
       {pending && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={(e) => e.target === e.currentTarget && setPending(null)}>
-          <div className="bg-[#111] border border-white/12 rounded-2xl w-full max-w-sm shadow-2xl p-6">
+          <div ref={confirmDialogRef} role="dialog" aria-modal="true"
+            aria-label={pending.mode === 'book' ? 'Xác nhận đặt lịch' : 'Hủy lịch đặt'} tabIndex={-1}
+            className="bg-[#111] border border-white/12 rounded-2xl w-full max-w-sm shadow-2xl p-6">
             <div className="flex items-start justify-between mb-5">
               <h3 className="text-white font-bold text-xl">
                 {pending.mode === 'book' ? 'Xác nhận đặt lịch' : 'Hủy lịch đặt'}
               </h3>
-              <button type="button" onClick={() => setPending(null)} className="text-white/40 hover:text-white transition-colors">
+              <button type="button" onClick={() => setPending(null)} aria-label="Đóng" className="text-white/40 hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -263,11 +330,13 @@ export function BookingCalendar({
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3.5 rounded-xl border shadow-2xl flex items-center gap-2.5 text-base font-medium ${
-          toast.kind === 'ok' ? 'bg-[#0F6B3E] border-[#0F6B3E]/60 text-white' : 'bg-red-500 border-red-500/60 text-white'
-        }`}>
-          {toast.kind === 'ok' ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
-          {toast.text}
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 w-full max-w-sm flex justify-center">
+          <div className={`w-full px-6 py-3.5 rounded-xl border shadow-2xl flex items-center gap-2.5 text-base font-medium ${
+            toast.kind === 'ok' ? 'bg-[#0F6B3E] border-[#0F6B3E]/60 text-white' : 'bg-red-500 border-red-500/60 text-white'
+          }`}>
+            {toast.kind === 'ok' ? <Check className="w-5 h-5 shrink-0" /> : <X className="w-5 h-5 shrink-0" />}
+            {toast.text}
+          </div>
         </div>
       )}
     </div>
@@ -283,7 +352,7 @@ function LegendDot({ cls, label }: { cls: string; label: string }) {
   );
 }
 
-function SlotCell({
+const SlotCell = React.memo(function SlotCell({
   slot, capacity, striped, isToday, onBook, onCancel,
 }: {
   slot: Slot; capacity: number; striped: boolean; isToday: boolean;
@@ -293,7 +362,7 @@ function SlotCell({
   const todayColCls = isToday
     ? 'border-l-2 border-l-[#0F6B3E]/50 bg-[#0F6B3E]/[0.06]'
     : '';
-  const base = `h-[72px] border-b border-r border-white/8 flex flex-col items-center justify-center gap-1.5 px-1 transition-all ${
+  const base = `min-h-[72px] border-b border-r border-white/8 flex flex-col items-center justify-center gap-1 px-1.5 py-1.5 transition-all ${
     striped && !isToday ? 'bg-white/[0.02]' : ''
   } ${todayColCls}`;
 
@@ -352,4 +421,4 @@ function SlotCell({
       </span>
     </button>
   );
-}
+});

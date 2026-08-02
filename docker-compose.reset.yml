@@ -1,0 +1,81 @@
+# docker-compose.reset.yml — Fresh start: wipes the DB and recreates everything.
+#
+# Usage:
+#   docker compose -f docker-compose.reset.yml up -d
+#
+# After the containers are healthy, the DB will be clean with only the
+# default admin trainer seeded. Switch back to the normal compose file
+# for day-to-day operation:
+#   docker compose up -d
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: renfit-mongo
+    expose:
+      - "27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: renfit-backend
+    expose:
+      - "8000"
+    volumes:
+      - ./backend/env/.env:/app/env/.env:ro
+    environment:
+      API_HOST: "0.0.0.0"
+      API_PORT: "8000"
+      MONGODB_URI: "mongodb://mongo:27017/renfit"
+      DB_NAME: "renfit"
+      RESET_DB: "true"
+      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000}"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: renfit-frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: "${DOMAIN:-:80}"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  caddy_data:
+  caddy_config:

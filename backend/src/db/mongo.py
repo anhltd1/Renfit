@@ -20,3 +20,11 @@ def personal_trainers_collection() -> Collection:
 
 def inbody_collection() -> Collection:
     return get_renfit_database()[col.INBODY]
+
+
+def notifications_collection() -> Collection:
+    return get_renfit_database()[col.NOTIFICATION]
+
+
+def trainer_notifications_collection() -> Collection:
+    return get_renfit_database()[col.TRAINER_NOTIFICATION]

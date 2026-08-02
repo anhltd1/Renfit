@@ -22,14 +22,29 @@ export interface LoginPayload {
 
 async function post<T>(path: string, body: unknown): Promise<T> {
   const url = API_BASE ? `${API_BASE}${path}` : path;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (networkErr) {
+    // Network failure — backend unreachable, DNS error, CORS preflight blocked, etc.
+    console.error('[auth] Network error:', networkErr);
+    throw new Error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.');
+  }
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { detail?: unknown };
+    const text = await res.text().catch(() => '');
+    let err: { detail?: unknown } = {};
+    try {
+      err = JSON.parse(text) as { detail?: unknown };
+    } catch {
+      // Response is not JSON (likely a proxy error page)
+      console.error(`[auth] Non-JSON error response (${res.status}):`, text.slice(0, 500));
+      throw new Error(`Lỗi máy chủ (${res.status}). Vui lòng thử lại.`);
+    }
 
     // FastAPI 422: detail is an array of Pydantic validation errors
     if (Array.isArray(err.detail)) {
@@ -44,7 +59,9 @@ async function post<T>(path: string, body: unknown): Promise<T> {
       throw new Error(err.detail);
     }
 
-    throw new Error('Đã xảy ra lỗi. Vui lòng thử lại.');
+    // Unexpected JSON shape
+    console.error(`[auth] Unexpected error shape (${res.status}):`, err);
+    throw new Error(`Đã xảy ra lỗi (${res.status}). Vui lòng thử lại.`);
   }
 
   return res.json();

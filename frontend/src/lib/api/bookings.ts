@@ -50,7 +50,18 @@ export async function fetchAvailability(customerId: string): Promise<Availabilit
   return handleResponse<Availability>(res);
 }
 
-export async function createBooking(customerId: string, time: string): Promise<{ message: string }> {
+export interface CreateBookingResult {
+  success: boolean;
+  booking_id: string;
+  time: string;
+  status: BookingStatus;
+  message: string;
+}
+
+export async function createBooking(
+  customerId: string,
+  time: string,
+): Promise<CreateBookingResult> {
   const res = await fetch(url('/api/v1/bookings'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

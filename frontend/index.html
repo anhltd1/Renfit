@@ -4,11 +4,33 @@
     <head>
       
       <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Renfit Landing Page Design</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+      <title>Renfit — Đặt lịch tập & AI Coach</title>
       <meta name="description" content="Premium Vietnamese landing page showcasing a private gym with AI coaching, personalized training, easy booking, and elite fitness services." />
       <meta name="robots" content="noindex, nofollow" />
-      <style>html, body { height: 100%; margin: 0; } #root { height: 100%; }</style>
+
+      <!-- PWA -->
+      <link rel="manifest" href="/manifest.webmanifest" />
+      <meta name="theme-color" content="#0B0B0B" />
+      <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+      <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+      <meta name="mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      <meta name="apple-mobile-web-app-title" content="Renfit" />
+
+      <style>
+        html, body { height: 100%; margin: 0; }
+        #root { height: 100%; }
+        /* Safe-area insets so fixed headers/footers clear the notch/home-indicator
+           on iOS PWAs and Android gesture-nav devices. */
+        :root {
+          --safe-top: env(safe-area-inset-top, 0px);
+          --safe-bottom: env(safe-area-inset-bottom, 0px);
+          --safe-left: env(safe-area-inset-left, 0px);
+          --safe-right: env(safe-area-inset-right, 0px);
+        }
+      </style>
       
     </head>
 

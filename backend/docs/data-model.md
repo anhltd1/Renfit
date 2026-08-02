@@ -119,3 +119,24 @@ Individual message turn within a `ChatSession`.
 | `content` | string/object | Plain text or Anthropic message blocks |
 | `sequence` | int | 0-based monotonic order within session |
 | `created_at` | string/date | |
+
+---
+
+### `Notification` (planned — not yet implemented)
+
+Per-customer alerts for booking approvals, upcoming-session reminders, and
+new InBody scores. Full design, generation mechanism, and click-through
+routing: [notifications.md](notifications.md).
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string | Unique |
+| `customer_id` | string | References `Customer.id` — recipient |
+| `type` | enum | `booking_approved` \| `session_reminder` \| `inbody_added` |
+| `title` | string | Short headline |
+| `message` | string | One-line detail |
+| `target` | string | Click-through target, e.g. `dashboard:bookings` |
+| `related_id` | string | `Booking.id` or `Inbody.id` this notification is about |
+| `read` | bool | Default `false` |
+| `created_at` | string/date | |
+| `read_at` | string/date \| null | |

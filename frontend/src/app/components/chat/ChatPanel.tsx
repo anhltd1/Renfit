@@ -1,41 +1,42 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { Bot, Loader2, Send } from 'lucide-react';
 import { sendChatMessage } from '../../../lib/api/chat';
-import type { ChatResponse } from '../../../lib/api/chat';
-import { BookingForm } from './BookingForm';
-import { BookingIntakeForm } from './BookingIntakeForm';
-import { ChatMessageContent } from './ChatMessageContent';
-import { CustomerInfoForm } from './CustomerInfoForm';
-import type {
-  BookingFormData,
-  ChatMessage,
-  CustomerFormData,
-  IntakeFormData,
-} from './types';
-import { inferFormFromResponse, introForForm } from './formUtils';
+import type { ChatArtifact, ChatResponse } from '../../../lib/api/chat';
+import { ChatArtifactCard } from './ChatArtifactCard';
+import { SuggestedReplies } from './SuggestedReplies';
+import type { ChatMessage } from './types';
 import { getAuthUser } from '../../../lib/auth';
+
+/**
+ * Lazy-loaded — react-markdown is only needed to render assistant replies,
+ * not on initial chat-screen paint (U7 Performance & PWA, SPLIT-3). The
+ * fallback renders the raw text unformatted so the message is never
+ * invisible while the markdown renderer's chunk downloads.
+ */
+const ChatMessageContent = lazy(() =>
+  import('./ChatMessageContent').then((m) => ({ default: m.ChatMessageContent })),
+);
 
 const WELCOME_MESSAGE: ChatMessage = {
   id: 'welcome',
   role: 'assistant',
   content:
-    'Xin chào! Tôi là Renfit AI Coach. Bạn có thể hỏi về tập luyện, dinh dưỡng, hoặc đặt lịch buổi tập nhé!',
+    'Xin chào! Tôi là Renfit AI Coach. Bạn có thể hỏi về tập luyện, dinh dưỡng, tiến độ InBody, hoặc đặt lịch buổi tập nhé!',
 };
 
+/** Matches the backend's first-turn suggestions (services/ai/suggestions.py). */
+const INITIAL_SUGGESTIONS = [
+  'Tôi muốn đặt lịch',
+  'Tôi muốn kiểm tra tiến độ',
+  'Tôi muốn tư vấn lịch tập',
+];
+
 function mapResponseToMessage(res: ChatResponse, id: string): ChatMessage {
-  const form = inferFormFromResponse(res);
-  const customerName =
-    typeof res.metadata?.customer_name === 'string'
-      ? res.metadata.customer_name
-      : undefined;
   return {
     id,
     role: 'assistant',
     content: res.message,
-    responseType: res.type,
-    form,
-    formIntro: form ? introForForm(res.message, form) : undefined,
-    formCustomerName: customerName,
+    artifact: res.artifact ?? null,
   };
 }
 
@@ -55,7 +56,9 @@ export function ChatPanel({
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>(INITIAL_SUGGESTIONS);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const customerId = getAuthUser()?.id ?? null;
 
   const scrollToBottom = useCallback(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -65,36 +68,8 @@ export function ChatPanel({
     scrollToBottom();
   }, [messages, loading, scrollToBottom]);
 
-  const processResponse = useCallback((res: ChatResponse) => {
-    setConversationId(res.conversation_id);
-    setMessages((prev) => [
-      ...prev,
-      mapResponseToMessage(res, `assistant-${Date.now()}`),
-    ]);
-  }, []);
-
-  const sendToAgent = useCallback(
-    async (text: string, formData?: Record<string, string>) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await sendChatMessage({
-          message: text,
-          conversation_id: conversationId,
-          form_data: formData,
-        });
-        processResponse(res);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi.');
-      } finally {
-        setLoading(false);
-      }
-    },
-    [conversationId, processResponse]
-  );
-
-  const handleSend = async () => {
-    const text = input.trim();
+  const handleSend = async (override?: string) => {
+    const text = (override ?? input).trim();
     if (!text || loading) return;
 
     setMessages((prev) => [
@@ -102,7 +77,31 @@ export function ChatPanel({
       { id: `user-${Date.now()}`, role: 'user', content: text },
     ]);
     setInput('');
-    await sendToAgent(text);
+    setSuggestions([]);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await sendChatMessage({
+        message: text,
+        conversation_id: conversationId,
+        customer_id: customerId,
+      });
+      setConversationId(res.conversation_id);
+      setMessages((prev) => [
+        ...prev,
+        mapResponseToMessage(res, `assistant-${Date.now()}`),
+      ]);
+      setSuggestions(res.suggestions ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSuggestionClick = (text: string) => {
+    if (loading) return;
+    void handleSend(text);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -112,65 +111,32 @@ export function ChatPanel({
     }
   };
 
-  const disableFormOnMessage = (messageId: string) => {
-    setMessages((prev) =>
-      prev.map((m) => (m.id === messageId ? { ...m, formDisabled: true } : m))
-    );
-  };
-
-  const handleCustomerFormSubmit = async (messageId: string, data: CustomerFormData) => {
-    disableFormOnMessage(messageId);
+  /**
+   * Called when a booking action (book/cancel) is triggered directly from an
+   * artifact card. Appends a fresh assistant message confirming the result
+   * so the conversation always ends with a clear confirmation, rather than
+   * the slot just quietly disappearing from the availability card.
+   */
+  const handleArtifactBookingAction = (message: string, artifact: ChatArtifact) => {
     setMessages((prev) => [
       ...prev,
       {
-        id: `user-${Date.now()}`,
-        role: 'user',
-        content: `Đã gửi thông tin: ${data.customer_name}`,
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: message,
+        artifact,
       },
     ]);
-    await sendToAgent('Tôi đã gửi thông tin khách hàng qua biểu mẫu.', data);
-  };
-
-  const handleBookingFormSubmit = async (messageId: string, data: BookingFormData) => {
-    disableFormOnMessage(messageId);
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `user-${Date.now()}`,
-        role: 'user',
-        content: `Đặt lịch: ${data.customer_name} — ${data.date} ${data.time}`,
-      },
-    ]);
-    await sendToAgent('Tôi đã gửi thông tin đặt lịch qua biểu mẫu.', data);
-  };
-
-  const handleIntakeFormSubmit = async (messageId: string, data: IntakeFormData) => {
-    disableFormOnMessage(messageId);
-    const loggedIn = getAuthUser();
-    const enriched = {
-      ...data,
-      customer_name: data.customer_name || loggedIn?.id || '',
-      phone: data.phone || loggedIn?.phone_number || '',
-    };
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `user-${Date.now()}`,
-        role: 'user',
-        content: `Đặt lịch: ${enriched.customer_name} — ${enriched.date} ${enriched.time}`,
-      },
-    ]);
-    await sendToAgent(
-      'Tôi đã gửi đầy đủ thông tin đặt lịch (tên, SĐT, ngày giờ) qua biểu mẫu.',
-      enriched
+    // Mirrors the backend's contextual suggestions for book_slot/cancel_booking
+    // (services/ai/suggestions.py) since this action bypasses chat() entirely.
+    setSuggestions(
+      artifact.kind === 'booking_confirmation'
+        ? ['Xem lịch tập sắp tới của tôi', 'Kiểm tra tiến độ InBody', 'Tôi muốn đặt lịch']
+        : ['Đặt lại một lịch khác', 'Xem khung giờ còn trống', 'Tôi muốn đặt lịch'],
     );
   };
 
   const isFull = variant === 'full';
-
-  const hasActiveForm = messages.some(
-    (m) => m.role === 'assistant' && m.form && !m.formDisabled
-  );
 
   return (
     <div
@@ -220,40 +186,18 @@ export function ChatPanel({
                 </div>
               )}
               {msg.role === 'assistant' ? (
-                msg.form && !msg.formDisabled ? (
-                  <p className="text-sm leading-relaxed text-white/95 mb-1">
-                    {msg.formIntro ?? introForForm(msg.content, msg.form)}
-                  </p>
-                ) : (
+                <Suspense fallback={<p className="whitespace-pre-line leading-relaxed text-sm">{msg.content}</p>}>
                   <ChatMessageContent content={msg.content} />
-                )
+                </Suspense>
               ) : (
                 <p className="whitespace-pre-line leading-relaxed text-sm">{msg.content}</p>
               )}
 
-              {msg.responseType === 'customer_saved' && (
-                <p className="mt-2 text-xs text-green-400">✓ Đã lưu thông tin khách hàng</p>
-              )}
-              {msg.responseType === 'booking_success' && (
-                <p className="mt-2 text-xs text-green-400">✓ Đã tạo lịch đặt buổi tập</p>
-              )}
-
-              {msg.form === 'intake' && !msg.formDisabled && (
-                <BookingIntakeForm
-                  disabled={loading}
-                  onSubmit={(data) => handleIntakeFormSubmit(msg.id, data)}
-                />
-              )}
-              {msg.form === 'customer' && !msg.formDisabled && (
-                <CustomerInfoForm
-                  disabled={loading}
-                  onSubmit={(data) => handleCustomerFormSubmit(msg.id, data)}
-                />
-              )}
-              {msg.form === 'booking' && !msg.formDisabled && (
-                <BookingForm
-                  disabled={loading}
-                  onSubmit={(data) => handleBookingFormSubmit(msg.id, data)}
+              {msg.artifact && (
+                <ChatArtifactCard
+                  artifact={msg.artifact}
+                  customerId={customerId}
+                  onBookingAction={handleArtifactBookingAction}
                 />
               )}
             </div>
@@ -274,12 +218,10 @@ export function ChatPanel({
         <p className="px-6 text-red-400 text-sm shrink-0">{error}</p>
       )}
 
-      <div className="p-4 border-t border-white/10 shrink-0">
-        {hasActiveForm ? (
-          <p className="text-center text-white/50 text-sm py-2">
-            Điền thông tin trong tin nhắn AI phía trên ↑
-          </p>
-        ) : (
+      <div className="p-4 border-t border-white/10 shrink-0 space-y-3">
+        {suggestions.length > 0 && !loading && (
+          <SuggestedReplies suggestions={suggestions} onSelect={handleSuggestionClick} />
+        )}
         <div className="flex gap-2 items-end">
           <textarea
             value={input}
@@ -292,14 +234,13 @@ export function ChatPanel({
           />
           <button
             type="button"
-            onClick={handleSend}
+            onClick={() => handleSend()}
             disabled={loading || !input.trim()}
             className="w-11 h-11 shrink-0 rounded-full bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 disabled:opacity-50 flex items-center justify-center transition-all duration-300 hover:scale-105"
           >
             <Send className="w-5 h-5 text-white" />
           </button>
         </div>
-        )}
       </div>
     </div>
   );

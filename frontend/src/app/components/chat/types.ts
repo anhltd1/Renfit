@@ -1,35 +1,8 @@
-export type ChatFormType = 'customer' | 'booking' | 'intake';
-
-/** Thu thập đủ thông tin đặt lịch trong một bước (tên, SĐT, ngày giờ) */
-export interface IntakeFormData {
-  customer_name: string;
-  phone: string;
-  date: string;
-  time: string;
-}
+import type { ChatArtifact } from '../../../lib/api/chat';
 
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  form?: ChatFormType;
-  formIntro?: string;
-  formDisabled?: boolean;
-  formCustomerName?: string;
-  responseType?: 'text' | 'form_request' | 'booking_success' | 'customer_saved';
-}
-
-export interface CustomerFormData {
-  customer_name: string;
-  phone: string;
-  goal: string;
-  health_note: string;
-  note: string;
-}
-
-export interface BookingFormData {
-  customer_name: string;
-  date: string;
-  time: string;
-  note: string;
+  artifact?: ChatArtifact | null;
 }

@@ -4,7 +4,6 @@ import { Hero } from '../components/Hero';
 import { About } from '../components/About';
 import { Services } from '../components/Services';
 import { AIChat } from '../components/AIChat';
-import { Booking } from '../components/Booking';
 import { Trainers } from '../components/Trainers';
 import { Testimonials } from '../components/Testimonials';
 import { Pricing } from '../components/Pricing';
@@ -25,7 +24,6 @@ export function LandingPage() {
       <section id="trainers">
         <Trainers />
       </section>
-      <Booking />
       <Footer />
     </div>
   );

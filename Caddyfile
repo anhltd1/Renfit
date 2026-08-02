@@ -1,0 +1,38 @@
+# Caddy config for Renfit's production frontend (U9 Deployment).
+#
+# {$DOMAIN} is substituted from the root-level .env at container start
+# (docker-compose.yml passes it through).
+#
+# - Production: set DOMAIN to a real, DNS-resolving domain (e.g.
+#   renfit.example.com). Caddy then automatically obtains/renews a Let's
+#   Encrypt TLS certificate for it and redirects HTTP -> HTTPS — no manual
+#   certbot/nginx-TLS setup needed.
+# - Local Docker testing without a domain: leave DOMAIN unset or set it to
+#   ":80". A bare hostname like "localhost" does NOT disable TLS — Caddy
+#   still treats any hostname as a real domain and tries to manage HTTPS
+#   for it via its internal CA (which needs "certutil" to install into
+#   trust stores; that's unavailable in this Alpine image and breaks
+#   startup). A port-only address (":80") tells Caddy to serve plain HTTP
+#   with no certificate management at all.
+{$DOMAIN} {
+	# Serve the built SPA.
+	root * /usr/share/caddy
+	encode gzip
+
+	# Explicit ordering via handle blocks — Caddy evaluates handle blocks
+	# top-to-bottom (first match wins), which guarantees API/chat requests
+	# hit the backend and never fall through to try_files/file_server.
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+	handle /chat* {
+		reverse_proxy backend:8000
+	}
+
+	# SPA fallback: any other path serves index.html so client-side routing
+	# (react-router) works on a hard refresh/deep link.
+	handle {
+		try_files {path} /index.html
+		file_server
+	}
+}

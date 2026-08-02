@@ -8,7 +8,7 @@ A full-stack web app for a private gym. Customers book sessions, track body comp
 |---|---|
 | Frontend | React 18 + Vite + TypeScript + Tailwind CSS |
 | Backend | Python 3.11 + FastAPI |
-| Database | MongoDB (remote, e.g. MongoDB Atlas) |
+| Database | MongoDB 7 (self-hosted via Docker, persisted volume) |
 | AI Coach | Anthropic Claude (Haiku) via tool-use agents |
 | Auth | bcrypt password hashing (passlib) |
 | Infra | Docker + Docker Compose |
@@ -27,24 +27,36 @@ Edit `backend/env/.env` and fill in:
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
-MONGODB_URI=mongodb+srv://...
 ```
 
-### 2. Run
+> **MongoDB** is self-hosted inside Docker — no external `MONGODB_URI` needed. The compose file
+> sets it to `mongodb://mongo:27017/renfit` automatically.
+
+### 2. Run (normal — preserves existing data)
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
+
+### 3. Run (first time / reset — wipes DB and starts fresh)
+
+```bash
+docker compose -f docker-compose.reset.yml up --build -d
+```
+
+This drops all collections, recreates indexes, and seeds the default admin trainer.
 
 | Service | URL |
 |---|---|
-| Frontend | http://localhost:5173 |
-| Backend API | http://localhost:8000 |
-| API health | http://localhost:8000/api/v1/health |
+| Frontend | http://localhost |
+| Backend API | not exposed to the host by default (see `docker-compose.yml`) |
+| API health | via the frontend proxy, e.g. `curl http://localhost/api/v1/health` |
 
 The first run seeds a default trainer account automatically (see [Default accounts](#default-accounts)).
 
-> The frontend Vite dev server proxies `/api/*` and `/chat` to the backend, so no CORS configuration is needed in the browser.
+> The frontend is served by Caddy in production and proxies `/api/*` and `/chat` to the backend
+> container, so no CORS configuration is needed in the browser. For a real deployment (TLS,
+> domain, VM setup) see [`DOCKER.md`](DOCKER.md#production-deployment-single-vm).
 
 ---
 
@@ -140,15 +152,20 @@ Renfit/
 ├── frontend/                 # React + Vite SPA
 │   └── src/
 │       ├── app/
-│       │   ├── components/   # Shared UI components
+│       │   ├── components/   # Shared UI components (incl. CalendarKiosk)
+│       │   ├── desktop/      # Desktop-specific pages/components
+│       │   ├── mobile/       # Mobile-specific pages/components
+│       │   ├── shared/       # Shared primitives, hooks, device detection
 │       │   └── pages/        # Route-level page components
 │       └── lib/
 │           ├── api/          # Typed fetch wrappers
 │           └── auth.ts       # localStorage session helpers
-├── docker-compose.yml
+├── docker-compose.yml         # Normal operation (preserves DB)
+├── docker-compose.reset.yml   # Fresh start (wipes DB, recreates everything)
 ├── Dockerfile.backend
-├── Dockerfile.frontend
-└── DOCKER.md                 # Docker-specific commands
+├── Dockerfile.frontend        # Multi-stage: Vite build → Caddy runtime (TLS, reverse proxy)
+├── Caddyfile
+└── DOCKER.md                 # Docker-specific commands + production deployment guide
 ```
 
 ---

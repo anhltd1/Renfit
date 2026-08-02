@@ -20,7 +20,7 @@ pytest test/ -v
 
 | Test file | What it covers |
 |---|---|
-| `test_tools.py` | AI agent tool functions (customer lookup, booking create/cancel, profile update) |
-| `test_agent_intake.py` | End-to-end agent response for booking intake flow |
+| `test_tools.py` | AI agent self-service tools (read-only profile, InBody history, booking availability/create/cancel) — all scoped to a server-bound `customer_id` |
+| `test_agent_artifacts.py` | `ChatAgent` login gating and artifact rendering from tool results |
 
 Tests use `unittest.mock.patch` to replace MongoDB collection calls, so no `.env` or live Atlas connection is needed.

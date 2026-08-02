@@ -1,7 +1,7 @@
 import { Link } from './Link';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import logoImage from '../../imports/image.png';
-import { LayoutDashboard, LogIn, LogOut, Menu, User, X } from 'lucide-react';
+import { LayoutDashboard, LogOut, Menu, User, X } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { getAuthUser, clearAuthUser } from '../../lib/auth';
@@ -41,9 +41,6 @@ export function Navigation() {
             <a href="#trainers" className="text-white/80 hover:text-[#0F6B3E] transition-colors">
               Huấn Luyện Viên
             </a>
-            <a href="#pricing" className="text-white/80 hover:text-[#0F6B3E] transition-colors">
-              Bảng Giá
-            </a>
             {user ? (
               <div className="flex items-center gap-3">
                 <Link
@@ -51,7 +48,7 @@ export function Navigation() {
                   className="bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white px-5 py-2 rounded-full transition-all duration-300 hover:scale-105 flex items-center gap-2"
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  Dashboard
+                  Vào trang chủ
                 </Link>
                 <Link
                   to="/dashboard"
@@ -66,20 +63,19 @@ export function Navigation() {
                     </div>
                   )}
                 </Link>
-                <button onClick={handleLogout}
-                  className="flex items-center gap-1.5 text-white/40 hover:text-red-400 transition-colors text-sm">
-                  <LogOut className="w-4 h-4" />
+                <button type="button" onClick={handleLogout} aria-label="Đăng xuất"
+                  className="flex items-center justify-center w-10 h-10 rounded-full bg-red-500/15 hover:bg-red-500/30 border border-red-500/30 hover:border-red-500/60 text-red-400 hover:text-red-300 transition-all duration-200">
+                  <LogOut className="w-5 h-5" />
                 </button>
               </div>
             ) : (
               <div className="flex items-center gap-3">
-                <Link to="/booking"
+                <Link to="/login"
                   className="bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white px-6 py-2 rounded-full transition-all duration-300 hover:scale-105">
                   Đặt Lịch Ngay
                 </Link>
                 <Link to="/login"
                   className="flex items-center gap-1.5 text-white/70 hover:text-white transition-colors text-sm">
-                  <LogIn className="w-4 h-4" />
                   Đăng nhập
                 </Link>
               </div>
@@ -88,7 +84,10 @@ export function Navigation() {
 
           {/* Mobile Menu Button */}
           <button
+            type="button"
             onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? 'Đóng menu' : 'Mở menu'}
+            aria-expanded={isOpen}
             className="md:hidden text-white"
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -119,18 +118,11 @@ export function Navigation() {
             >
               Huấn Luyện Viên
             </a>
-            <a
-              href="#pricing"
-              className="block text-white/80 hover:text-[#0F6B3E] transition-colors"
-              onClick={() => setIsOpen(false)}
-            >
-              Bảng Giá
-            </a>
             {user ? (
               <>
                 <Link to="/dashboard" onClick={() => setIsOpen(false)}
                   className="w-full bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white px-6 py-2 rounded-full transition-all duration-300 text-center flex items-center justify-center gap-2">
-                  <LayoutDashboard className="w-4 h-4" /> Dashboard
+                  <LayoutDashboard className="w-4 h-4" /> Vào trang chủ
                 </Link>
                 <div className="flex items-center gap-3">
                   <Link to="/dashboard" onClick={() => setIsOpen(false)}
@@ -145,20 +137,20 @@ export function Navigation() {
                     {user.id}
                   </Link>
                   <button onClick={handleLogout}
-                    className="flex items-center gap-2 text-white/40 hover:text-red-400 transition-colors">
-                    <LogOut className="w-4 h-4" /> Đăng xuất
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/15 hover:bg-red-500/30 border border-red-500/30 hover:border-red-500/60 text-red-400 hover:text-red-300 transition-all duration-200">
+                    <LogOut className="w-5 h-5" /> Đăng xuất
                   </button>
                 </div>
               </>
             ) : (
               <>
-                <Link to="/booking" onClick={() => setIsOpen(false)}
+                <Link to="/login" onClick={() => setIsOpen(false)}
                   className="w-full bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white px-6 py-2 rounded-full transition-all duration-300 text-center">
                   Đặt Lịch Ngay
                 </Link>
                 <Link to="/login" onClick={() => setIsOpen(false)}
                   className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-                  <LogIn className="w-4 h-4" /> Đăng nhập
+                  Đăng nhập
                 </Link>
               </>
             )}

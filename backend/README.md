@@ -84,11 +84,47 @@ backend/
 
 All `/admin` endpoints (except `/login`) require `Authorization: Bearer <token>` where the token is the trainer's `id` returned at login.
 
+### Notifications (customer) — `/api/v1/notifications`
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `?customer_id=&unread_only=` | List a customer's notifications, newest first |
+| GET | `/unread-count?customer_id=` | Unread count (powers the bell badge) |
+| POST | `/{notification_id}/read?customer_id=` | Mark one notification read |
+| POST | `/read-all` | Mark all of a customer's notifications read |
+
+Fires on booking approval, ≤1-hour session reminders (background scan every
+60s, started in `main.py`'s startup event), and new InBody records.
+
+### Notifications (trainer) — `/api/v1/admin/notifications`
+
+Inline in the admin router (same `Authorization: Bearer <token>` as other
+`/admin` endpoints). Broadcast, not per-trainer — see design doc.
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `?unread_only=` | List all trainer notifications, newest first |
+| GET | `/unread-count` | Unread count |
+| POST | `/{notification_id}/read` | Mark one notification read |
+| POST | `/read-all` | Mark all read |
+
+Fires when a trainee creates or cancels a booking, and when a new trainee
+signs up. Full design for both: [`docs/notifications.md`](docs/notifications.md).
+
 ### AI Chat — `/api/v1/chat`
 
 | Method | Path | Description |
 |---|---|---|
-| POST | `` | Send a message; returns assistant reply |
+| POST | `` | Send a message as a logged-in customer; returns assistant reply + optional artifact |
+
+Login-only — `customer_id` (the caller's own `Customer.id`) is required in the
+request body and scopes every AI tool server-side. The agent has read-only
+access to the caller's own profile and InBody history (no tool to edit them —
+that happens on the Profile page) plus booking availability/create/cancel for
+that same customer. Instead of inline forms, tool results are returned as a
+structured, read-only `artifact` (`profile`, `inbody_progress`,
+`booking_availability`, `booking_confirmation`, or `booking_cancelled`) that
+the frontend renders as a card under the reply.
 
 ---
 

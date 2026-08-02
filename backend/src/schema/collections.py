@@ -6,6 +6,8 @@ BOOKINGS = "Bookings"
 INBODY = "Inbody"
 CHAT_SESSION = "ChatSession"
 CHAT_MESSAGE = "ChatMessage"
+NOTIFICATION = "Notification"
+TRAINER_NOTIFICATION = "TrainerNotification"
 
 ALL_COLLECTIONS = (
     CUSTOMER,
@@ -14,4 +16,6 @@ ALL_COLLECTIONS = (
     INBODY,
     CHAT_SESSION,
     CHAT_MESSAGE,
+    NOTIFICATION,
+    TRAINER_NOTIFICATION,
 )

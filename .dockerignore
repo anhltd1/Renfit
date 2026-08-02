@@ -24,6 +24,8 @@
 backend/env/.env
 backend/env/.env.local
 backend/env/*.local
+.env
+.env.local
 
 # ── Docs / dev-only files ─────────────────────────────────────────
 **/*.md

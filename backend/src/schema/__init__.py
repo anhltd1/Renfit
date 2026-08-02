@@ -17,11 +17,13 @@ from src.schema.collections import (
     CHAT_SESSION,
     CUSTOMER,
     INBODY,
+    NOTIFICATION,
     PERSONAL_TRAINER,
 )
 from src.schema.customer import Customer
 from src.schema.inbody import Inbody
 from src.schema.mongo import COLLECTION_SPECS, VALIDATION_OPTIONS
+from src.schema.notification import Notification, NotificationType
 from src.schema.personal_trainer import PersonalTrainer
 
 __all__ = [
@@ -34,6 +36,7 @@ __all__ = [
     "COLLECTION_SPECS",
     "CUSTOMER",
     "INBODY",
+    "NOTIFICATION",
     "PERSONAL_TRAINER",
     "VALIDATION_OPTIONS",
     "Booking",
@@ -46,5 +49,7 @@ __all__ = [
     "ChatSessionStatus",
     "Customer",
     "Inbody",
+    "Notification",
+    "NotificationType",
     "PersonalTrainer",
 ]

@@ -1,11 +1,8 @@
-import { Link } from './Link';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import logoImage from '../../imports/image.png';
 import { Dumbbell, Users, Star } from 'lucide-react';
-import { getAuthUser } from '../../lib/auth';
 
 export function Hero() {
-  const user = getAuthUser();
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -46,22 +43,6 @@ export function Hero() {
           Phòng gym riêng tư cao cấp với huấn luyện viên cá nhân chuyên nghiệp,
           hỗ trợ AI thông minh và chương trình tập luyện được cá nhân hóa hoàn toàn.
         </p>
-
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20">
-          <Link
-            to={user ? '/dashboard' : '/booking'}
-            className="px-8 py-4 bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white rounded-full transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(15,107,62,0.5)] text-center"
-          >
-            {user ? 'Vào Dashboard' : 'Đặt Lịch Tư Vấn'}
-          </Link>
-          <Link
-            to={user ? '/dashboard' : '/ai-coach'}
-            className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-sm border border-white/20 transition-all duration-300 hover:scale-105 text-center"
-          >
-            {user ? `Xin chào, ${user.id}` : 'Chat Với AI Coach'}
-          </Link>
-        </div>
 
         {/* Floating Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">

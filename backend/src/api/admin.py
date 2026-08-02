@@ -20,7 +20,14 @@ from src.db.mongo import (
     personal_trainers_collection,
 )
 from src.schema.inbody import Inbody
-from src.services.booking_service import list_window_bookings, set_booking_status
+from src.services.booking_service import admin_assign_booking, list_window_bookings, set_booking_status
+from src.services.notification_service import (
+    list_trainer_notifications,
+    mark_all_trainer_notifications_read,
+    mark_trainer_notification_read,
+    notify_inbody_added,
+    trainer_unread_count,
+)
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
@@ -173,6 +180,11 @@ def add_inbody(
         date_recorded=record_date,
     )
     inbody_collection().insert_one(inbody.model_dump())
+    notify_inbody_added(
+        customer_id=customer_id,
+        inbody_id=inbody.id,
+        date_recorded=_fmt_date(inbody.date_recorded),
+    )
     return InbodyRecord(
         id=inbody.id,
         customer_id=inbody.customer_id,
@@ -188,6 +200,29 @@ def add_inbody(
 
 class UpdateBookingStatusRequest(BaseModel):
     status: str = Field(..., description="pending | approved | rejected")
+
+
+class AssignBookingRequest(BaseModel):
+    customer_id: str = Field(..., description="Customer.id (name)")
+    time: str = Field(..., description="Slot key, e.g. '2026-06-15T08:00'")
+    note: str = ""
+
+
+@router.post("/bookings/assign", status_code=201)
+def assign_booking(
+    body: AssignBookingRequest,
+    trainer_id: str = Depends(_require_admin),
+) -> dict:
+    """Admin-creates a booking for a customer — auto-approved, bypasses capacity."""
+    result = admin_assign_booking(
+        customer_id=body.customer_id,
+        time=body.time,
+        trainer_id=trainer_id,
+        note=body.note,
+    )
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message", "Đặt lịch thất bại."))
+    return result
 
 
 @router.get("/bookings")
@@ -206,3 +241,48 @@ def update_booking_status(
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("message", "Cập nhật thất bại."))
     return result
+
+
+# ── Notifications (trainer-facing, broadcast — see docs/notifications.md) ──
+
+
+class TrainerNotificationOut(BaseModel):
+    id: str
+    type: str
+    title: str
+    message: str
+    target: str
+    related_id: str
+    read: bool
+    created_at: str
+    read_at: str | None = None
+
+
+@router.get("/notifications", response_model=list[TrainerNotificationOut])
+def get_trainer_notifications(
+    unread_only: bool = False, _: str = Depends(_require_admin)
+) -> list[TrainerNotificationOut]:
+    docs = list_trainer_notifications(unread_only=unread_only)
+    return [TrainerNotificationOut(**doc) for doc in docs]
+
+
+@router.get("/notifications/unread-count")
+def get_trainer_unread_count(_: str = Depends(_require_admin)) -> dict:
+    return {"count": trainer_unread_count()}
+
+
+@router.post("/notifications/{notification_id}/read")
+def mark_trainer_notification_as_read(
+    notification_id: str, _: str = Depends(_require_admin)
+) -> dict:
+    result = mark_trainer_notification_read(notification_id=notification_id)
+    if not result.get("success"):
+        raise HTTPException(
+            status_code=404, detail=result.get("message", "Không tìm thấy thông báo.")
+        )
+    return result
+
+
+@router.post("/notifications/read-all")
+def mark_all_trainer_notifications_as_read(_: str = Depends(_require_admin)) -> dict:
+    return mark_all_trainer_notifications_read()

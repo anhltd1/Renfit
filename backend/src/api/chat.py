@@ -25,7 +25,7 @@ def post_chat(body: ChatRequest) -> ChatResponse:
         return agent.chat(
             message=body.message.strip(),
             conversation_id=body.conversation_id,
-            form_data=body.form_data,
+            customer_id=body.customer_id,
         )
     except anthropic.APIError as exc:
         raise HTTPException(

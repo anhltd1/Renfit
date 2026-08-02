@@ -12,6 +12,7 @@ from src.db.mongo import customers_collection, inbody_collection
 from src.schema.customer import Customer
 from src.schema.inbody import Inbody
 from src.services.customer_service import find_customer_by_name
+from src.services.notification_service import notify_trainee_registered
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -117,6 +118,7 @@ def signup(body: SignupRequest) -> AuthResponse:
         age=body.age,
     )
     coll.insert_one(customer.model_dump(exclude_none=True))
+    notify_trainee_registered(customer_id=name)
 
     # Create initial Inbody record if height or weight provided
     h = body.height.strip()

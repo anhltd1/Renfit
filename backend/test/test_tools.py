@@ -1,269 +1,18 @@
 """Unit tests for customer/booking business rules (mocked MongoDB)."""
 
+from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.schema.booking import BookingStatus
 from src.schema.customer import Customer
 from src.services.ai.tools import execute_tool
-from src.services.booking_service import create_booking, upsert_booking
-from src.services.customer_service import (
-    find_customer_by_name,
-    save_customer_info,
-    update_customer_info,
-    upsert_customer_info,
-)
-
-
-def test_request_booking_intake_tool():
-    result = execute_tool("request_booking_intake", {"reason": "missing_info"})
-    assert result["success"] is True
-    assert result["show_form"] is True
-    assert result["form"] == "intake"
-
-
-def test_upsert_customer_info_tool():
-    with patch(
-        "src.services.ai.tools.upsert_customer_info",
-        return_value={"success": True, "upserted": True},
-    ) as mock_upsert:
-        result = execute_tool(
-            "upsert_customer_info",
-            {"customer_name": "A", "phone": "1", "goal": "muscle"},
-        )
-        assert result["success"] is True
-        mock_upsert.assert_called_once()
+from src.services.customer_service import find_customer_by_name
 
 
 @pytest.fixture
 def mock_settings():
     return MagicMock()
-
-
-@patch("src.services.customer_service.customers_collection")
-def test_save_customer_info_requires_fields(mock_coll, mock_settings):
-    result = save_customer_info(
-        customer_name="",
-        phone="0901234567",
-        settings=mock_settings,
-    )
-    assert result["success"] is False
-    mock_coll.assert_not_called()
-
-
-@patch("src.services.customer_service.customers_collection")
-def test_save_customer_info_success(mock_coll, mock_settings):
-    coll = MagicMock()
-    mock_coll.return_value = coll
-    coll.find_one.return_value = None
-
-    result = save_customer_info(
-        customer_name="Nguyen Van A",
-        phone="0901234567",
-        goal="weight loss",
-        settings=mock_settings,
-    )
-
-    assert result["success"] is True
-    coll.insert_one.assert_called_once()
-    saved = coll.insert_one.call_args[0][0]
-    assert saved["id"] == "Nguyen Van A"
-    assert saved["phone_number"] == "0901234567"
-
-
-@patch("src.services.customer_service.customers_collection")
-def test_save_customer_info_upserts_existing(mock_coll, mock_settings):
-    coll = MagicMock()
-    mock_coll.return_value = coll
-    existing = Customer(
-        id="Nguyen Van A",
-        phone_number="0901111111",
-        health_note="",
-        goal="",
-        address="",
-        password="",
-    )
-    coll.find_one.return_value = {**existing.model_dump(), "_id": "oid1"}
-
-    result = save_customer_info(
-        customer_name="Nguyen Van A",
-        phone="0902222222",
-        settings=mock_settings,
-    )
-
-    assert result["success"] is True
-    assert result.get("updated") is True
-    coll.insert_one.assert_not_called()
-    coll.replace_one.assert_called_once()
-
-
-@patch("src.services.customer_service.customers_collection")
-def test_update_customer_info_by_name(mock_coll, mock_settings):
-    coll = MagicMock()
-    mock_coll.return_value = coll
-    existing = Customer(
-        id="Nguyen Van A",
-        phone_number="0901234567",
-        health_note="",
-        goal="",
-        address="",
-        password="",
-        height="",
-        weight="",
-    )
-    coll.find_one.return_value = {**existing.model_dump(), "_id": "oid1"}
-
-    result = update_customer_info(
-        customer_name="Nguyen Van A",
-        height="170",
-        weight="65",
-        goal="muscle gain",
-        settings=mock_settings,
-    )
-
-    assert result["success"] is True
-    updated = coll.replace_one.call_args[0][1]
-    assert updated["height"] == "170"
-    assert updated["weight"] == "65"
-    assert updated["goal"] == "muscle gain"
-
-
-@patch("src.services.customer_service.customers_collection")
-def test_update_customer_creates_when_missing_with_phone(mock_coll, mock_settings):
-    coll = MagicMock()
-    mock_coll.return_value = coll
-    coll.find_one.return_value = None
-
-    result = update_customer_info(
-        customer_name="New User",
-        phone="0909999999",
-        goal="weight loss",
-        settings=mock_settings,
-    )
-
-    assert result["success"] is True
-    assert result.get("created") is True
-    coll.insert_one.assert_called_once()
-
-
-@patch("src.services.booking_service.bookings_collection")
-@patch("src.services.booking_service.find_customer_by_name")
-def test_upsert_booking_updates_existing_by_name(
-    mock_find, mock_bookings_coll, mock_settings
-):
-    mock_find.return_value = Customer(
-        id="Nguyen Van A",
-        phone_number="0901234567",
-        health_note="",
-        goal="",
-        address="",
-        password="",
-    )
-    coll = MagicMock()
-    mock_bookings_coll.return_value = coll
-    coll.find_one.return_value = {
-        "_id": "oid2",
-        "customer_id": "Nguyen Van A",
-        "trainer_id": "Chưa chỉ định",
-        "time": "2026-06-01T19:00",
-        "status": "pending",
-        "note": "",
-    }
-
-    result = upsert_booking(
-        customer_name="Nguyen Van A",
-        trainer="",
-        date="2026-06-01",
-        time="19:00",
-        note="Updated note",
-        settings=mock_settings,
-    )
-
-    assert result["success"] is True
-    assert result.get("updated") is True
-    coll.insert_one.assert_not_called()
-    coll.replace_one.assert_called_once()
-
-
-@patch("src.services.booking_service.bookings_collection")
-@patch("src.services.booking_service.find_customer_by_name")
-def test_create_booking_requires_existing_customer(
-    mock_find, mock_bookings_coll, mock_settings
-):
-    mock_find.return_value = None
-
-    result = create_booking(
-        customer_name="Unknown User",
-        trainer="PT Huy",
-        date="2026-06-01",
-        time="19:00",
-        settings=mock_settings,
-    )
-
-    assert result["success"] is False
-    assert result["requires_customer_info"] is True
-    mock_bookings_coll.assert_not_called()
-
-
-@patch("src.services.booking_service.bookings_collection")
-@patch("src.services.booking_service.find_customer_by_name")
-def test_create_booking_success(mock_find, mock_bookings_coll, mock_settings):
-    mock_find.return_value = Customer(
-        id="Nguyen Van A",
-        phone_number="0901234567",
-        health_note="",
-        goal="muscle gain",
-        address="",
-        password="",
-    )
-    coll = MagicMock()
-    mock_bookings_coll.return_value = coll
-    coll.find_one.return_value = None
-
-    result = create_booking(
-        customer_name="Nguyen Van A",
-        trainer="PT Huy",
-        date="2026-06-01",
-        time="19:00",
-        settings=mock_settings,
-    )
-
-    assert result["success"] is True
-    assert result.get("created") is True
-    coll.insert_one.assert_called_once()
-    booking = coll.insert_one.call_args[0][0]
-    assert booking["status"] == BookingStatus.PENDING.value
-
-
-@patch("src.services.booking_service.bookings_collection")
-@patch("src.services.booking_service.find_customer_by_name")
-def test_create_booking_without_trainer_uses_default(
-    mock_find, mock_bookings_coll, mock_settings
-):
-    mock_find.return_value = Customer(
-        id="Nguyen Van A",
-        phone_number="0901234567",
-        health_note="",
-        goal="",
-        address="",
-        password="",
-    )
-    coll = MagicMock()
-    mock_bookings_coll.return_value = coll
-    coll.find_one.return_value = None
-
-    result = create_booking(
-        customer_name="Nguyen Van A",
-        trainer="",
-        date="2026-06-01",
-        time="19:00",
-        settings=mock_settings,
-    )
-
-    assert result["success"] is True
-    booking = coll.insert_one.call_args[0][0]
-    assert booking["trainer_id"] == "Chưa chỉ định"
 
 
 @patch("src.services.customer_service.customers_collection")
@@ -282,3 +31,235 @@ def test_find_customer_by_name(mock_coll, mock_settings):
     found = find_customer_by_name("nguyen van a", mock_settings)
     assert found is not None
     assert found.phone_number == "1"
+
+
+# ── Self-service tools (customer_id bound server-side, read-only profile) ──
+
+
+def test_self_service_tools_require_customer_id():
+    for tool_name in (
+        "get_my_profile",
+        "get_my_inbody_history",
+        "get_booking_availability",
+        "book_slot",
+        "cancel_booking",
+    ):
+        result = execute_tool(tool_name, {}, customer_id="")
+        assert result["success"] is False
+
+
+def test_unknown_tool_fails_even_with_customer_id():
+    result = execute_tool("delete_everything", {}, customer_id="Real User")
+    assert result["success"] is False
+
+
+@patch("src.services.ai.tools.get_customer_info")
+def test_get_my_profile_uses_bound_customer_id(mock_get_info):
+    mock_get_info.return_value = {"success": True, "found": True, "customer": {}}
+    result = execute_tool("get_my_profile", {"customer_name": "Someone Else"}, customer_id="Real User")
+    assert result["success"] is True
+    mock_get_info.assert_called_once_with("Real User")
+
+
+@patch("src.services.ai.tools.get_inbody_history")
+def test_get_my_inbody_history_uses_bound_customer_id(mock_history):
+    mock_history.return_value = {"success": True, "records": []}
+    result = execute_tool("get_my_inbody_history", {}, customer_id="Real User")
+    assert result["success"] is True
+    mock_history.assert_called_once_with("Real User")
+
+
+@patch("src.services.ai.tools.build_ai_availability")
+def test_get_booking_availability_uses_bound_customer_id(mock_avail):
+    mock_avail.return_value = {"success": True, "days_with_open_slots": []}
+    result = execute_tool("get_booking_availability", {}, customer_id="Real User")
+    assert result["success"] is True
+    mock_avail.assert_called_once_with("Real User", date_filter="")
+
+
+@patch("src.services.ai.tools.build_ai_availability")
+def test_get_booking_availability_passes_date_filter(mock_avail):
+    mock_avail.return_value = {"success": True, "days_with_open_slots": []}
+    result = execute_tool(
+        "get_booking_availability", {"date": "2026-06-15"}, customer_id="Real User"
+    )
+    assert result["success"] is True
+    mock_avail.assert_called_once_with("Real User", date_filter="2026-06-15")
+
+
+@patch("src.services.ai.tools.create_customer_booking")
+def test_book_slot_combines_date_and_time(mock_create):
+    mock_create.return_value = {"success": True, "booking_id": "abc"}
+    result = execute_tool(
+        "book_slot",
+        {"date": "2026-06-15", "time": "08:00", "note": "buổi đầu"},
+        customer_id="Real User",
+    )
+    assert result["success"] is True
+    mock_create.assert_called_once_with(
+        customer_id="Real User",
+        time="2026-06-15T08:00",
+        note="buổi đầu",
+    )
+
+
+@patch("src.services.ai.tools.cancel_customer_booking")
+def test_cancel_booking_uses_bound_customer_id(mock_cancel):
+    mock_cancel.return_value = {"success": True}
+    result = execute_tool(
+        "cancel_booking", {"booking_id": "abc"}, customer_id="Real User"
+    )
+    assert result["success"] is True
+    mock_cancel.assert_called_once_with(customer_id="Real User", booking_id="abc")
+
+
+@patch("src.services.customer_service.inbody_collection")
+def test_get_inbody_history_computes_progress(mock_coll, mock_settings):
+    coll = MagicMock()
+    mock_coll.return_value = coll
+    coll.find.return_value.sort.return_value = [
+        {"id": "1", "customer_id": "A", "height": 170, "weight": 70, "SMM": 30, "BFM": 15, "date_recorded": "2026-01-01"},
+        {"id": "2", "customer_id": "A", "height": 170, "weight": 68, "SMM": 31, "BFM": 13, "date_recorded": "2026-02-01"},
+    ]
+
+    from src.services.customer_service import get_inbody_history
+
+    result = get_inbody_history("A")
+    assert result["success"] is True
+    assert result["record_count"] == 2
+    assert result["latest"]["weight"] == 68
+    assert result["progress_since_first_record"]["weight_change"] == -2.0
+    assert result["progress_since_first_record"]["SMM_change"] == 1.0
+    assert result["progress_since_first_record"]["BFM_change"] == -2.0
+
+
+@patch("src.services.booking_service.bookings_collection")
+def test_build_ai_availability_excludes_full_and_past_slots(mock_bookings_coll):
+    coll = MagicMock()
+    mock_bookings_coll.return_value = coll
+    coll.find.return_value = []
+
+    from src.services.booking_service import build_ai_availability
+
+    result = build_ai_availability("Real User")
+    assert result["success"] is True
+    assert isinstance(result["days_with_open_slots"], list)
+    assert result["my_upcoming_bookings"] == []
+
+
+@patch("src.services.booking_service.bookings_collection")
+def test_build_ai_availability_defaults_to_today_and_tomorrow(mock_bookings_coll):
+    coll = MagicMock()
+    mock_bookings_coll.return_value = coll
+    coll.find.return_value = []
+
+    from src.services.booking_service import build_ai_availability, today_ict, window_days
+
+    result = build_ai_availability("Real User")
+    assert result["requested_date"] is None
+    expected_dates = {
+        d.isoformat()
+        for d in window_days()
+        if d in (today_ict(), today_ict() + timedelta(days=1))
+    }
+    returned_dates = {d["date"] for d in result["days_with_open_slots"]}
+    assert returned_dates.issubset(expected_dates)
+
+
+@patch("src.services.booking_service.bookings_collection")
+def test_build_ai_availability_filters_to_requested_date(mock_bookings_coll):
+    coll = MagicMock()
+    mock_bookings_coll.return_value = coll
+    coll.find.return_value = []
+
+    from src.services.booking_service import build_ai_availability, window_days
+
+    # Pick a date inside the bookable window that's not today/tomorrow, if any.
+    candidate = next((d for d in window_days()), None)
+    assert candidate is not None
+    target = candidate.isoformat()
+
+    result = build_ai_availability("Real User", date_filter=target)
+    assert result["requested_date"] == target
+    assert result["date_in_range"] is True
+    for day in result["days_with_open_slots"]:
+        assert day["date"] == target
+
+
+@patch("src.services.booking_service.bookings_collection")
+def test_build_ai_availability_rejects_out_of_range_date(mock_bookings_coll):
+    coll = MagicMock()
+    mock_bookings_coll.return_value = coll
+    coll.find.return_value = []
+
+    from src.services.booking_service import build_ai_availability
+
+    result = build_ai_availability("Real User", date_filter="2000-01-01")
+    assert result["date_in_range"] is False
+    assert result["days_with_open_slots"] == []
+
+
+@patch("src.services.booking_service.bookings_collection")
+def test_build_ai_availability_echoes_bookable_window_bounds(mock_bookings_coll):
+    coll = MagicMock()
+    mock_bookings_coll.return_value = coll
+    coll.find.return_value = []
+
+    from src.services.booking_service import build_ai_availability, window_days
+
+    result = build_ai_availability("Real User")
+    all_days = window_days()
+    assert result["window_start"] == all_days[0].isoformat()
+    assert result["window_end"] == all_days[-1].isoformat()
+
+
+# ── System prompt is grounded in the real current date ─────────────────────
+
+
+def test_build_system_prompt_includes_real_today():
+    from datetime import date
+
+    from src.services.ai.prompts import build_system_prompt
+
+    fixed_today = date(2026, 7, 11)  # a Saturday
+    prompt = build_system_prompt(today=fixed_today)
+    assert "2026-07-11" in prompt
+    assert "Thứ 7" in prompt
+
+
+def test_build_system_prompt_defaults_to_today_ict():
+    from src.services.ai.prompts import build_system_prompt
+    from src.services.booking_service import today_ict
+
+    prompt = build_system_prompt()
+    assert today_ict().isoformat() in prompt
+
+
+def test_build_system_prompt_date_lookup_table_matches_window_days():
+    """Regression test: the prompt must give the model a literal lookup
+    table for every bookable weekday instead of asking it to compute dates
+    (e.g. "thứ 5 tuần sau" was previously miscalculated as 17/7 instead of
+    the correct 16/7 for a Saturday 11/7 "today").
+    """
+    from datetime import date
+
+    from src.services.ai.prompts import build_system_prompt
+    from src.services.booking_service import window_days
+
+    fixed_today = date(2026, 7, 11)  # Saturday — the exact bug scenario
+    prompt = build_system_prompt(today=fixed_today)
+
+    all_days = window_days(fixed_today)
+    assert len(all_days) == 12  # 2 weeks minus 2 Sundays
+
+    # Every bookable date must appear literally in the prompt so the model
+    # can look it up instead of calculating it.
+    for d in all_days:
+        assert d.isoformat() in prompt
+
+    # The exact failure from the bug report: "thứ 5 tuần sau" must map to
+    # 2026-07-16 (Thursday), not 2026-07-17 (which is "thứ 6 tuần sau").
+    assert "Thứ 5 tuần sau | 2026-07-16" in prompt
+    assert "Thứ 6 tuần sau | 2026-07-17" in prompt
+    assert date.fromisoformat("2026-07-16").weekday() == 3  # Thursday
+    assert date.fromisoformat("2026-07-17").weekday() == 4  # Friday

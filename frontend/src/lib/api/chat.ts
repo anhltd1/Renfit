@@ -1,24 +1,37 @@
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
-export type ChatResponseType =
-  | 'text'
-  | 'form_request'
-  | 'booking_success'
-  | 'customer_saved';
+export type ArtifactKind =
+  | 'profile'
+  | 'inbody_progress'
+  | 'booking_availability'
+  | 'booking_confirmation'
+  | 'booking_cancelled';
+
+/**
+ * Structured, read-only UI panel rendered from a tool result. Artifacts are
+ * generated server-side from deterministic data — the AI cannot fabricate
+ * one, and no artifact is ever a data-entry form. Editing personal info
+ * happens on the Profile page, not in chat.
+ */
+export interface ChatArtifact {
+  kind: ArtifactKind;
+  title: string;
+  data: Record<string, any>;
+}
 
 export interface ChatResponse {
   conversation_id: string;
-  type: ChatResponseType;
   message: string;
-  form?: 'customer' | 'booking' | 'intake' | null;
-  fields?: string[] | null;
+  artifact?: ChatArtifact | null;
+  /** Always exactly 3 clickable follow-up prompts for the chat input. */
+  suggestions?: string[];
   metadata?: Record<string, unknown>;
 }
 
 export interface ChatRequest {
   message: string;
   conversation_id?: string | null;
-  form_data?: Record<string, string>;
+  customer_id?: string | null;
 }
 
 export async function sendChatMessage(payload: ChatRequest): Promise<ChatResponse> {
@@ -29,7 +42,7 @@ export async function sendChatMessage(payload: ChatRequest): Promise<ChatRespons
     body: JSON.stringify({
       message: payload.message,
       conversation_id: payload.conversation_id ?? null,
-      form_data: payload.form_data ?? {},
+      customer_id: payload.customer_id ?? null,
     }),
   });
 

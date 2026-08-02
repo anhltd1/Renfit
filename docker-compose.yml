@@ -1,20 +1,56 @@
 services:
+  mongo:
+    image: mongo:7
+    container_name: renfit-mongo
+    expose:
+      - "27017"
+    # Uncomment to access MongoDB from the host (for debugging with Compass, etc.)
+    # ports:
+    #   - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
     container_name: renfit-backend
-    ports:
-      - "8000:8000"
+    # No host port mapping (U9 Deployment hardening) — the backend is only
+    # reachable from the frontend/Caddy container over the compose-internal
+    # network (see Caddyfile's reverse_proxy). Uncomment the line below if
+    # you need to reach the API directly from the host for local debugging.
+    # ports:
+    #   - "8000:8000"
+    expose:
+      - "8000"
     volumes:
       - ./backend/env/.env:/app/env/.env:ro
     environment:
       API_HOST: "0.0.0.0"
       API_PORT: "8000"
-      # Allow browser + frontend container origins
-      CORS_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000"
+      # Override MONGODB_URI to use the local mongo container
+      MONGODB_URI: "mongodb://mongo:27017/renfit"
+      DB_NAME: "renfit"
+      # Allow the public domain (production) + local dev origins
+      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000}"
+    depends_on:
+      mongo:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health')"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health')",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,12 +63,29 @@ services:
       dockerfile: Dockerfile.frontend
     container_name: renfit-frontend
     ports:
-      - "5173:5173"
+      - "80:80"
+      - "443:443"
     environment:
-      # Vite dev server proxies /api and /chat to backend service
-      VITE_BACKEND_URL: "http://backend:8000"
-      VITE_API_URL: "http://localhost:8000"
+      # Consumed by the Caddyfile (Caddy substitutes {$DOMAIN} at start) —
+      # must be a real, DNS-resolving domain for automatic Let's Encrypt TLS.
+      # Defaults to ":80" (plain HTTP, no cert management) for local Docker
+      # testing — do NOT default this to "localhost"; Caddy treats any
+      # hostname as a real domain needing HTTPS, which breaks startup
+      # without a proper CA trust-store setup in the container.
+      DOMAIN: "${DOMAIN:-:80}"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
     depends_on:
       backend:
         condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  # Persists MongoDB data across container restarts/rebuilds.
+  # To do a full reset: docker compose -f docker-compose.reset.yml up -d
+  mongo_data:
+  # Persists Caddy's issued TLS certificates across container restarts/
+  # rebuilds so it doesn't re-request a new one from Let's Encrypt every time.
+  caddy_data:
+  caddy_config:

@@ -2,6 +2,33 @@ import type { AuthUser } from '../auth';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
+function url(path: string) {
+  return API_BASE ? `${API_BASE}${path}` : path;
+}
+
+/** Matches the backend's InbodyRecordOut (see docs/data-model.md `Inbody`). */
+export interface InbodyRecordOut {
+  id: string;
+  customer_id: string;
+  height: number;
+  weight: number;
+  SMM: number;
+  BFM: number;
+  date_recorded: string;
+}
+
+/**
+ * The customer's own InBody history (read-only — recording happens on the
+ * admin/trainer side). Was previously an inline `fetchMyInbody` helper in
+ * UserDashboardPage.tsx; centralized here so `useInbody` (U2) has a single
+ * typed client to wrap, consistent with the rest of this module.
+ */
+export async function fetchMyInbody(customerId: string): Promise<InbodyRecordOut[]> {
+  const res = await fetch(url(`/api/v1/profile/inbody?customer_id=${encodeURIComponent(customerId)}`));
+  if (!res.ok) return [];
+  return res.json();
+}
+
 export interface UpdateProfilePayload {
   customer_id: string;
   goal?: string;
@@ -16,8 +43,7 @@ export interface UpdateProfilePayload {
 }
 
 export async function updateProfile(payload: UpdateProfilePayload): Promise<AuthUser> {
-  const url = API_BASE ? `${API_BASE}/api/v1/profile` : '/api/v1/profile';
-  const res = await fetch(url, {
+  const res = await fetch(url('/api/v1/profile'), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

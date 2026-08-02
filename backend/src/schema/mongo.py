@@ -227,4 +227,116 @@ COLLECTION_SPECS: list[CollectionSpec] = [
             },
         ],
     ),
+    _spec(
+        col.NOTIFICATION,
+        {
+            "$jsonSchema": {
+                "bsonType": "object",
+                "required": [
+                    "id",
+                    "customer_id",
+                    "type",
+                    "title",
+                    "message",
+                    "target",
+                    "related_id",
+                    "read",
+                    "created_at",
+                ],
+                "properties": {
+                    "id": {"bsonType": "string"},
+                    "customer_id": {"bsonType": "string"},
+                    "type": {
+                        "enum": [
+                            "booking_approved",
+                            "session_reminder",
+                            "inbody_added",
+                        ],
+                    },
+                    "title": {"bsonType": "string"},
+                    "message": {"bsonType": "string"},
+                    "target": {"bsonType": "string"},
+                    "related_id": {"bsonType": "string"},
+                    "read": {"bsonType": "bool"},
+                    "created_at": {"bsonType": DATE_OR_STRING},
+                    "read_at": {"bsonType": [*DATE_OR_STRING, "null"]},
+                },
+            }
+        },
+        [
+            {"keys": [("id", 1)], "unique": True, "name": "notification_id_unique"},
+            {
+                "keys": [("customer_id", 1), ("created_at", -1)],
+                "name": "notification_customer_created",
+            },
+            {
+                "keys": [("customer_id", 1), ("read", 1)],
+                "name": "notification_customer_read",
+            },
+            # Idempotency: never insert a second notification of the same
+            # type for the same related record (booking/inbody).
+            {
+                "keys": [("type", 1), ("related_id", 1)],
+                "unique": True,
+                "name": "notification_type_related_unique",
+            },
+        ],
+    ),
+    _spec(
+        col.TRAINER_NOTIFICATION,
+        {
+            "$jsonSchema": {
+                "bsonType": "object",
+                "required": [
+                    "id",
+                    "type",
+                    "title",
+                    "message",
+                    "target",
+                    "related_id",
+                    "read",
+                    "created_at",
+                ],
+                "properties": {
+                    "id": {"bsonType": "string"},
+                    "type": {
+                        "enum": [
+                            "booking_created",
+                            "booking_cancelled",
+                            "trainee_registered",
+                        ],
+                    },
+                    "title": {"bsonType": "string"},
+                    "message": {"bsonType": "string"},
+                    "target": {"bsonType": "string"},
+                    "related_id": {"bsonType": "string"},
+                    "read": {"bsonType": "bool"},
+                    "created_at": {"bsonType": DATE_OR_STRING},
+                    "read_at": {"bsonType": [*DATE_OR_STRING, "null"]},
+                },
+            }
+        },
+        [
+            {
+                "keys": [("id", 1)],
+                "unique": True,
+                "name": "trainer_notification_id_unique",
+            },
+            {
+                "keys": [("created_at", -1)],
+                "name": "trainer_notification_created",
+            },
+            {
+                "keys": [("read", 1)],
+                "name": "trainer_notification_read",
+            },
+            # Idempotency: never insert a second notification of the same
+            # type for the same related record (booking/customer).
+            {
+                "keys": [("type", 1), ("related_id", 1)],
+                "unique": True,
+                "name": "trainer_notification_type_related_unique",
+            },
+        ],
+    ),
 ]
