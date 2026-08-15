@@ -141,3 +141,31 @@ Infrastructure Design = U9 only; Code Generation + Build and Test as prescribed.
 
 ### OPERATIONS Phase
 - [ ] Operations — PLACEHOLDER (deployment handled via Infrastructure Design + Build and Test)
+
+---
+
+## V2 Initiative: Admin UX & Feature Improvements
+
+### INCEPTION Phase (V2)
+- [x] Workspace Detection — Resumed 2026-08-02 (brownfield, existing U1–U9 complete)
+- [x] Requirements Analysis — Approved 2026-08-02
+  - **Artifacts**: inception/requirements/{requirements-v2.md, requirement-verification-questions-v2.md}
+  - 11 FRs + 3 NFRs; out-of-scope list documented
+- [x] Workflow Planning — Approved 2026-08-02
+  - **Artifacts**: inception/plans/execution-plan-v2.md
+- [x] Application Design — Approved 2026-08-02
+  - **Artifacts**: inception/application-design/{components-v2, component-methods-v2, services-v2, component-dependency-v2, application-design-v2}.md
+- [x] Units Generation — Approved 2026-08-02
+  - **Artifacts**: inception/application-design/{unit-of-work-v2, unit-of-work-dependency-v2, unit-of-work-story-map-v2}.md
+  - 8 units (U10–U17), sequential delivery
+
+### CONSTRUCTION Phase (V2, per-unit loop)
+- [x] U10 Density & Polish — COMPLETE (Approved 2026-08-02)
+- [x] U11 Admin Today Screen — COMPLETE (Approved 2026-08-02)
+- [x] U12 Block Off Slots — COMPLETE (Approved 2026-08-02)
+- [x] U13 Batch Pre-Booking — COMPLETE (Approved 2026-08-02)
+- [x] U14 PT Member Management — COMPLETE (Approved 2026-08-03)
+- [x] U15 Client List & Detail — COMPLETE (Approved 2026-08-03)
+- [x] U16 Member Home & InBody Viz — COMPLETE (Approved 2026-08-03)
+- [x] U17 Web Push — COMPLETE (Approved 2026-08-03)
+- [ ] Build and Test — EXECUTE (after all units)

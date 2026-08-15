@@ -5,11 +5,12 @@
  * actions — mirrors desktop DesktopAdminHeader's actions, relocated per
  * mobile's lack of a persistent top bar.
  */
-import React from 'react';
-import { LogOut, Phone, RefreshCw, User, Users } from 'lucide-react';
+import React, { useCallback } from 'react';
+import { LogOut, Phone, Plus, RefreshCw, User, Users } from 'lucide-react';
 import type { CustomerSummary } from '../../../lib/api/admin';
 import { TrainerNotificationBell } from '../../components/TrainerNotificationBell';
 import { StackHeader } from '../shell/StackHeader';
+import { PullToRefresh } from '../../shared/primitives/PullToRefresh';
 
 /**
  * Memoized customer row (U7 Performance & PWA, MEMO-1) — avoids re-rendering
@@ -68,6 +69,7 @@ export interface CustomerListScreenProps {
   refreshing: boolean;
   onLogout: () => void;
   onNavigateFromNotification: (view: string) => void;
+  onCreateMember?: () => void;
 }
 
 export function CustomerListScreen({
@@ -81,6 +83,7 @@ export function CustomerListScreen({
   refreshing,
   onLogout,
   onNavigateFromNotification,
+  onCreateMember,
 }: CustomerListScreenProps) {
   const filtered = customers.filter(
     (c) =>
@@ -131,31 +134,46 @@ export function CustomerListScreen({
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+      <PullToRefresh onRefresh={async () => { onRefresh(); }} className="p-2 space-y-0.5">
         {loading && (
-          <div className="flex items-center justify-center py-16 text-white/25">
-            <RefreshCw className="w-5 h-5 animate-spin" />
+          <div className="space-y-1 p-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-3 py-2.5">
+                <div className="w-9 h-9 rounded-full bg-white/[0.06] animate-pulse shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 w-28 bg-white/[0.06] rounded animate-pulse" />
+                  <div className="h-2.5 w-20 bg-white/[0.04] rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
           </div>
         )}
         {!loading && error && (
           <p className="text-red-400 text-xs p-4 bg-red-400/10 rounded-xl m-2">{error}</p>
         )}
         {!loading && !error && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-white/20 gap-2">
-            <Users className="w-8 h-8" />
-            <p className="text-sm">{search ? 'Không tìm thấy.' : 'Chưa có hội viên.'}</p>
+          <div className="flex flex-col items-center justify-center py-12 text-white/25 gap-2">
+            <Users className="w-7 h-7" />
+            <p className="text-sm font-medium">{search ? 'Không tìm thấy hội viên.' : 'Chưa có hội viên nào.'}</p>
+            <p className="text-xs text-white/15">{search ? 'Thử tìm với từ khóa khác.' : 'Hội viên mới sẽ xuất hiện khi đăng ký.'}</p>
           </div>
         )}
         {!loading &&
           !error &&
           filtered.map((c) => <CustomerRow key={c.id} customer={c} onSelect={onSelect} />)}
-      </div>
+      </PullToRefresh>
 
-      {!loading && filtered.length > 0 && (
-        <div className="shrink-0 px-4 py-2.5 border-t border-white/6 bg-[#0A0A0A]/95 backdrop-blur-sm">
+      {!loading && (
+        <div className="shrink-0 px-4 py-2.5 border-t border-white/6 bg-[#0A0A0A]/95 backdrop-blur-sm flex items-center justify-between">
           <p className="text-white/25 text-xs">
-            {search ? `${filtered.length} / ${customers.length} hội viên` : `${customers.length} hội viên`}
+            {customers.length} hội viên
           </p>
+          {onCreateMember && (
+            <button type="button" onClick={onCreateMember}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-[#0F6B3E] bg-[#0F6B3E]/10 border border-[#0F6B3E]/20 hover:bg-[#0F6B3E]/20 transition-all">
+              <Plus className="w-3.5 h-3.5" /> Tạo hội viên
+            </button>
+          )}
         </div>
       )}
     </div>

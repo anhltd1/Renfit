@@ -14,6 +14,7 @@ from src.api.bookings import router as bookings_router
 from src.api.chat import router as chat_router
 from src.api.notifications import router as notifications_router
 from src.api.profile import router as profile_router
+from src.api.push import router as push_router
 from src.config import get_settings
 from src.init_db.seed import seed_admin_trainer
 from src.services.notification_scheduler import run_reminder_scheduler_forever
@@ -40,6 +41,7 @@ app.include_router(bookings_router)
 app.include_router(profile_router)
 app.include_router(chat_router)
 app.include_router(notifications_router)
+app.include_router(push_router)
 
 
 @app.on_event("startup")

@@ -27,8 +27,8 @@ export function AIChat() {
   return (
     <section className="py-24 px-6 bg-black relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#0F6B3E]/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#0F6B3E]/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#0F6B3E]/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#0F6B3E]/10 rounded-full blur-3xl" />
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
@@ -54,10 +54,7 @@ export function AIChat() {
               </div>
               <div>
                 <h3 className="text-white font-bold">Renfit AI Coach</h3>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                  <span className="text-white/80 text-sm">Đang hoạt động</span>
-                </div>
+                <span className="text-white/60 text-sm">Tư vấn tập luyện & đặt lịch</span>
               </div>
             </div>
 

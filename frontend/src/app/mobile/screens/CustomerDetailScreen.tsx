@@ -8,6 +8,7 @@ import { Activity, MapPin, Phone, User, Weight } from 'lucide-react';
 import type { CustomerSummary } from '../../../lib/api/admin';
 import { StackHeader } from '../shell/StackHeader';
 import { InbodySectionMobile } from '../components/InbodySectionMobile';
+import { TrainerNotes } from '../../components/TrainerNotes';
 
 export interface CustomerDetailScreenProps {
   customer: CustomerSummary;
@@ -92,6 +93,9 @@ export function CustomerDetailScreen({ customer, onBack }: CustomerDetailScreenP
             <p className="text-white/50 text-sm text-center py-4">Hội viên chưa cập nhật thông tin.</p>
           )}
         </div>
+
+        {/* Trainer Notes */}
+        <TrainerNotes customerId={customer.id} />
 
         {/* InBody charts */}
         <InbodySectionMobile customerId={customer.id} />

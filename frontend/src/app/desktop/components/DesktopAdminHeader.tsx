@@ -3,13 +3,13 @@
  * View toggle (clients/bookings), customer-count pill, refresh, notification
  * bell, and logout — same content as the combined component's header.
  */
-import { CalendarDays, LogOut, RefreshCw, ShieldCheck, Users } from 'lucide-react';
+import { CalendarDays, Home, LogOut, RefreshCw, ShieldCheck, Users } from 'lucide-react';
 import { LiveClock } from '../../components/LiveClock';
 import { TrainerNotificationBell } from '../../components/TrainerNotificationBell';
 
 export interface DesktopAdminHeaderProps {
-  view: 'clients' | 'bookings';
-  onViewChange: (view: 'clients' | 'bookings') => void;
+  view: 'today' | 'clients' | 'bookings';
+  onViewChange: (view: 'today' | 'clients' | 'bookings') => void;
   customerCount: number;
   onRefresh: () => void;
   refreshing: boolean;
@@ -26,8 +26,8 @@ export function DesktopAdminHeader({
 }: DesktopAdminHeaderProps) {
   return (
     <header
-      className="shrink-0 bg-[#0A0A0A] border-b border-white/8 px-5 py-3.5 flex items-center justify-between gap-2"
-      style={{ paddingTop: 'max(0.875rem, env(safe-area-inset-top))' }}
+      className="shrink-0 bg-[#0A0A0A] border-b border-white/8 px-4 py-2.5 flex items-center justify-between gap-2"
+      style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}
     >
       {/* Left */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -40,12 +40,23 @@ export function DesktopAdminHeader({
         </div>
 
         {/* View tabs */}
-        <div className="flex items-center gap-1 ml-4 bg-white/5 border border-white/8 rounded-xl p-1 shrink-0">
+        <div className="flex items-center gap-1 ml-4 bg-white/5 border border-white/8 rounded-lg p-0.5 shrink-0">
+          <button
+            type="button"
+            data-testid="tab-today"
+            onClick={() => onViewChange('today')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-all ${
+              view === 'today' ? 'bg-[#0F6B3E] text-white' : 'text-white/50 hover:text-white'
+            }`}
+          >
+            <Home className="w-3.5 h-3.5" />
+            <span>Hôm nay</span>
+          </button>
           <button
             type="button"
             data-testid="tab-clients"
             onClick={() => onViewChange('clients')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-all ${
               view === 'clients' ? 'bg-[#0F6B3E] text-white' : 'text-white/50 hover:text-white'
             }`}
           >
@@ -56,7 +67,7 @@ export function DesktopAdminHeader({
             type="button"
             data-testid="tab-bookings"
             onClick={() => onViewChange('bookings')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-all ${
               view === 'bookings' ? 'bg-[#0F6B3E] text-white' : 'text-white/50 hover:text-white'
             }`}
           >
@@ -96,7 +107,7 @@ export function DesktopAdminHeader({
         )}
         <TrainerNotificationBell
           onNavigate={(v) => {
-            if (v === 'clients' || v === 'bookings') onViewChange(v);
+            if (v === 'today' || v === 'clients' || v === 'bookings') onViewChange(v);
           }}
         />
         <button

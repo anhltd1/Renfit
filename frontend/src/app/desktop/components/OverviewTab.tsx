@@ -18,7 +18,6 @@ import {
   RefreshCw,
   Target,
   User,
-  Weight,
 } from 'lucide-react';
 import { AvatarUpload } from '../../components/AvatarUpload';
 import { StackedInbodyChart } from '../../components/InbodyCharts';
@@ -72,8 +71,6 @@ export function OverviewTab() {
   const [healthNote, setHealthNote] = useState(user?.health_note ?? '');
   const [address, setAddress]       = useState(user?.address ?? '');
   const [age, setAge]               = useState(String(user?.age ?? '20'));
-  const [height, setHeight]         = useState(user?.height ?? '170');
-  const [weight, setWeight]         = useState(user?.weight ?? '60');
   const [currentPw, setCurrentPw]   = useState('');
   const [newPw, setNewPw]           = useState('');
   const [confirmPw, setConfirmPw]   = useState('');
@@ -102,7 +99,6 @@ export function OverviewTab() {
       await update({
         customer_id: user.id, avatar, goal: goal === 'Khác' ? customGoal.trim() : goal,
         health_note: healthNote.trim(), address: address.trim(), age: ageNum,
-        height: height.trim(), weight: weight.trim(),
         ...(newPw ? { current_password: currentPw, new_password: newPw } : {}),
       });
       setCurrentPw(''); setNewPw(''); setConfirmPw('');
@@ -177,21 +173,7 @@ export function OverviewTab() {
               rows={2} className={`${inputCls} resize-none`} />
           </div>
 
-          {/* Body metrics */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-white/60 text-xs uppercase tracking-widest mb-2 flex items-center gap-1">
-                <Weight className="w-3 h-3 text-[#0F6B3E]" /> Chiều cao
-              </label>
-              <NumberStepper value={height} onChange={setHeight} min={100} max={250} placeholder="170" unit="cm" />
-            </div>
-            <div>
-              <label className="text-white/60 text-xs uppercase tracking-widest mb-2 flex items-center gap-1">
-                <Weight className="w-3 h-3 text-[#0F6B3E]" /> Cân nặng
-              </label>
-              <NumberStepper value={weight} onChange={setWeight} min={30} max={300} step={0.5} placeholder="60" unit="kg" />
-            </div>
-          </div>
+          {/* Body metrics removed — height/weight are managed by PT via admin dashboard */}
 
           {/* Password change */}
           <details className="group">

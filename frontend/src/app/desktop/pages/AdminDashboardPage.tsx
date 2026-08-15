@@ -13,16 +13,19 @@ import { AdminBookings } from '../../components/AdminBookings';
 import { DesktopAdminHeader } from '../components/DesktopAdminHeader';
 import { CustomerSidebar } from '../components/CustomerSidebar';
 import { CustomerDetail } from '../components/CustomerDetail';
+import { AdminTodayScreen } from '../components/AdminTodayScreen';
+import { MemberFormModal } from '../../components/MemberFormModal';
 
 export function AdminDashboardPage() {
   const navigate = useNavigate();
-  const [view, setView] = useState<'clients' | 'bookings'>('clients');
+  const [view, setView] = useState<'today' | 'clients' | 'bookings'>('today');
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<CustomerSummary | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [creatingMember, setCreatingMember] = useState(false);
 
   const load = async (showRefreshing = false) => {
     if (showRefreshing) setRefreshing(true);
@@ -68,12 +71,18 @@ export function AdminDashboardPage() {
         onLogout={handleLogout}
       />
 
-      {view === 'bookings' ? (
-        <div className="flex-1 min-h-0">
+      {/* `key={view}` remounts the wrapper so the entrance animation replays on
+          every view switch (React would otherwise reuse the same div). */}
+      {view === 'today' ? (
+        <div key={view} className="flex-1 min-h-0 animate-panel-in">
+          <AdminTodayScreen />
+        </div>
+      ) : view === 'bookings' ? (
+        <div key={view} className="flex-1 min-h-0 animate-panel-in">
           <AdminBookings />
         </div>
       ) : (
-        <div className="flex-1 flex min-h-0">
+        <div key={view} className="flex-1 flex min-h-0 animate-panel-in">
           <CustomerSidebar
             customers={customers}
             selectedId={selected?.id ?? null}
@@ -82,6 +91,7 @@ export function AdminDashboardPage() {
             onSelect={setSelected}
             loading={loading}
             error={error}
+            onCreateMember={() => setCreatingMember(true)}
           />
 
           <main className="flex-1 min-w-0 overflow-hidden">
@@ -91,10 +101,19 @@ export function AdminDashboardPage() {
                 <p className="text-sm">Chọn một hội viên để xem thông tin</p>
               </div>
             ) : (
-              <CustomerDetail key={selected.id} customer={selected} />
+              <CustomerDetail key={selected.id} customer={selected} onRefresh={() => load(true)} />
             )}
           </main>
         </div>
+      )}
+
+      {/* Create member modal */}
+      {creatingMember && (
+        <MemberFormModal
+          mode="create"
+          onClose={() => setCreatingMember(false)}
+          onSaved={() => { setCreatingMember(false); load(true); }}
+        />
       )}
     </div>
   );

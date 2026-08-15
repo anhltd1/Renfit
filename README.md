@@ -10,8 +10,9 @@ A full-stack web app for a private gym. Customers book sessions, track body comp
 | Backend | Python 3.11 + FastAPI |
 | Database | MongoDB 7 (self-hosted via Docker, persisted volume) |
 | AI Coach | Anthropic Claude (Haiku) via tool-use agents |
+| Notifications | Web Push (VAPID) — real-time native OS notifications |
 | Auth | bcrypt password hashing (passlib) |
-| Infra | Docker + Docker Compose |
+| Infra | Docker + Docker Compose + Caddy (TLS, reverse proxy) |
 
 ---
 
@@ -27,6 +28,12 @@ Edit `backend/env/.env` and fill in:
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
+```
+
+For Web Push notifications (optional — app works without it):
+```
+VAPID_PUBLIC_KEY=<generate with: npx web-push generate-vapid-keys>
+VAPID_PRIVATE_KEY=<generate with: npx web-push generate-vapid-keys>
 ```
 
 > **MongoDB** is self-hosted inside Docker — no external `MONGODB_URI` needed. The compose file
@@ -122,29 +129,44 @@ A trainer account is seeded on first startup (idempotent):
 
 ## Key Features
 
+### Member-facing
+- **Data-driven home dashboard** — next session with countdown, weight/BFM progress since first measurement, contextual AI Coach entry. Replaces static navigation links.
 - **Customer auth** — signup with personal info (name, phone, age, goal, health notes, height/weight); bcrypt password; avatar upload.
-- **User dashboard** — single-page shell with sidebar navigation: profile editing, read-only InBody history charts, AI coach chat tab, booking calendar tab.
-- **AI Coach** — Claude Haiku agent with tool use (look up customer profile, create/cancel bookings). Chat state persists within a browser session.
-- **Bookings** — 5-day sliding calendar (Mon–Sat, 08:00–20:00, 1-hour slots, max 4 customers/slot). Two-week bookable window. Statuses: `pending` → `approved` / `rejected`.
-- **InBody tracking** — trainers log height, weight, SMM, BFM per session. Customers see read-only stacked line charts on their dashboard.
-- **Trainer dashboard** — client list with InBody charts + add-measurement form; booking calendar with status management (approve / reject / reset).
+- **AI Coach** — Claude Haiku agent with tool use (look up customer profile, create/cancel bookings, check availability). Respects blocked slots. Chat state persists within a browser session.
+- **Bookings** — 5-day sliding calendar (Mon–Sat, 08:00–20:00, 1-hour slots, max 4 customers/slot). Two-week bookable window. Blocked slots shown as unavailable.
+- **InBody tracking** — read-only stacked line charts, body composition ring (muscle/fat/rest), first-vs-latest comparison with delta arrows.
+- **Web Push notifications** — real-time native OS notifications for booking approvals, session reminders, new InBody data. No polling.
+
+### Trainer/Admin-facing
+- **"Hôm nay" landing screen** — today's approved sessions + all pending bookings with inline approve/reject. The PT sees what matters immediately.
+- **Batch pre-booking** — select one member, paint multiple slots across days, confirm in one action. Summary notification to the member.
+- **Block off slots** — block individual hours or full days (holiday, maintenance). Affected bookings can be cancelled in one assisted action. Blocked slots excluded from member calendar and AI Coach.
+- **Calendar kiosk mode** ("Lịch để bàn") — fullscreen tablet view of today's schedule with real-time clock, interactive status management, date navigation.
+- **Member management** — PT can create members (generates temp password), edit profiles (identity fields locked), archive/restore members (soft-delete with visual badge).
+- **Client list** — sort by name / last session / next session. Archived members shown at the bottom with "Đã nghỉ" badge. Keyboard navigation (`/` to search).
+- **Two-column member detail** — identity and info on the left, trainer notes + InBody charts on the right (desktop). Compact hero.
+- **Trainer notes** — timestamped notes per member (PT writes about performance, improvements). Add/delete with timestamps.
+- **Booking calendar** — 2-week grid with status management (approve/reject/reset), admin assignment, blocked-slot visualization (diagonal hatch).
 
 ---
 
 ## Repository Layout
 
-```
+```text
 Renfit/
 ├── backend/                  # FastAPI application
 │   ├── src/
-│   │   ├── api/              # HTTP route handlers
+│   │   ├── api/              # HTTP route handlers (auth, admin, bookings, chat, push, notifications, profile)
 │   │   ├── config/           # pydantic-settings (reads env/.env)
 │   │   ├── db/               # MongoDB collection accessors
 │   │   ├── init_db/          # DB init, reset, and seed scripts
-│   │   ├── schema/           # Pydantic models + MongoDB validators
+│   │   ├── schema/           # Pydantic models (Customer, Booking, BlockedSlot, PushSubscription, etc.)
 │   │   └── services/
 │   │       ├── ai/           # Claude agent, tools, prompts
 │   │       ├── booking_service.py
+│   │       ├── blocked_slot_service.py
+│   │       ├── push_service.py
+│   │       ├── notification_service.py
 │   │       └── customer_service.py
 │   ├── env/                  # .env config (gitignored)
 │   ├── test/                 # Pytest unit tests
@@ -152,13 +174,13 @@ Renfit/
 ├── frontend/                 # React + Vite SPA
 │   └── src/
 │       ├── app/
-│       │   ├── components/   # Shared UI components (incl. CalendarKiosk)
-│       │   ├── desktop/      # Desktop-specific pages/components
-│       │   ├── mobile/       # Mobile-specific pages/components
-│       │   ├── shared/       # Shared primitives, hooks, device detection
-│       │   └── pages/        # Route-level page components
+│       │   ├── components/   # Shared UI (CalendarKiosk, BatchBookingMode, BlockOffManager, TrainerNotes, BodyCompositionRing, etc.)
+│       │   ├── desktop/      # Desktop-specific pages/components (MemberHomeDashboard, AdminTodayScreen, CustomerDetail, etc.)
+│       │   ├── mobile/       # Mobile-specific pages/components (native-like bottom-tab shell)
+│       │   ├── shared/       # Shared primitives (Button, Card, Modal, Skeleton, PullToRefresh, haptics), hooks, device detection
+│       │   └── pages/        # Thin route-level entries (device-split)
 │       └── lib/
-│           ├── api/          # Typed fetch wrappers
+│           ├── api/          # Typed fetch wrappers (admin, auth, bookings, chat, notifications, profile, push)
 │           └── auth.ts       # localStorage session helpers
 ├── docker-compose.yml         # Normal operation (preserves DB)
 ├── docker-compose.reset.yml   # Fresh start (wipes DB, recreates everything)
@@ -170,9 +192,114 @@ Renfit/
 
 ---
 
+## Deployment (Production)
+
+### What you need
+
+- A Linux VM (Ubuntu/Debian recommended, any cloud provider — DigitalOcean, AWS, Hetzner, etc.)
+- A domain name pointing to your VM's IP (for automatic HTTPS via Let's Encrypt)
+- Docker + Docker Compose plugin installed on the VM
+- Ports 80 and 443 open in the firewall
+
+### Step-by-step
+
+```bash
+# 1. SSH into your VM
+ssh user@your-server-ip
+
+# 2. Clone the repo
+git clone https://github.com/YOUR_USERNAME/renfit.git && cd renfit
+
+# 3. Create backend secrets
+cp backend/env/.env.example backend/env/.env
+nano backend/env/.env
+# Fill in:
+#   ANTHROPIC_API_KEY=sk-ant-...
+#   VAPID_PUBLIC_KEY=...   (generate: npx web-push generate-vapid-keys)
+#   VAPID_PRIVATE_KEY=...
+
+# 4. Create deployment config
+cp .env.example .env
+nano .env
+# Set:
+#   DOMAIN=your-domain.com
+#   CORS_ORIGINS=https://your-domain.com
+
+# 5. Deploy (first time — fresh DB)
+docker compose -f docker-compose.reset.yml up --build -d
+
+# 6. Verify
+curl https://your-domain.com/api/v1/health
+# Should return: {"status":"ok", ...}
+```
+
+Caddy automatically obtains and renews a Let's Encrypt TLS certificate for your domain. No manual certbot or nginx config needed.
+
+### Subsequent deploys (after code changes)
+
+```bash
+cd renfit
+git pull
+docker compose up --build -d
+```
+
+### Database backups
+
+```bash
+# Create backup
+docker compose exec mongo mongodump --db renfit --out /tmp/backup
+docker cp renfit-mongo:/tmp/backup ./backup-$(date +%Y%m%d)
+
+# Restore
+docker cp ./backup-YYYYMMDD renfit-mongo:/tmp/restore
+docker compose exec mongo mongorestore --db renfit --drop /tmp/restore/renfit
+```
+
+For more details see [`DOCKER.md`](DOCKER.md).
+
+---
+
+## Push to GitHub
+
+### First-time setup
+
+```bash
+# From the project root
+git init   # if not already a git repo
+git add .
+git commit -m "Initial commit — Renfit gym management platform"
+
+# Create a repo on GitHub (via web or CLI)
+gh repo create renfit --private --source=. --push
+# OR manually:
+git remote add origin https://github.com/YOUR_USERNAME/renfit.git
+git branch -M main
+git push -u origin main
+```
+
+### Subsequent pushes
+
+```bash
+git add .
+git commit -m "description of changes"
+git push
+```
+
+### What's gitignored (safe to push)
+
+The `.gitignore` already excludes:
+- `backend/env/.env` (secrets)
+- `node_modules/`, `dist/`, `__pycache__/`
+- `.venv/`, coverage reports
+- Docker volumes (data lives in named volumes, not on disk)
+
+You can safely push the entire repo — no secrets will leak.
+
+---
+
 ## Further Reading
 
-- [`DOCKER.md`](DOCKER.md) — Docker commands and tips
-- [`backend/README.md`](backend/README.md) — Backend API reference
-- [`backend/docs/data-model.md`](backend/docs/data-model.md) — MongoDB collections
-- [`frontend/README.md`](frontend/README.md) — Frontend pages and components
+- [`DOCKER.md`](DOCKER.md) — Docker commands, environment variables, and production deployment details
+- [`backend/docs/data-model.md`](backend/docs/data-model.md) — MongoDB collections and schema
+- [`backend/docs/notifications.md`](backend/docs/notifications.md) — Notification system design
+- [`frontend/README.md`](frontend/README.md) — Frontend architecture and components

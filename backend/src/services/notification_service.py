@@ -111,6 +111,17 @@ def create_notification(
     except DuplicateKeyError:
         return {"success": True, "created": False, "message": "Already notified"}
 
+    # Send push notification (best-effort)
+    try:
+        from src.services.push_service import send_to_customer
+        send_to_customer(
+            customer_id=name,
+            title=title or _TITLES[type],
+            body=message,
+        )
+    except Exception:
+        pass  # Push is fire-and-forget
+
     return {"success": True, "created": True, "notification_id": notification.id}
 
 
@@ -254,6 +265,16 @@ def create_trainer_notification(
     except DuplicateKeyError:
         return {"success": True, "created": False, "message": "Already notified"}
 
+    # Send push to trainers (best-effort)
+    try:
+        from src.services.push_service import send_to_trainers
+        send_to_trainers(
+            title=title or _TRAINER_TITLES[type],
+            body=message,
+        )
+    except Exception:
+        pass  # Push is fire-and-forget
+
     return {"success": True, "created": True, "notification_id": notification.id}
 
 
@@ -282,6 +303,17 @@ def notify_trainee_registered(*, customer_id: str) -> dict[str, Any]:
         type=TrainerNotificationType.TRAINEE_REGISTERED,
         related_id=customer_id,
         message=f"{customer_id} vừa đăng ký làm hội viên mới.",
+    )
+
+
+def notify_batch_booking(*, customer_id: str, count: int, related_id: str) -> dict[str, Any]:
+    """Single summary notification for a batch booking (N slots assigned by PT)."""
+    return create_notification(
+        customer_id=customer_id,
+        type=NotificationType.BOOKING_APPROVED,
+        related_id=related_id,
+        message=f"HLV đã đặt {count} buổi tập cho bạn.",
+        title="Lịch tập mới từ HLV",
     )
 
 

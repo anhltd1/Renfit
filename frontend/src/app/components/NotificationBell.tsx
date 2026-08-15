@@ -46,7 +46,19 @@ export function NotificationBell({ customerId, onNavigate }: NotificationBellPro
   const [unread, setUnread] = useState(0);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(false);
+  const [ringing, setRinging] = useState(false);
+  const prevUnreadRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Trigger bell ring when unread count increases
+  useEffect(() => {
+    if (unread > prevUnreadRef.current && prevUnreadRef.current >= 0) {
+      setRinging(true);
+      const t = setTimeout(() => setRinging(false), 700);
+      return () => clearTimeout(t);
+    }
+    prevUnreadRef.current = unread;
+  }, [unread]);
 
   const refreshUnreadCount = useCallback(() => {
     fetchUnreadCount(customerId).then(setUnread).catch(() => {});
@@ -105,7 +117,7 @@ export function NotificationBell({ customerId, onNavigate }: NotificationBellPro
         className="relative w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors"
         aria-label="Thông báo"
       >
-        <Bell className="w-[18px] h-[18px] text-white/80" />
+        <Bell className={`w-[18px] h-[18px] text-white/80 ${ringing ? 'animate-bell-ring' : ''}`} />
         {unread > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#0F6B3E] border-2 border-black text-[10px] font-bold text-white flex items-center justify-center">
             {unread > 9 ? '9+' : unread}
@@ -131,7 +143,11 @@ export function NotificationBell({ customerId, onNavigate }: NotificationBellPro
           {loading ? (
             <p className="text-white/40 text-sm text-center py-8">Đang tải...</p>
           ) : notifications.length === 0 ? (
-            <p className="text-white/40 text-sm text-center py-8">Chưa có thông báo nào.</p>
+            <div className="flex flex-col items-center py-8 text-white/25 gap-1.5">
+              <Bell className="w-6 h-6" />
+              <p className="text-sm">Không có thông báo mới.</p>
+              <p className="text-xs text-white/15">Bạn sẽ nhận thông báo khi có cập nhật.</p>
+            </div>
           ) : (
             <div className="divide-y divide-white/5">
               {notifications.map((n) => {

@@ -34,10 +34,6 @@ export function DesktopHeader({ tab, customerId, onNavigateFromNotification }: D
             </div>
             <div className="min-w-0">
               <h1 className="text-white font-bold truncate">Renfit AI Coach</h1>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-white/50 text-xs">Đang hoạt động</span>
-              </div>
             </div>
             <div className="ml-auto hidden sm:flex items-center gap-2 bg-[#0F6B3E]/20 px-3 py-1.5 rounded-full border border-[#0F6B3E]/30 shrink-0">
               <Sparkles className="w-3.5 h-3.5 text-[#0F6B3E]" />

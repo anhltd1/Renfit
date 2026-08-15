@@ -2,6 +2,12 @@ services:
   mongo:
     image: mongo:7
     container_name: renfit-mongo
+    command:
+      - "mongod"
+      - "--bind_ip_all"
+      - "--quiet"
+    logging:
+      driver: "none"
     expose:
       - "27017"
     # Uncomment to access MongoDB from the host (for debugging with Compass, etc.)
@@ -10,8 +16,8 @@ services:
     volumes:
       - mongo_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
       timeout: 5s
       retries: 5
       start_period: 10s

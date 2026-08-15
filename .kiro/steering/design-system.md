@@ -75,8 +75,36 @@ mobile navigation pattern — bottom sheets replace centered modals on mobile).
 - Respect `prefers-reduced-motion` when adding new animation.
 
 ## Motion
-- `transition-all duration-300` as the default; hover `scale-105` on **containers**, never on text.
-- Keep all animation "subtle premium" — noticeable, not flashy.
+Tokens live in `theme.css` (`:root`). Pick one of the three durations — don't introduce new
+ad hoc values:
+
+| Token | Value | Use for |
+|---|---|---|
+| `--motion-fast` | 150ms | press feedback (`active:scale-[0.97]`), hover, small state flips, row leave |
+| `--motion-base` | 250ms | panel/tab entrances, modals, sheets, list rows, number count-up |
+| `--motion-slow` | 400ms | ambient/looping accents only |
+| `--motion-enter` | `cubic-bezier(0.25, 0.46, 0.45, 0.94)` | all entrances; exits use `ease-out` |
+
+Ready-made utilities (all in `theme.css`): `animate-fade-up` (list rows, honours `--stagger`),
+`animate-panel-in` (view swap that remounts), `animate-row-leave` (row resolved/deleted),
+`animate-slide-up` (mobile sheet), `animate-popup-in` (toast), `animate-slide-in-left/right`
+(calendar week paging).
+
+Rules:
+- `transition-all duration-300` stays the default for hover; hover `scale-105` on **containers**,
+  never on text. Add `active:scale-[0.97]` to anything tappable (the `Button` primitive already
+  has it) — touch has no hover to confirm a tap.
+- Tabs that stay mounted (`display: none` toggling) must use the shared `TabPanel` primitive,
+  not a raw `display` style — it fades the incoming panel in. Exits are instant (fade-through);
+  never leave two sibling flex panels visible at once.
+- Animate only `opacity` and `transform`. No `height`/`top`/`width` animation, no animation
+  library (framer-motion et al. are deliberately not a dependency).
+- Cap `--stagger` at ~8 items. Never stagger the booking calendar grid (65 cells).
+- Nothing on a blocking path may exceed `--motion-slow`.
+- `prefers-reduced-motion: reduce` is handled globally in `theme.css` (durations collapse; loading
+  spinners stay animated). JS-driven motion must check it itself — see `useCountUp`.
+- Keep all animation "subtle premium" — noticeable, not flashy. No scroll-triggered reveals,
+  parallax, or celebration animations.
 
 ## Common anti-patterns (reject these in review)
 - Light backgrounds / `bg-white text-black` anywhere in the app.

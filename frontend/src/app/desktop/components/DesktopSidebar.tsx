@@ -3,14 +3,14 @@
  * Rebuilt from the sidebar previously inlined in UserDashboardPage.tsx —
  * same structure and behavior, using shared primitives for the nav buttons.
  */
-import { Bot, Calendar, LogOut, Plus, User } from 'lucide-react';
+import { Bot, Calendar, Home, LogOut, Plus, User } from 'lucide-react';
 import { Link } from '../../components/Link';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import logoImage from '../../../imports/image.png';
 import { cn } from '../../shared/primitives/cn';
 import type { AuthUser } from '../../../lib/auth';
 
-export type DashboardTab = 'overview' | 'chat' | 'bookings';
+export type DashboardTab = 'home' | 'overview' | 'chat' | 'bookings';
 
 export interface DesktopSidebarProps {
   user: AuthUser;
@@ -21,6 +21,7 @@ export interface DesktopSidebarProps {
 }
 
 const NAV_ITEMS: { key: DashboardTab; icon: React.ReactNode; label: string; tour: string }[] = [
+  { key: 'home', icon: <Home className="w-4 h-4" />, label: 'Tổng quan', tour: 'sidebar-home' },
   { key: 'overview', icon: <User className="w-4 h-4" />, label: 'Hồ sơ & InBody', tour: 'sidebar-profile' },
   { key: 'chat', icon: <Bot className="w-4 h-4" />, label: 'AI Coach', tour: 'sidebar-chat' },
   { key: 'bookings', icon: <Calendar className="w-4 h-4" />, label: 'Đặt lịch tập', tour: 'sidebar-bookings' },

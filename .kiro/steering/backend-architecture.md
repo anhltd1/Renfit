@@ -13,10 +13,10 @@ Layered architecture: **API routers → services → MongoDB**. The AI Coach is 
   stale-index drop, optional `RESET_DB` database wipe, admin seed, notification-reminder scheduler
   `asyncio.create_task`).
 - `src/api/*` — routers: `auth.py`, `profile.py`, `bookings.py`, `admin.py`, `chat.py`,
-  `notifications.py`. Admin endpoints use a `_require_admin` bearer-token dependency; customer
-  endpoints trust a client-supplied `customer_id` (no JWT — see project-summary.md ground rules).
+  `notifications.py`, `push.py`. Admin endpoints use a `_require_admin` bearer-token dependency;
+  customer endpoints trust a client-supplied `customer_id` (no JWT — see project-summary.md).
 - `src/services/*` — `booking_service.py`, `customer_service.py`, `notification_service.py`,
-  `notification_scheduler.py`.
+  `notification_scheduler.py`, `blocked_slot_service.py`, `push_service.py`.
 - `src/services/ai/*` — `agent.py` (conversation loop), `tools.py` (profile/InBody/booking tools),
   `prompts.py` (system prompt + date-grounding lookup table), `memory.py`, `suggestions.py`.
 - `src/schema/*` — Pydantic/document models + `collections.py` (collection name constants).
@@ -33,7 +33,8 @@ volume. Two compose files control startup behavior:
   recreate all collections, indexes, and seed the admin trainer (clean slate).
 
 Full reference: `backend/docs/data-model.md`. Collections: `Customer`, `Personal_Trainer`,
-`Bookings`, `Inbody`, `ChatSession`, `ChatMessage`, `Notification`, `TrainerNotification`.
+`Bookings`, `Inbody`, `ChatSession`, `ChatMessage`, `Notification`, `TrainerNotification`,
+`TrainerNote`, `BlockedSlot`, `PushSubscription`.
 
 Key rules to respect when touching bookings:
 - Bookable window: Monday of current week → Saturday of next week (12 days), **no Sundays**.

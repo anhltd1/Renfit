@@ -16,3 +16,4 @@ class Customer(BaseModel):
     avatar: str = ""
     password: str = Field(..., description="bcrypt hash string")
     age: int | float | None = None
+    active: bool = True

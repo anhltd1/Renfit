@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { Availability, Slot, DayAvailability } from '../../lib/api/bookings';
 import { useFocusTrap } from '../shared/primitives/useFocusTrap';
+import { haptic } from '../shared/primitives/haptics';
 
 /** U8 Accessibility — see AdminBookings.tsx's identical helper for rationale. */
 function useEscapeToClose(open: boolean, onClose: () => void) {
@@ -132,6 +133,7 @@ export function BookingCalendar({
   const confirmAction = async () => {
     if (!pending) return;
     setActing(true);
+    haptic();
     try {
       if (pending.mode === 'book') {
         await onBook(pending.slot);
@@ -330,7 +332,7 @@ export function BookingCalendar({
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 w-full max-w-sm flex justify-center">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 w-full max-w-sm flex justify-center animate-toast-in">
           <div className={`w-full px-6 py-3.5 rounded-xl border shadow-2xl flex items-center gap-2.5 text-base font-medium ${
             toast.kind === 'ok' ? 'bg-[#0F6B3E] border-[#0F6B3E]/60 text-white' : 'bg-red-500 border-red-500/60 text-white'
           }`}>

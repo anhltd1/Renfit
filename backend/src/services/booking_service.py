@@ -127,6 +127,8 @@ def count_active_for_slot(key: str) -> int:
 # ── Availability (customer view) ──────────────────────────────────────────────
 
 def build_availability(customer_id: str) -> dict:
+    from src.services.blocked_slot_service import get_blocked_hours_for_date
+
     counts = active_counts()
 
     my_bookings: dict[str, dict] = {}
@@ -144,6 +146,7 @@ def build_availability(customer_id: str) -> dict:
 
     days = []
     for d in window_days():
+        blocked_hours = get_blocked_hours_for_date(d.isoformat())
         slots = []
         for hour in slot_hours():
             key = slot_time_str(d, hour)
@@ -154,6 +157,7 @@ def build_availability(customer_id: str) -> dict:
             slot_dt = datetime(d.year, d.month, d.day, hour, tzinfo=ICT)
             past = slot_dt <= now
             full = count >= CAPACITY
+            blocked = hour in blocked_hours
             slots.append(
                 {
                     "hour": hour,
@@ -162,10 +166,11 @@ def build_availability(customer_id: str) -> dict:
                     "remaining": max(0, CAPACITY - count),
                     "full": full,
                     "past": past,
+                    "blocked": blocked,
                     "my_status": mine_status,
                     "my_booking_id": mine["id"] if mine else None,
-                    # bookable only if not past, not full and not already mine
-                    "available": (not past) and (not full) and (not mine_active),
+                    # bookable only if not past, not full, not blocked, and not already mine
+                    "available": (not past) and (not full) and (not blocked) and (not mine_active),
                 }
             )
         days.append(
@@ -184,6 +189,8 @@ def build_availability(customer_id: str) -> dict:
 
 def list_window_bookings() -> dict:
     """All bookings inside the window grouped by day + hour (trainer view)."""
+    from src.services.blocked_slot_service import get_blocked_hours_for_date
+
     valid_keys = {
         slot_time_str(d, h) for d in window_days() for h in slot_hours()
     }
@@ -205,6 +212,7 @@ def list_window_bookings() -> dict:
     weekday_labels = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
     days = []
     for d in window_days():
+        blocked_hours = get_blocked_hours_for_date(d.isoformat())
         slots = []
         for hour in slot_hours():
             key = slot_time_str(d, hour)
@@ -213,6 +221,7 @@ def list_window_bookings() -> dict:
                     "hour": hour,
                     "time": key,
                     "bookings": grouped.get(key, []),
+                    "blocked": hour in blocked_hours,
                 }
             )
         days.append(

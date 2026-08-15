@@ -14,10 +14,11 @@ at once.
 
 ## Stack at a glance
 - **Backend**: Python 3.10+, FastAPI, PyMongo (MongoDB, db name `renfit`), Anthropic Claude
-  (`claude-3-5-haiku-20241022`) for the AI Coach, `passlib[bcrypt]` for auth. Tests: `pytest`.
+  (`claude-3-5-haiku-20241022`) for the AI Coach, `passlib[bcrypt]` for auth, `pywebpush` for
+  Web Push notifications (VAPID). Tests: `pytest`.
 - **Frontend**: React 18 + TypeScript + Vite 6, Tailwind CSS 4, `react-router` 7, Radix UI +
   some MUI, `recharts` (charts), `react-markdown` (chat), `lucide-react` (icons). Tests: Vitest +
-  React Testing Library + fast-check (added in the ongoing UI/UX rebuild, see below).
+  React Testing Library + fast-check.
 - **Infra**: Docker Compose (`docker-compose.yml`, `docker-compose.reset.yml`,
   `Dockerfile.backend`, `Dockerfile.frontend`). Self-hosted MongoDB 7 via Docker (persisted in a
   named volume). Backend on :8000, frontend dev server on :5173 proxying `/api` and `/chat` to
@@ -53,13 +54,16 @@ at once.
 - `testing-conventions.md` — backend pytest + frontend Vitest/RTL/fast-check conventions
 - `aidlc-workflow.md` — how the AI-DLC methodology is used on this project, and where its docs live
 
-## Current initiative (as of this writing)
-A **frontend UI/UX rebuild** is in progress via the AI-DLC workflow: rebuilding the dashboards, auth
-pages, and shared components to fully conform to `DESIGN.md`, adding a **native-like mobile UI**
-selected by device detection (desktop UI on computers, distinct mobile UI on phones — not just a
-responsive reflow), completing the PWA, improving performance, and adding automated frontend tests.
-Backend is stable and out of scope for this initiative. See `aidlc-workflow.md` and
-`.kiro/aidlc-docs/aidlc-state.md` for live status.
+## Recent work (as of this writing)
+Two AI-DLC initiatives completed:
+1. **V1 (U1–U9)**: Frontend UI/UX rebuild — DESIGN.md conformance, native-like mobile UI via
+   device detection, PWA, code-splitting, accessibility pass, Docker/Caddy deployment.
+2. **V2 (U10–U17)**: Admin UX & feature improvements — denser admin layout, "Hôm nay" PT landing
+   screen, block-off slots, batch pre-booking, PT member management (create/edit/archive), client
+   list sorting + two-column detail, member home dashboard (next session hero, progress strip,
+   body composition ring), Web Push notifications replacing polling.
+
+Both are complete. See `.kiro/aidlc-docs/aidlc-state.md` for full status.
 
 ## Ground rules that apply everywhere
 - All user-facing text is **Vietnamese**, dark theme only, no light-mode variants.

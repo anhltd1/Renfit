@@ -21,14 +21,16 @@ describe('useTrainerNotifications', () => {
     expect(result.current.unreadCount).toBe(1);
   });
 
-  it('pushes only newly-seen notifications into the popup queue on later polls', async () => {
+  it('pushes only newly-seen notifications into the popup queue on refetch', async () => {
     const spy = vi.spyOn(adminApi, 'fetchTrainerNotifications').mockResolvedValueOnce([n1] as any);
     const { result } = renderHook(() => useTrainerNotifications());
     await waitFor(() => expect(result.current.notifications).toEqual([n1]));
 
     spy.mockResolvedValueOnce([n1, n2] as any);
+    // Trigger visibility-based refetch
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', writable: true });
     await act(async () => {
-      vi.advanceTimersByTime(10_000);
+      document.dispatchEvent(new Event('visibilitychange'));
     });
     await waitFor(() => expect(result.current.popups).toEqual([n2]));
   });
@@ -54,8 +56,9 @@ describe('useTrainerNotifications', () => {
     await waitFor(() => expect(result.current.notifications).toEqual([n1]));
 
     spy.mockResolvedValueOnce([n1, n2] as any);
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', writable: true });
     await act(async () => {
-      vi.advanceTimersByTime(10_000);
+      document.dispatchEvent(new Event('visibilitychange'));
     });
     await waitFor(() => expect(result.current.popups).toEqual([n2]));
 

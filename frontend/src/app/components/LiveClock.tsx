@@ -38,7 +38,7 @@ export function LiveClock() {
       </div>
       <div className="flex flex-col items-center leading-none">
         <span className="text-white font-bold text-lg tracking-widest tabular-nums">
-          {hh}<span className="animate-pulse text-[#0F6B3E]">:</span>{mm}<span className="text-white/30 text-base font-normal">:{ss}</span>
+          {hh}<span className="text-[#0F6B3E]">:</span>{mm}<span className="text-white/30 text-base font-normal">:{ss}</span>
         </span>
         <span className="text-white/35 text-[11px] tracking-wide mt-0.5">
           {day} · {date} · TP.HCM

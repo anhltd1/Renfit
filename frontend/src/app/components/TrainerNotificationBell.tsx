@@ -219,7 +219,11 @@ export function TrainerNotificationBell({ onNavigate }: TrainerNotificationBellP
             {loading ? (
               <p className="text-white/40 text-sm text-center py-8">Đang tải...</p>
             ) : notifications.length === 0 ? (
-              <p className="text-white/40 text-sm text-center py-8">Chưa có thông báo nào.</p>
+              <div className="flex flex-col items-center py-8 text-white/25 gap-1.5">
+                <Bell className="w-6 h-6" />
+                <p className="text-sm">Không có thông báo mới.</p>
+                <p className="text-xs text-white/15">Thông báo sẽ hiển thị khi hội viên đặt lịch.</p>
+              </div>
             ) : (
               <div className="divide-y divide-white/5">
                 {notifications.map((n) => {

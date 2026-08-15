@@ -14,18 +14,21 @@ import { AdminBottomTabBar, type AdminMobileTabKey } from '../shell/AdminBottomT
 import { useStack } from '../shell/useStack';
 import { CustomerListScreen } from '../screens/CustomerListScreen';
 import { CustomerDetailScreen } from '../screens/CustomerDetailScreen';
+import { AdminTodayScreen } from '../../desktop/components/AdminTodayScreen';
+import { MemberFormModal } from '../../components/MemberFormModal';
 
 type ClientsStackScreen = 'root' | 'detail';
 
 export function AdminDashboardPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<AdminMobileTabKey>('clients');
+  const [activeTab, setActiveTab] = useState<AdminMobileTabKey>('today');
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<CustomerSummary | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [creatingMember, setCreatingMember] = useState(false);
 
   const clientsStack = useStack<ClientsStackScreen>('root');
 
@@ -70,6 +73,8 @@ export function AdminDashboardPage() {
       clientsStack.reset('root');
     } else if (view === 'bookings') {
       setActiveTab('bookings');
+    } else if (view === 'today') {
+      setActiveTab('today');
     }
   };
 
@@ -89,14 +94,26 @@ export function AdminDashboardPage() {
         refreshing={refreshing}
         onLogout={handleLogout}
         onNavigateFromNotification={handleNotificationNavigate}
+        onCreateMember={() => setCreatingMember(true)}
       />
     );
   }
 
   return (
     <div className="h-[100dvh] w-full flex flex-col overflow-hidden bg-[#080808] text-white">
-      <div className="flex-1 min-h-0 flex flex-col">
-        {activeTab === 'clients' ? clientsContent : <AdminBookings />}
+      {/* Keyed on tab + stack position so the entrance replays on every
+          navigation (the screens already remount, the wrapper would not). */}
+      <div
+        key={`${activeTab}:${clientsStack.current}`}
+        className="flex-1 min-h-0 flex flex-col animate-panel-in"
+      >
+        {activeTab === 'today' ? (
+          <AdminTodayScreen />
+        ) : activeTab === 'clients' ? (
+          clientsContent
+        ) : (
+          <AdminBookings />
+        )}
       </div>
       <AdminBottomTabBar
         active={activeTab}
@@ -105,6 +122,15 @@ export function AdminDashboardPage() {
           if (tab !== 'clients') clientsStack.reset('root');
         }}
       />
+
+      {/* Create member modal */}
+      {creatingMember && (
+        <MemberFormModal
+          mode="create"
+          onClose={() => setCreatingMember(false)}
+          onSaved={() => { setCreatingMember(false); load(true); }}
+        />
+      )}
     </div>
   );
 }

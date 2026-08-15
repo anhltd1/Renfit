@@ -5,6 +5,7 @@ import type { ChatArtifact, ChatResponse } from '../../../lib/api/chat';
 import { ChatArtifactCard } from './ChatArtifactCard';
 import { SuggestedReplies } from './SuggestedReplies';
 import type { ChatMessage } from './types';
+import { TypingIndicator } from './TypingIndicator';
 import { getAuthUser } from '../../../lib/auth';
 
 /**
@@ -151,12 +152,7 @@ export function ChatPanel({
           </div>
           <div>
             <h3 className="text-white font-bold text-sm">Renfit AI Coach</h3>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-white/80 text-xs">
-                {loading ? 'Đang trả lời...' : 'Đang hoạt động'}
-              </span>
-            </div>
+            {loading && <span className="text-white/60 text-xs">Đang trả lời...</span>}
           </div>
         </div>
       )}
@@ -204,14 +200,7 @@ export function ChatPanel({
           </div>
         ))}
 
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-white/10 border border-white/10 rounded-2xl px-5 py-3 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 text-[#0F6B3E] animate-spin" />
-              <span className="text-white/60 text-sm">AI đang suy nghĩ...</span>
-            </div>
-          </div>
-        )}
+        {loading && <TypingIndicator />}
       </div>
 
       {error && (

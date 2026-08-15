@@ -6,7 +6,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Layers,
   Loader2,
+  Lock,
   Plus,
   RefreshCw,
   RotateCcw,
@@ -15,6 +17,9 @@ import {
   X,
 } from 'lucide-react';
 import { CalendarKiosk } from './CalendarKiosk';
+import { BlockOffManager } from './BlockOffManager';
+import { BatchBookingMode } from './BatchBookingMode';
+import { useBatchBooking } from '../shared/hooks/useBatchBooking';
 import {
   assignBooking,
   fetchBookings,
@@ -27,6 +32,7 @@ import {
   type CustomerSummary,
 } from '../../lib/api/admin';
 import { useFocusTrap } from '../shared/primitives/useFocusTrap';
+import { haptic } from '../shared/primitives/haptics';
 
 /**
  * U8 Accessibility — this component's two hand-rolled overlays (status-
@@ -126,6 +132,12 @@ export function AdminBookings() {
   // Kiosk mode state
   const [kioskOpen, setKioskOpen] = useState(false);
 
+  // Block-off manager state
+  const [blockOff, setBlockOff] = useState<{ date: string; hour?: number } | null>(null);
+
+  // Batch booking mode
+  const batch = useBatchBooking();
+
   // Get current HCM hour for highlighting
   const nowHCM = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
   const currentHour = nowHCM.getHours();
@@ -197,6 +209,7 @@ export function AdminBookings() {
   const changeStatus = async (status: BookingStatus) => {
     if (!selected) return;
     setActing(true);
+    haptic();
     try {
       const r = await updateBookingStatus(selected.booking.id, status);
       setToast({ kind: 'ok', text: r.message });
@@ -230,10 +243,10 @@ export function AdminBookings() {
   return (
     <div ref={calendarRef} className="flex flex-col h-full overflow-hidden scroll-mt-4">
       {/* Sub-header */}
-      <div className="shrink-0 px-6 py-4 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
+      <div className="shrink-0 px-4 py-3 border-b border-white/10 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-white font-bold text-lg">Lịch đặt — 2 tuần</h2>
-          <p className="text-white/50 text-sm mt-0.5">
+          <h2 className="text-white font-bold text-base">Lịch đặt — 2 tuần</h2>
+          <p className="text-white/50 text-xs mt-0.5">
             08:00–20:00 mỗi ngày (nghỉ Chủ Nhật) · tối đa {data?.capacity ?? 4} người / giờ
           </p>
         </div>
@@ -248,6 +261,21 @@ export function AdminBookings() {
             <CalendarDays className="w-4 h-4" />
             <span className="hidden lg:inline">Lịch để bàn</span>
           </button>
+          <button type="button" onClick={() => { const today = new Date().toISOString().slice(0, 10); setBlockOff({ date: today }); }} title="Chặn giờ" aria-label="Chặn giờ"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white/50 hover:text-amber-400 hover:bg-amber-400/10 border border-white/10 hover:border-amber-400/30 transition-all text-sm">
+            <Lock className="w-4 h-4" />
+            <span className="hidden lg:inline">Chặn giờ</span>
+          </button>
+          <button type="button" onClick={batch.active ? batch.deactivate : batch.activate}
+            title={batch.active ? 'Thoát chế độ đặt loạt' : 'Đặt lịch loạt'} aria-label="Đặt lịch loạt"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all text-sm ${
+              batch.active
+                ? 'text-[#0F6B3E] bg-[#0F6B3E]/15 border-[#0F6B3E]/40'
+                : 'text-white/50 hover:text-[#0F6B3E] hover:bg-[#0F6B3E]/10 border-white/10 hover:border-[#0F6B3E]/30'
+            }`}>
+            <Layers className="w-4 h-4" />
+            <span className="hidden lg:inline">{batch.active ? 'Đang đặt loạt' : 'Đặt lịch loạt'}</span>
+          </button>
           <button type="button" onClick={() => load()} title="Làm mới" aria-label="Làm mới"
             className="p-2 rounded-xl text-white/50 hover:text-white hover:bg-white/5 transition-all">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -256,7 +284,7 @@ export function AdminBookings() {
       </div>
 
       {/* Day navigation */}
-      <div className="shrink-0 px-6 py-3 border-b border-white/8 flex items-center gap-3">
+      <div className="shrink-0 px-4 py-2 border-b border-white/8 flex items-center gap-3">
         <button type="button" disabled={!canLeft} onClick={() => { setSlideDir('right'); setSlideKey((k) => k + 1); setOffset((o) => o - 1); }}
           aria-label="Xem ngày trước"
           className="p-2 rounded-lg border border-white/15 text-white/60 hover:text-white hover:border-[#0F6B3E]/60 disabled:opacity-25 transition-all">
@@ -368,11 +396,38 @@ export function AdminBookings() {
                   const slot = day.slots[rowIdx];
                   const isToday = day.date === todayIso;
                   const isNowCell = isCurrentHour && isToday;
+                  const isBlocked = !!slot.blocked;
                   const openAssign = () => {
+                    // Blocked slots can't be assigned
+                    if (isBlocked) return;
+                    // In batch mode, toggle the slot instead of opening assign dialog
+                    if (batch.active && batch.member) {
+                      batch.toggleSlot(slot.time);
+                      return;
+                    }
                     setAssigning({ dateIso: day.date, hour, time: slot.time });
                     setAssignSearch('');
                     setAssignCustomerId('');
                   };
+                  const isStaged = batch.active && batch.stagedSlots.has(slot.time);
+
+                  // Blocked slot — render with diagonal hatch (like Sunday)
+                  if (isBlocked) {
+                    return (
+                      <div key={day.date + hour}
+                        className={`border-b border-r border-white/8 min-h-[88px] relative overflow-hidden ${rowIdx % 2 === 0 ? 'bg-white/[0.01]' : ''}`}
+                        title="Đã chặn"
+                      >
+                        <div className="absolute inset-0" style={{ background: 'repeating-linear-gradient(-45deg, transparent 0px, transparent 6px, rgba(239,68,68,0.06) 6px, rgba(239,68,68,0.06) 7px)' }} />
+                        <div className="relative flex items-center justify-center h-full p-2">
+                          <span className="text-[10px] bg-red-500/15 text-red-400/70 px-2 py-0.5 rounded-full font-semibold border border-red-500/20">
+                            Đã chặn
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div key={day.date + hour}
                       role="button"
@@ -385,7 +440,9 @@ export function AdminBookings() {
                       }}
                       aria-label={`Đặt lịch tập lúc ${String(hour).padStart(2, '0')}:00 ${fmtDayLabel(day.date)}`}
                       className={`border-b border-r border-white/8 p-2 min-h-[88px] space-y-1.5 relative group/cell cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0F6B3E] ${
-                        isNowCell
+                        isStaged
+                          ? 'bg-[#0F6B3E]/15 border-2 border-dashed border-[#0F6B3E]/60 animate-stage-bounce'
+                          : isNowCell
                           ? 'bg-[#0F6B3E]/30 border-t-2 border-t-[#0F6B3E] border-l-2 border-l-[#0F6B3E]'
                           : isToday
                           ? 'bg-[#0F6B3E]/[0.05] border-l-2 border-l-[#0F6B3E]/40 hover:bg-[#0F6B3E]/10'
@@ -575,7 +632,7 @@ export function AdminBookings() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 w-full max-w-sm flex justify-center">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 w-full max-w-sm flex justify-center animate-toast-in">
           <div className={`w-full px-6 py-3.5 rounded-xl border shadow-2xl flex items-center gap-2.5 text-base font-medium ${
             toast.kind === 'ok' ? 'bg-[#0F6B3E] border-[#0F6B3E]/60 text-white' : 'bg-red-500 border-red-500/60 text-white'
           }`}>
@@ -587,6 +644,39 @@ export function AdminBookings() {
 
       {/* Kiosk mode */}
       {kioskOpen && <CalendarKiosk onClose={() => setKioskOpen(false)} />}
+
+      {/* Block-off manager */}
+      {blockOff && (
+        <BlockOffManager
+          date={blockOff.date}
+          preSelectedHour={blockOff.hour}
+          onClose={() => setBlockOff(null)}
+          onDone={() => { setBlockOff(null); load(true); }}
+        />
+      )}
+
+      {/* Batch booking mode */}
+      {batch.active && (
+        <BatchBookingMode
+          member={batch.member}
+          onSelectMember={batch.setMember}
+          stagedSlots={batch.stagedSlots}
+          submitting={batch.submitting}
+          onSubmit={async () => {
+            const result = await batch.submit();
+            if (result && result.success_count > 0) {
+              setToast({ kind: 'ok', text: `Đã đặt ${result.success_count} buổi tập.` });
+              batch.deactivate();
+              await load(true);
+            } else {
+              setToast({ kind: 'err', text: 'Đặt lịch thất bại.' });
+            }
+          }}
+          onCancel={batch.deactivate}
+          customers={customers}
+          data={data}
+        />
+      )}
     </div>
   );
 }

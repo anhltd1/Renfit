@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     ai_max_history_turns: int = 20
     ai_request_timeout: int = 60
 
+    # Web Push (VAPID)
+    vapid_public_key: str = ""
+    vapid_private_key: str = ""
+    vapid_contact_email: str = "mailto:admin@renfit.local"
+
     log_level: str = "INFO"
 
     @property

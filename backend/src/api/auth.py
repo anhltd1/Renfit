@@ -11,7 +11,6 @@ from pydantic import BaseModel, Field
 from src.db.mongo import customers_collection, inbody_collection
 from src.schema.customer import Customer
 from src.schema.inbody import Inbody
-from src.services.customer_service import find_customer_by_name
 from src.services.notification_service import notify_trainee_registered
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -94,14 +93,6 @@ def signup(body: SignupRequest) -> AuthResponse:
         raise HTTPException(
             status_code=409,
             detail="Số điện thoại này đã được đăng ký. Vui lòng đăng nhập.",
-        )
-
-    # Check name uniqueness (Customer.id is the name)
-    existing_by_name = find_customer_by_name(name)
-    if existing_by_name is not None:
-        raise HTTPException(
-            status_code=409,
-            detail="Tên này đã được đăng ký. Vui lòng dùng tên đầy đủ hoặc thêm số phân biệt.",
         )
 
     hashed = _pwd.hash(body.password)

@@ -20,16 +20,18 @@ describe('useNotifications', () => {
     expect(result.current.unreadCount).toBe(1);
   });
 
-  it('polls every 30s', async () => {
+  it('refetches on visibility change', async () => {
     const spy = vi.spyOn(notificationsApi, 'fetchNotifications').mockResolvedValue([] as any);
     vi.spyOn(notificationsApi, 'fetchUnreadCount').mockResolvedValue(0);
     renderHook(() => useNotifications('cust-1'));
     await waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
 
+    // Simulate tab becoming visible
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', writable: true });
     await act(async () => {
-      vi.advanceTimersByTime(30000);
+      document.dispatchEvent(new Event('visibilitychange'));
     });
-    expect(spy).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(spy).toHaveBeenCalledTimes(2));
   });
 
   it('markRead refetches the list and unread count', async () => {

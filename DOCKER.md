@@ -208,3 +208,12 @@ Set directly in `docker-compose.yml` (not overridden by env files):
 | `MONGODB_URI` | `mongodb://mongo:27017/renfit` | Local mongo container (compose-internal network) |
 | `DB_NAME` | `renfit` | MongoDB database name |
 | `RESET_DB` | `false` (normal) / `true` (reset) | Whether to wipe DB on backend startup — only `true` in `docker-compose.reset.yml` |
+
+Set in `backend/env/.env` (secrets, not in compose):
+
+| Variable | Purpose |
+|---|---|
+| `ANTHROPIC_API_KEY` | Claude API key for AI Coach |
+| `VAPID_PUBLIC_KEY` | Web Push VAPID public key (generate: `npx web-push generate-vapid-keys`) |
+| `VAPID_PRIVATE_KEY` | Web Push VAPID private key |
+| `VAPID_CONTACT_EMAIL` | Contact email for VAPID (default: `mailto:admin@renfit.local`) |

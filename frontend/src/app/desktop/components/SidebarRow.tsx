@@ -19,7 +19,7 @@ export const SidebarRow = React.memo(function SidebarRow({ customer, selected, o
       type="button"
       data-testid={`sidebar-row-${customer.id}`}
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all rounded-xl ${
+      className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-all rounded-lg ${
         selected
           ? 'bg-[#0F6B3E]/20 border border-[#0F6B3E]/30'
           : 'hover:bg-white/5 border border-transparent'
@@ -29,11 +29,11 @@ export const SidebarRow = React.memo(function SidebarRow({ customer, selected, o
         <img
           src={customer.avatar}
           alt={customer.id}
-          className="w-10 h-10 rounded-full object-cover shrink-0 border border-white/10"
+          className="w-8 h-8 rounded-full object-cover shrink-0 border border-white/10"
         />
       ) : (
-        <div className="w-10 h-10 rounded-full bg-[#0F6B3E]/12 border border-[#0F6B3E]/20 flex items-center justify-center shrink-0">
-          <User className="w-4.5 h-4.5 text-[#0F6B3E]" />
+        <div className="w-8 h-8 rounded-full bg-[#0F6B3E]/12 border border-[#0F6B3E]/20 flex items-center justify-center shrink-0">
+          <User className="w-3.5 h-3.5 text-[#0F6B3E]" />
         </div>
       )}
       <div className="flex-1 min-w-0">
@@ -43,9 +43,16 @@ export const SidebarRow = React.memo(function SidebarRow({ customer, selected, o
         <p className="text-white/35 text-xs truncate flex items-center gap-1 mt-0.5">
           <Phone className="w-2.5 h-2.5 shrink-0" />
           {customer.phone_number}
+          {customer.last_session && (
+            <span className="text-white/20 ml-1">· {customer.last_session.slice(8, 10)}/{customer.last_session.slice(5, 7)}</span>
+          )}
         </p>
       </div>
-      {customer.goal && (
+      {customer.active === false ? (
+        <span className="hidden lg:block text-[10px] px-2 py-0.5 rounded-full border shrink-0 bg-red-500/10 border-red-500/20 text-red-400/70">
+          Đã nghỉ
+        </span>
+      ) : customer.goal ? (
         <span
           className={`hidden lg:block text-[10px] px-2 py-0.5 rounded-full border shrink-0 max-w-[80px] truncate ${
             selected
@@ -55,7 +62,7 @@ export const SidebarRow = React.memo(function SidebarRow({ customer, selected, o
         >
           {customer.goal}
         </span>
-      )}
+      ) : null}
     </button>
   );
 });

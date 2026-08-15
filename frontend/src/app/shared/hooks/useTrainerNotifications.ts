@@ -11,11 +11,9 @@ const POLL_INTERVAL_MS = 10_000;
 
 /**
  * Trainer-facing (broadcast) notifications (U2 Shared Data Layer).
- * Wraps lib/api/admin.ts's trainer notification functions and formalizes the
- * popup-queue tracking currently inline in TrainerNotificationBell.tsx: any
- * notification not seen in a prior poll is pushed into `popups`; the caller
- * (the bell component) owns rendering/auto-dismiss timing, this hook only
- * owns "what's new since last poll" + the persisted list + unread count.
+ * Push replaces polling (U17). Refetches on visibility change as fallback.
+ * Popup-queue tracking: any notification not seen in a prior fetch is pushed
+ * into `popups`; the caller (bell component) owns rendering/auto-dismiss.
  */
 export function useTrainerNotifications() {
   const [notifications, setNotifications] = useState<TrainerNotification[]>([]);
@@ -27,7 +25,6 @@ export function useTrainerNotifications() {
     try {
       const all = await fetchTrainerNotifications();
       if (seenIdsRef.current === null) {
-        // First poll — seed known ids without popping toasts for history.
         seenIdsRef.current = new Set(all.map((n) => n.id));
       } else {
         const fresh = all.filter((n) => !seenIdsRef.current!.has(n.id));
@@ -43,10 +40,14 @@ export function useTrainerNotifications() {
     }
   }, []);
 
+  // Initial fetch + visibility-based refetch (replaces polling)
   useEffect(() => {
     void poll();
-    const id = setInterval(poll, POLL_INTERVAL_MS);
-    return () => clearInterval(id);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') poll();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [poll]);
 
   const dismissPopup = useCallback((id: string) => {

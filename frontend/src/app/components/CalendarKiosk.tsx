@@ -16,6 +16,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   CalendarCheck,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Maximize2,
   Minimize2,
@@ -54,6 +56,23 @@ function todayIso() {
   return `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}`;
 }
 
+/** Get ISO date string for today + offset days. */
+function dateIsoOffset(offset: number) {
+  const n = getNow();
+  n.setDate(n.getDate() + offset);
+  return `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}`;
+}
+
+/** Get a Date object for today + offset days (in HCM timezone). */
+function dateFromOffset(offset: number) {
+  const n = getNow();
+  n.setDate(n.getDate() + offset);
+  return n;
+}
+
+/** Max forward days: 2 weeks (14 days) from today. */
+const MAX_FORWARD_DAYS = 14;
+
 const STATUS_META: Record<BookingStatus, { label: string; pill: string }> = {
   pending: {
     label: 'Chờ duyệt',
@@ -89,6 +108,7 @@ export interface CalendarKioskProps {
 
 export function CalendarKiosk({ onClose }: CalendarKioskProps) {
   const [now, setNow] = useState(getNow);
+  const [dateOffset, setDateOffset] = useState(0); // 0 = today, +1 = tomorrow, etc.
   const [slots, setSlots] = useState<TodaySlot[]>([]);
   const [capacity, setCapacity] = useState(4);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -98,6 +118,12 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const currentRowRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const isToday = dateOffset === 0;
+  const canGoBack = dateOffset > 0;
+  const canGoForward = dateOffset < MAX_FORWARD_DAYS;
+  const viewDateIso = dateIsoOffset(dateOffset);
+  const viewDate = dateFromOffset(dateOffset);
 
   // Clock tick every second
   useEffect(() => {
@@ -110,12 +136,12 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
     return () => { clearTimeout(timeout); clearInterval(id); };
   }, []);
 
-  // Fetch today's bookings
+  // Fetch bookings for the viewed date
   const loadData = useCallback(async () => {
     try {
       const data: AdminBookings = await fetchBookings();
-      const today = todayIso();
-      const day = data.days.find((d) => d.date === today);
+      const targetDate = dateIsoOffset(dateOffset);
+      const day = data.days.find((d) => d.date === targetDate);
       if (day) {
         setSlots(
           day.slots.map((s: AdminBookingSlot) => ({
@@ -124,14 +150,14 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
           })),
         );
       } else {
-        // Today might be Sunday or outside the window
+        // Date might be Sunday or outside the booking window
         setSlots(HOURS.map((h) => ({ hour: h, bookings: [] })));
       }
       setCapacity(data.capacity);
     } catch {
       // Silently retry on next poll — kiosk should be resilient
     }
-  }, []);
+  }, [dateOffset]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -142,13 +168,14 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
     return () => clearInterval(id);
   }, [loadData, selected]);
 
-  // Auto-scroll to current hour row on mount and when hour changes
+  // Auto-scroll to current hour row on mount and when hour changes (only when viewing today)
   const currentHour = now.getHours();
   useEffect(() => {
+    if (!isToday) return;
     setTimeout(() => {
       currentRowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 300);
-  }, [currentHour]);
+  }, [currentHour, isToday]);
 
   // Escape to close (modal first, then kiosk)
   useEffect(() => {
@@ -214,8 +241,8 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
   const hh = pad(now.getHours());
   const mm = pad(now.getMinutes());
   const ss = pad(now.getSeconds());
-  const dayOfWeek = VIET_DAYS_FULL[now.getDay()];
-  const dateStr = fmtDate(now);
+  const viewDayOfWeek = VIET_DAYS_FULL[viewDate.getDay()];
+  const viewDateStr = fmtDate(viewDate);
 
   // Determine active slots (use data or fallback)
   const displaySlots = slots.length > 0 ? slots : HOURS.map((h) => ({ hour: h, bookings: [] }));
@@ -227,15 +254,38 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
     >
       {/* Header */}
       <header className="shrink-0 flex items-center justify-between px-8 py-5 border-b border-white/8">
-        {/* Left: date info */}
+        {/* Left: date info + navigation */}
         <div className="flex items-center gap-4">
-          <div className="flex flex-col items-center">
-            <span className="text-white/50 text-sm font-medium tracking-wide">{dayOfWeek}</span>
+          <button
+            type="button"
+            disabled={!canGoBack}
+            onClick={() => setDateOffset((o) => o - 1)}
+            className="p-2 rounded-lg border border-white/15 text-white/60 hover:text-white hover:border-[#0F6B3E]/60 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+            aria-label="Ngày trước"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="flex flex-col items-center min-w-[80px]">
+            <span className="text-white/50 text-sm font-medium tracking-wide">{viewDayOfWeek}</span>
             <span className="text-5xl font-bold text-white tabular-nums leading-none mt-1">
-              {pad(now.getDate())}
+              {pad(viewDate.getDate())}
             </span>
-            <span className="text-white/40 text-xs mt-1">{dateStr}</span>
+            <span className="text-white/40 text-xs mt-1">{viewDateStr}</span>
+            {isToday && (
+              <span className="mt-1 text-[10px] bg-[#0F6B3E]/30 text-[#0F6B3E] px-2 py-0.5 rounded-full font-semibold border border-[#0F6B3E]/40">
+                Hôm nay
+              </span>
+            )}
           </div>
+          <button
+            type="button"
+            disabled={!canGoForward}
+            onClick={() => setDateOffset((o) => o + 1)}
+            className="p-2 rounded-lg border border-white/15 text-white/60 hover:text-white hover:border-[#0F6B3E]/60 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+            aria-label="Ngày sau"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
           <div className="h-14 w-px bg-white/10 mx-2" />
           <div className="text-white/30 text-xs">GMT+07 · TP. Hồ Chí Minh</div>
         </div>
@@ -246,7 +296,7 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
             <Clock className="w-5 h-5 text-[#0F6B3E]" />
           </div>
           <span className="text-4xl font-bold tracking-wider tabular-nums text-white">
-            {hh}<span className="animate-pulse text-[#0F6B3E]">:</span>{mm}
+            {hh}<span className="text-[#0F6B3E]">:</span>{mm}
             <span className="text-xl text-white/30 font-normal ml-1">:{ss}</span>
           </span>
         </div>
@@ -276,8 +326,8 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
 
       {/* Day timeline */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-4 relative">
-        {/* Now indicator line — absolute positioned across the timeline */}
-        {currentMinutes >= dayStartMin && currentMinutes <= dayEndMin && (
+        {/* Now indicator line — only shown when viewing today */}
+        {isToday && currentMinutes >= dayStartMin && currentMinutes <= dayEndMin && (
           <div
             className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
             style={{ top: `calc(${nowFraction * 100}% + 1rem)` }}
@@ -285,14 +335,14 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
             <div className="w-20 flex items-center justify-end pr-2">
               <div className="w-3 h-3 rounded-full bg-[#0F6B3E] shadow-[0_0_10px_rgba(15,107,62,0.8)]" />
             </div>
-            <div className="flex-1 h-0.5 bg-[#0F6B3E] shadow-[0_0_8px_rgba(15,107,62,0.5)]" />
+            <div className="flex-1 h-0.5 bg-[#0F6B3E] shadow-[0_0_8px_rgba(15,107,62,0.5)] animate-glow-pulse" />
           </div>
         )}
 
         {/* Hour rows */}
         {displaySlots.map((slot) => {
-          const isCurrentHour = slot.hour === currentHour;
-          const isPast = slot.hour < currentHour;
+          const isCurrentHour = isToday && slot.hour === currentHour;
+          const isPast = isToday && slot.hour < currentHour;
           const approvedBookings = slot.bookings.filter((b) => b.status === 'approved');
           const pendingBookings = slot.bookings.filter((b) => b.status === 'pending');
           const totalCount = slot.bookings.length;

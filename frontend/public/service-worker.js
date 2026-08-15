@@ -66,3 +66,47 @@ self.addEventListener('fetch', (event) => {
       .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/'))),
   );
 });
+
+// ── Web Push notifications (U17) ────────────────────────────────────────────
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch {
+    payload = { title: 'Renfit', body: event.data.text() };
+  }
+
+  const { title = 'Renfit', body = '', url = '/' } = payload;
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      data: { url },
+      vibrate: [100, 50, 100],
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      // Focus an existing tab if one is open
+      for (const client of clients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      // Otherwise open a new window
+      return self.clients.openWindow(url);
+    }),
+  );
+});

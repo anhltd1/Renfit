@@ -5,6 +5,7 @@
  */
 import { Bot, Calendar, Home, User } from 'lucide-react';
 import { cn } from '../../shared/primitives/cn';
+import { haptic } from '../../shared/primitives/haptics';
 
 export type MobileTabKey = 'overview' | 'booking' | 'coach' | 'profile';
 
@@ -32,9 +33,10 @@ export function BottomTabBar({ active, onChange }: BottomTabBarProps) {
           type="button"
           data-testid={`mobile-tab-${tab.key}`}
           data-tour={`mobile-tab-${tab.key}`}
-          onClick={() => onChange(tab.key)}
+          onClick={() => { haptic(); onChange(tab.key); }}
           className={cn(
-            'flex-1 flex flex-col items-center justify-center gap-1 py-2.5 transition-colors',
+            'flex-1 flex flex-col items-center justify-center gap-1 py-2.5',
+            'transition-[color,transform] duration-[var(--motion-fast)] active:scale-[0.92]',
             active === tab.key ? 'text-[#0F6B3E]' : 'text-white/40',
           )}
         >

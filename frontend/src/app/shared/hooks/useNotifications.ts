@@ -6,13 +6,11 @@ import {
   markNotificationRead,
   type AppNotification,
 } from '../../../lib/api/notifications';
-import { useQueryState, usePolling, type QueryState } from './useQuery';
-
-const POLL_INTERVAL_MS = 30000;
+import { useQueryState, type QueryState } from './useQuery';
 
 /**
  * Customer-facing notifications (U2 Shared Data Layer — wraps lib/api/notifications.ts).
- * Polls every 30s, matching the current NotificationBell.tsx cadence.
+ * Push replaces polling (U17). Refetches on visibility change (tab focus) as fallback.
  */
 export function useNotifications(
   customerId: string,
@@ -36,10 +34,17 @@ export function useNotifications(
     void refreshUnread();
   }, [refreshUnread]);
 
-  usePolling(async (silent) => {
-    await query.refetch(silent);
-    await refreshUnread();
-  }, POLL_INTERVAL_MS);
+  // Refetch on tab focus (lightweight fallback for push)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        query.refetch(true);
+        refreshUnread();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [query, refreshUnread]);
 
   const markRead = useCallback(
     async (id: string) => {

@@ -1,6 +1,13 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* ── Motion tokens ─────────────────────────────────────────────────────── */
+  --motion-fast: 150ms;
+  --motion-base: 250ms;
+  --motion-slow: 400ms;
+  --ease-enter: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-exit: cubic-bezier(0.0, 0.0, 0.2, 1);
+
   --font-size: 16px;
   --font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --background: #0B0B0B;
@@ -40,6 +47,19 @@
   --sidebar-accent-foreground: #FFFFFF;
   --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: #0F6B3E;
+
+  /* ── Motion tokens ────────────────────────────────────────────────────
+     Three durations only. Everything animated in the app picks one of them
+     so motion feels like a single system instead of per-component guesses.
+       fast  — press feedback, hover, small state flips
+       base  — panel/tab entrances, modals, list rows
+       slow  — ambient/looping accents (e.g. kiosk "now" line)
+     `--motion-enter` is the shared entrance curve (decelerate); exits use
+     `ease-out` so leaving elements get out of the way quickly. */
+  --motion-fast: 150ms;
+  --motion-base: 250ms;
+  --motion-slow: 400ms;
+  --motion-enter: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /* NOTE: A previous default `.dark` token block (oklch values) was removed in U1
@@ -202,8 +222,8 @@
   to   { opacity: 1; transform: translateX(0); }
 }
 
-.animate-slide-in-left  { animation: slide-in-left  0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
-.animate-slide-in-right { animation: slide-in-right 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.animate-slide-in-left  { animation: slide-in-left  var(--motion-base) var(--motion-enter) both; }
+.animate-slide-in-right { animation: slide-in-right var(--motion-base) var(--motion-enter) both; }
 
 /* ── Top-center notification popup ────────────────────────────────────── */
 @keyframes popup-in {
@@ -211,7 +231,7 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.animate-popup-in { animation: popup-in 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.animate-popup-in { animation: popup-in var(--motion-base) var(--motion-enter) both; }
 
 /* ── Mobile bottom-sheet slide-up ─────────────────────────────────────── */
 @keyframes slide-up {
@@ -219,4 +239,246 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.animate-slide-up { animation: slide-up 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.animate-slide-up { animation: slide-up var(--motion-base) var(--motion-enter) both; }
+
+/* ── List entrance stagger (U10 Polish) ───────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fade-up var(--motion-base) var(--motion-enter) both;
+  animation-delay: calc(var(--stagger, 0) * 40ms);
+}
+
+/* ── Pull-to-refresh indicator ────────────────────────────────────────── */
+@keyframes ptr-spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-ptr-spin {
+  animation: ptr-spin 0.8s linear infinite;
+}
+
+/* ── Panel / tab entrance ─────────────────────────────────────────────────
+   Fade-through: the outgoing panel is removed immediately (no cross-overlap,
+   so sibling flex panels never fight for layout) and the incoming one fades
+   up 4px. Used by the shared TabPanel primitive and by view swaps that
+   remount their subtree. */
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-panel-in { animation: panel-in var(--motion-base) var(--motion-enter) both; }
+
+/* Transition-driven variant for panels that stay mounted (TabPanel) — an
+   animation with `both` fill would pin opacity/transform and block re-entry. */
+.tab-panel {
+  transition:
+    opacity var(--motion-base) var(--motion-enter),
+    transform var(--motion-base) var(--motion-enter);
+}
+
+.tab-panel-enter {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+/* ── Row leave (action result) ────────────────────────────────────────────
+   A row that just got resolved (approved/rejected) shrinks away before the
+   list refetches, so the change reads as "that one is handled" instead of a
+   silent re-render. Must be an animation, not a transition: the entrance
+   `animate-fade-up` fills forwards and would otherwise win the cascade. */
+@keyframes row-leave {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.97); }
+}
+
+.animate-row-leave { animation: row-leave var(--motion-fast) ease-out both; }
+
+/* ── Reduced motion ──────────────────────────────────────────────────────
+   DESIGN.md requires honouring prefers-reduced-motion. Collapsing durations
+   globally is safer than auditing every component, and keeps future work
+   compliant by default. Loading spinners are exempt: they carry state
+   ("still working"), not decoration. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-spin,
+  .animate-ptr-spin {
+    animation-duration: 0.8s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
+/* ── Tab panel crossfade (U18) ────────────────────────────────────────── */
+@keyframes tab-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-tab-enter {
+  animation: tab-enter var(--motion-base) var(--ease-enter) both;
+}
+
+/* ── Content reveal (skeleton → data) ─────────────────────────────────── */
+@keyframes content-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-content-in {
+  animation: content-in var(--motion-fast) var(--ease-enter) both;
+}
+
+/* ── Toast slide ──────────────────────────────────────────────────────── */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(8px); }
+}
+
+.animate-toast-in  { animation: toast-in  var(--motion-base) var(--ease-enter) both; }
+.animate-toast-out { animation: toast-out var(--motion-fast) var(--ease-exit) both; }
+
+/* ── Batch slot staging bounce (U18) ──────────────────────────────────── */
+@keyframes stage-bounce {
+  from { transform: scale(0.94); }
+  to   { transform: scale(1); }
+}
+
+.animate-stage-bounce {
+  animation: stage-bounce var(--motion-fast) var(--ease-enter) both;
+}
+
+/* ── Kiosk now-line ambient glow (U18) ────────────────────────────────── */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* ── Modal scale entrance (U18) ───────────────────────────────────────── */
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-modal-in    { animation: modal-in    var(--motion-base) var(--ease-enter) both; }
+.animate-backdrop-in { animation: backdrop-in var(--motion-slow)  var(--ease-enter) both; }
+
+/* ── Accessibility: respect reduced motion preference ─────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── AI Coach typing indicator (U19) ──────────────────────────────────── */
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-4px); opacity: 1; }
+}
+
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #0F6B3E;
+  animation: dot-bounce 1.2s ease-in-out infinite;
+}
+
+/* ── Notification bell ring (U19) ─────────────────────────────────────── */
+@keyframes bell-ring {
+  0%   { transform: rotate(0deg); }
+  15%  { transform: rotate(15deg); }
+  30%  { transform: rotate(-12deg); }
+  45%  { transform: rotate(8deg); }
+  60%  { transform: rotate(-5deg); }
+  75%  { transform: rotate(2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.animate-bell-ring {
+  animation: bell-ring 0.6s var(--ease-enter) both;
+}
+
+/* ── SVG empty-state wobble (U19) ─────────────────────────────────────── */
+@keyframes wobble {
+  0%, 100% { transform: rotate(-2deg); }
+  50%      { transform: rotate(2deg); }
+}
+
+.animate-wobble {
+  animation: wobble 2s ease-in-out infinite;
+}
+
+/* ── SVG stroke draw (U19) ────────────────────────────────────────────── */
+@keyframes stroke-draw {
+  from { stroke-dashoffset: 100; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.animate-stroke-draw {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: stroke-draw 0.8s var(--ease-enter) forwards;
+}
+
+/* ── Body composition ring arc draw (U19) ─────────────────────────────── */
+@keyframes draw-arc {
+  from { stroke-dashoffset: var(--arc-length, 300); }
+  to   { stroke-dashoffset: 0; }
+}
+
+.animate-draw-arc {
+  animation: draw-arc 0.8s var(--ease-enter) forwards;
+}
+
+/* ── View Transitions (U19) ───────────────────────────────────────────── */
+::view-transition-old(root) {
+  animation: var(--motion-fast) var(--ease-exit) both fade-out;
+}
+
+::view-transition-new(root) {
+  animation: var(--motion-base) var(--ease-enter) both fade-in;
+}
+
+@keyframes fade-out {
+  to { opacity: 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+}

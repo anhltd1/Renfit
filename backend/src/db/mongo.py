@@ -28,3 +28,15 @@ def notifications_collection() -> Collection:
 
 def trainer_notifications_collection() -> Collection:
     return get_renfit_database()[col.TRAINER_NOTIFICATION]
+
+
+def trainer_notes_collection() -> Collection:
+    return get_renfit_database()[col.TRAINER_NOTE]
+
+
+def blocked_slots_collection() -> Collection:
+    return get_renfit_database()[col.BLOCKED_SLOT]
+
+
+def push_subscriptions_collection() -> Collection:
+    return get_renfit_database()[col.PUSH_SUBSCRIPTION]

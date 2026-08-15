@@ -19,11 +19,13 @@ import { DesktopSidebar, type DashboardTab } from '../components/DesktopSidebar'
 import { DesktopHeader } from '../components/DesktopHeader';
 import { OverviewTab } from '../components/OverviewTab';
 import { BookingTab } from '../components/BookingTab';
+import { MemberHomeDashboard } from '../components/MemberHomeDashboard';
+import { TabPanel } from '../../shared/primitives/TabPanel';
 
 export function UserDashboardPage() {
   const navigate = useNavigate();
   const { user } = useProfile();
-  const [tab, setTab] = useState<DashboardTab>('overview');
+  const [tab, setTab] = useState<DashboardTab>('home');
   const [chatKey, setChatKey] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -59,20 +61,24 @@ export function UserDashboardPage() {
           tab={tab}
           customerId={user.id}
           onNavigateFromNotification={(t) => {
-            if (t === 'overview' || t === 'chat' || t === 'bookings') setTab(t);
+            if (t === 'home' || t === 'overview' || t === 'chat' || t === 'bookings') setTab(t);
           }}
         />
 
-        {/* Tab content stays mounted (hidden) so chat history/scroll survive tab switches. */}
-        <div className="flex-1 min-h-0 overflow-y-auto" style={{ display: tab === 'overview' ? 'block' : 'none' }}>
+        {/* Tab content stays mounted (hidden) so chat history/scroll survive tab
+            switches; TabPanel adds the fade-in that plain display toggling can't. */}
+        <TabPanel active={tab === 'home'} className="flex-1 min-h-0 overflow-y-auto">
+          <MemberHomeDashboard user={user} onNavigateTab={(t) => setTab(t as DashboardTab)} />
+        </TabPanel>
+        <TabPanel active={tab === 'overview'} className="flex-1 min-h-0 overflow-y-auto">
           <OverviewTab />
-        </div>
-        <div className="flex-1 min-h-0 flex flex-col" style={{ display: tab === 'chat' ? 'flex' : 'none' }}>
+        </TabPanel>
+        <TabPanel active={tab === 'chat'} display="flex" className="flex-1 min-h-0 flex-col">
           <ChatPanel key={chatKey} variant="full" showHeader={false} />
-        </div>
-        <div className="flex-1 min-h-0 overflow-y-auto" style={{ display: tab === 'bookings' ? 'block' : 'none' }}>
+        </TabPanel>
+        <TabPanel active={tab === 'bookings'} className="flex-1 min-h-0 overflow-y-auto">
           <BookingTab user={user} />
-        </div>
+        </TabPanel>
       </main>
 
       {showOnboarding && (
@@ -80,7 +86,7 @@ export function UserDashboardPage() {
           onTabChange={(t: OnboardingTab) => setTab(t)}
           onFinish={() => {
             setShowOnboarding(false);
-            setTab('overview');
+            setTab('home');
           }}
         />
       )}

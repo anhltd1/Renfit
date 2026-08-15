@@ -109,7 +109,14 @@ export function MobileShell() {
 
   return (
     <div className="h-[100dvh] w-full flex flex-col overflow-hidden bg-[#0B0B0B] text-white">
-      <div className="flex-1 min-h-0 flex flex-col">{content}</div>
+      {/* Keyed on tab + stack position so the entrance replays on every
+          navigation (the screens already remount, the wrapper would not). */}
+      <div
+        key={`${activeTab}:${profileStack.current}`}
+        className="flex-1 min-h-0 flex flex-col animate-panel-in"
+      >
+        {content}
+      </div>
       <BottomTabBar
         active={activeTab}
         onChange={(tab) => {
