@@ -29,7 +29,18 @@ from src.services.blocked_slot_service import (
     get_affected_bookings,
     list_blocked_slots,
 )
-from src.services.booking_service import admin_assign_booking, list_window_bookings, set_booking_status
+from src.services.booking_service import (
+    admin_assign_booking,
+    attendance_summary,
+    list_window_bookings,
+    set_booking_status,
+)
+from src.services.inbody_photo_service import (
+    InvalidPhotoError,
+    photo_urls,
+    save_photos,
+    validate_photos,
+)
 from src.services.notification_service import (
     list_trainer_notifications,
     mark_all_trainer_notifications_read,
@@ -89,6 +100,7 @@ class InbodyRecord(BaseModel):
     SMM: float
     BFM: float
     date_recorded: str
+    photos: list[str] = []  # photo URLs, first = cover
 
 
 class AddInbodyRequest(BaseModel):
@@ -97,6 +109,10 @@ class AddInbodyRequest(BaseModel):
     SMM: float = Field(..., ge=0)
     BFM: float = Field(..., ge=0)
     date_recorded: str | None = None   # ISO string; defaults to now if omitted
+    photos: list[str] = Field(
+        default_factory=list,
+        description="Base64 image data-URLs (max 6, ≤2MB each), first = cover",
+    )
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────
@@ -120,6 +136,7 @@ def admin_login(body: AdminLoginRequest) -> AdminLoginResponse:
 
 
 class TodaySession(BaseModel):
+    id: str  # booking id (for attendance actions)
     time: str
     hour: int
     customer_id: str
@@ -139,36 +156,47 @@ class TodayResponse(BaseModel):
     date: str
     sessions: list[TodaySession]
     pending: list[PendingBooking]
+    # Today's sessions still `approved` whose start time has passed (ICT).
+    unmarked_count: int = 0
+
+
+_TODAY_SESSION_STATUSES = ["approved", "completed", "no_show"]
 
 
 @router.get("/today", response_model=TodayResponse)
 def get_today(_: str = Depends(_require_admin)) -> TodayResponse:
-    """Today's approved sessions + all pending bookings (PT landing view)."""
-    from src.services.booking_service import today_ict, slot_hours
+    """Today's held sessions (approved/completed/no_show) + all pending bookings."""
+    from src.services.booking_service import now_ict, today_ict
 
     today = today_ict()
     today_prefix = today.isoformat()  # "2026-08-02"
+    current_hour = now_ict().hour
 
     # Build a customer_id → goal lookup
     customer_goals: dict[str, str] = {}
     for doc in customers_collection().find({}, {"_id": 0, "id": 1, "goal": 1}):
         customer_goals[doc.get("id", "")] = doc.get("goal", "")
 
-    # Today's approved bookings sorted by time
+    # Today's held sessions (approved + attendance-marked) sorted by time
     sessions: list[TodaySession] = []
+    unmarked_count = 0
     for doc in bookings_collection().find(
-        {"status": "approved", "time": {"$regex": f"^{today_prefix}"}},
+        {"status": {"$in": _TODAY_SESSION_STATUSES}, "time": {"$regex": f"^{today_prefix}"}},
     ).sort("time", 1):
         time_str = str(doc.get("time", ""))
         # Extract hour from "2026-08-02T14:00"
         hour = int(time_str[11:13]) if len(time_str) >= 13 else 0
         cid = doc.get("customer_id", "")
+        status = str(doc.get("status", "approved"))
+        if status == "approved" and hour <= current_hour:
+            unmarked_count += 1
         sessions.append(TodaySession(
+            id=str(doc.get("id", "")),
             time=time_str,
             hour=hour,
             customer_id=cid,
             customer_goal=customer_goals.get(cid, ""),
-            status="approved",
+            status=status,
         ))
 
     # All pending bookings across the window
@@ -184,7 +212,12 @@ def get_today(_: str = Depends(_require_admin)) -> TodayResponse:
             note=doc.get("note", ""),
         ))
 
-    return TodayResponse(date=today_prefix, sessions=sessions, pending=pending)
+    return TodayResponse(
+        date=today_prefix,
+        sessions=sessions,
+        pending=pending,
+        unmarked_count=unmarked_count,
+    )
 
 
 # ── Customers ──────────────────────────────────────────────────────────────
@@ -207,7 +240,8 @@ def list_customers(active: bool | None = None, _: None = Depends(_require_admin)
     # Build last/next session lookup from bookings
     today_iso = today_ict().isoformat()
     all_bookings = list(bookings_collection().find(
-        {"status": {"$in": ["approved", "pending"]}},
+        # `completed` counts as a real session; `no_show` does not.
+        {"status": {"$in": ["approved", "pending", "completed"]}},
         {"_id": 0, "customer_id": 1, "time": 1, "status": 1},
     ))
 
@@ -278,9 +312,25 @@ def get_inbody(
             SMM=float(doc.get("SMM", 0)),
             BFM=float(doc.get("BFM", 0)),
             date_recorded=_fmt_date(doc.get("date_recorded")),
+            photos=photo_urls(doc.get("photo_ids")),
         )
         for doc in docs
     ]
+
+
+class AttendanceSummaryOut(BaseModel):
+    customer_id: str
+    completed: int
+    no_show: int
+
+
+@router.get("/customers/{customer_id}/attendance", response_model=AttendanceSummaryOut)
+def get_customer_attendance(
+    customer_id: str, _: str = Depends(_require_admin)
+) -> AttendanceSummaryOut:
+    """Count of a customer's `completed` / `no_show` bookings."""
+    summary = attendance_summary(customer_id)
+    return AttendanceSummaryOut(customer_id=customer_id, **summary)
 
 
 @router.post("/customers/{customer_id}/inbody", response_model=InbodyRecord, status_code=201)
@@ -294,15 +344,24 @@ def add_inbody(
     if customers_collection().find_one({"id": customer_id}) is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy hội viên.")
 
+    # Validate every photo before writing anything (no partial records).
+    try:
+        parsed_photos = validate_photos(body.photos)
+    except InvalidPhotoError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
     record_date = body.date_recorded or datetime.utcnow().strftime("%Y-%m-%d")
+    inbody_id = str(uuid.uuid4())
+    photo_ids = save_photos(inbody_id=inbody_id, customer_id=customer_id, photos=parsed_photos)
     inbody = Inbody(
-        id=str(uuid.uuid4()),
+        id=inbody_id,
         customer_id=customer_id,
         height=body.height,
         weight=body.weight,
         SMM=body.SMM,
         BFM=body.BFM,
         date_recorded=record_date,
+        photo_ids=photo_ids,
     )
     inbody_collection().insert_one(inbody.model_dump())
     notify_inbody_added(
@@ -318,13 +377,18 @@ def add_inbody(
         SMM=inbody.SMM,
         BFM=inbody.BFM,
         date_recorded=_fmt_date(inbody.date_recorded),
+        photos=photo_urls(inbody.photo_ids),
     )
 
 
 # ── Bookings (trainer view) ─────────────────────────────────────────────────
 
 class UpdateBookingStatusRequest(BaseModel):
-    status: str = Field(..., description="pending | approved | rejected")
+    status: str = Field(
+        ...,
+        description="pending | approved | rejected | completed | no_show "
+        "(completed/no_show only once the session has started)",
+    )
 
 
 class AssignBookingRequest(BaseModel):

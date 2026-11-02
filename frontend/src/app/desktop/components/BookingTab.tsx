@@ -44,9 +44,6 @@ export function BookingTab({ user }: BookingTabProps) {
         <h2 className="text-white font-bold text-lg flex items-center gap-2">
           <CalendarDays className="w-5 h-5 text-[#0F6B3E]" /> Đặt Lịch Tập
         </h2>
-        <p className="text-white/50 text-sm mt-1">
-          Chọn khung giờ trống để đặt lịch. Phòng gym mở 08:00–20:00, nghỉ Chủ Nhật, tối đa {data?.capacity ?? 4} người/giờ.
-        </p>
       </div>
       <BookingCalendar
         customerId={user.id}

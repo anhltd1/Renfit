@@ -56,8 +56,7 @@ export function LoginPage() {
         </div>
       </div>
 
-      <h1 className="text-2xl font-bold text-white mb-1">Đăng nhập</h1>
-      <p className="text-white/50 text-sm mb-8">Đăng nhập để trò chuyện với AI Coach</p>
+      <h1 className="text-2xl font-bold text-white mb-8">Đăng nhập</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5 flex-1" data-testid="login-form">
         <div>

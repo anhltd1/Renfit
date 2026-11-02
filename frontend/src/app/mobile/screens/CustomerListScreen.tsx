@@ -1,16 +1,30 @@
 /**
  * Trainer mobile customer-list screen (U6 Trainer Mobile, TR-2, TR-6).
- * Root of the "Hội viên" tab: search + scrollable list, with refresh,
- * TrainerNotificationBell (reused as-is, NOTIF-1), and logout as header
- * actions — mirrors desktop DesktopAdminHeader's actions, relocated per
- * mobile's lack of a persistent top bar.
+ * Root of the "Hội viên" tab: search + filter chips + sort + scrollable list.
+ *
+ * U24 (FR-4/FR-10): header actions (bell + overflow menu with refresh /
+ * tablet mode / logout) come from the page as `headerActions`, shared by
+ * every mobile PT tab. Filter chips (`?filter=`) and sort options are the
+ * same as the desktop sidebar (`shared/clients`); archived rows show an
+ * "Đã nghỉ" marker. Pull-to-refresh still calls `onRefresh`.
  */
-import React, { useCallback } from 'react';
-import { LogOut, Phone, Plus, RefreshCw, User, Users } from 'lucide-react';
+import React, { useState } from 'react';
+import { Archive, Phone, Plus, User, Users } from 'lucide-react';
 import type { CustomerSummary } from '../../../lib/api/admin';
-import { TrainerNotificationBell } from '../../components/TrainerNotificationBell';
 import { StackHeader } from '../shell/StackHeader';
 import { PullToRefresh } from '../../shared/primitives/PullToRefresh';
+import { matchesQuery } from '../../shared/text/normalizeVi';
+import {
+  DEFAULT_CLIENT_FILTER,
+  SORT_OPTIONS,
+  filterClients,
+  isActiveClient,
+  sortClients,
+  type SortMode,
+} from '../../shared/clients/clientFilters';
+import { ClientFilterChips } from '../../shared/clients/ClientFilterChips';
+import { useClientFilter } from '../../shared/clients/useClientFilter';
+import { cn } from '../../shared/primitives/cn';
 
 /**
  * Memoized customer row (U7 Performance & PWA, MEMO-1) — avoids re-rendering
@@ -24,35 +38,46 @@ const CustomerRow = React.memo(function CustomerRow({
   customer: CustomerSummary;
   onSelect: (customer: CustomerSummary) => void;
 }) {
+  const archived = !isActiveClient(customer);
   return (
     <button
       type="button"
       data-testid={`admin-mobile-row-${customer.id}`}
       onClick={() => onSelect(customer)}
-      className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-xl hover:bg-white/5 border border-transparent transition-all"
+      className="w-full min-h-14 flex items-center gap-3 px-4 py-3 text-left rounded-xl hover:bg-white/5 active:bg-white/10 border border-transparent transition-colors"
     >
       {customer.avatar ? (
         <img
           src={customer.avatar}
-          alt={customer.id}
-          className="w-10 h-10 rounded-full object-cover shrink-0 border border-white/10"
+          alt=""
+          className={cn('w-10 h-10 rounded-full object-cover shrink-0 border border-white/10', archived && 'opacity-60')}
         />
       ) : (
         <div className="w-10 h-10 rounded-full bg-[#0F6B3E]/12 border border-[#0F6B3E]/20 flex items-center justify-center shrink-0">
-          <User className="w-4.5 h-4.5 text-[#0F6B3E]" />
+          <User className="w-4.5 h-4.5 text-primary-text" aria-hidden="true" />
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate text-white/75">{customer.id}</p>
-        <p className="text-white/35 text-xs truncate flex items-center gap-1 mt-0.5">
-          <Phone className="w-2.5 h-2.5 shrink-0" />
+        <p className={cn('text-sm font-medium truncate', archived ? 'text-white/60' : 'text-white/90')}>{customer.id}</p>
+        <p className="text-white/60 text-xs truncate flex items-center gap-1 mt-0.5 tabular-nums">
+          <Phone className="w-3 h-3 shrink-0" aria-hidden="true" />
           {customer.phone_number}
         </p>
       </div>
-      {customer.goal && (
-        <span className="text-[10px] px-2 py-0.5 rounded-full border shrink-0 max-w-[80px] truncate bg-white/5 border-white/10 text-white/40">
-          {customer.goal}
+      {archived ? (
+        <span
+          data-testid={`admin-mobile-row-archived-${customer.id}`}
+          className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border shrink-0 bg-[#f87171]/10 border-error-text/30 text-error-text"
+        >
+          <Archive className="w-3 h-3" aria-hidden="true" />
+          Đã nghỉ
         </span>
+      ) : (
+        customer.goal && (
+          <span className="text-xs px-2 py-0.5 rounded-full border shrink-0 max-w-[96px] truncate bg-white/5 border-white/10 text-white/60">
+            {customer.goal}
+          </span>
+        )
       )}
     </button>
   );
@@ -65,10 +90,9 @@ export interface CustomerListScreenProps {
   search: string;
   onSearchChange: (v: string) => void;
   onSelect: (customer: CustomerSummary) => void;
-  onRefresh: () => void;
-  refreshing: boolean;
-  onLogout: () => void;
-  onNavigateFromNotification: (view: string) => void;
+  onRefresh: () => void | Promise<void>;
+  /** Bell + overflow menu, shared by all mobile PT tabs (AdminHeaderActions). */
+  headerActions?: React.ReactNode;
   onCreateMember?: () => void;
 }
 
@@ -80,61 +104,58 @@ export function CustomerListScreen({
   onSearchChange,
   onSelect,
   onRefresh,
-  refreshing,
-  onLogout,
-  onNavigateFromNotification,
+  headerActions,
   onCreateMember,
 }: CustomerListScreenProps) {
-  const filtered = customers.filter(
-    (c) =>
-      c.id.toLowerCase().includes(search.toLowerCase()) ||
-      c.phone_number.includes(search) ||
-      c.goal.toLowerCase().includes(search.toLowerCase()),
+  const [filter, setFilter] = useClientFilter();
+  const [sort, setSort] = useState<SortMode>('alpha');
+
+  // U21 (FR-7): accent/case-insensitive Vietnamese match ("nguyen" finds "Nguyễn").
+  const filtered = sortClients(
+    filterClients(customers, filter).filter((c) => matchesQuery([c.id, c.phone_number, c.goal], search)),
+    sort,
   );
+  const hasConstraint = !!search || filter !== DEFAULT_CLIENT_FILTER || filtered.length !== customers.length;
 
   return (
     <div className="flex flex-col min-h-0 flex-1">
-      <StackHeader
-        title="Hội viên"
-        right={
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              data-testid="admin-mobile-refresh"
-              onClick={onRefresh}
-              disabled={refreshing}
-              className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/5 transition-all disabled:opacity-40"
-              title="Làm mới"
-              aria-label="Làm mới"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </button>
-            <TrainerNotificationBell onNavigate={onNavigateFromNotification} />
-            <button
-              type="button"
-              data-testid="admin-mobile-logout"
-              onClick={onLogout}
-              aria-label="Đăng xuất"
-              className="p-2 rounded-xl text-white/40 hover:text-red-400 hover:bg-red-400/5 transition-all"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        }
-      />
+      <StackHeader title="Hội viên" right={headerActions} />
 
-      <div className="px-4 py-3 border-b border-white/6">
+      <div className="px-4 py-3 border-b border-white/6 space-y-2">
         <input
           type="text"
           data-testid="admin-mobile-search"
+          aria-label="Tìm hội viên"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Tìm hội viên..."
-          className="w-full bg-white/5 border border-white/8 focus:border-[#0F6B3E] rounded-xl px-4 py-2.5 text-white placeholder:text-white/25 outline-none transition-colors text-sm"
+          className="w-full bg-white/5 border border-white/10 focus:border-[#3DBE7A] rounded-xl px-4 py-2.5 text-white placeholder:text-white/40 outline-none transition-colors text-base"
         />
+        <ClientFilterChips value={filter} onChange={setFilter} />
+        <div className="flex items-center gap-1.5" role="group" aria-label="Sắp xếp">
+          <span className="text-xs text-white/60 mr-1">Sắp xếp:</span>
+          {SORT_OPTIONS.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              data-testid={`admin-mobile-sort-${key}`}
+              aria-pressed={sort === key}
+              onClick={() => setSort(key)}
+              className={cn(
+                'tap-target inline-flex items-center justify-center px-3 rounded-full border text-xs transition-colors',
+                sort === key
+                  ? 'bg-[#0F6B3E]/20 border-primary-text/40 text-primary-text font-semibold'
+                  : 'border-white/10 text-white/60',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <PullToRefresh onRefresh={async () => { onRefresh(); }} className="p-2 space-y-0.5">
+      {/* Await the real load so the pull spinner stays until data arrives. */}
+      <PullToRefresh onRefresh={async () => { await onRefresh(); }} className="p-2 space-y-0.5">
         {loading && (
           <div className="space-y-1 p-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -149,13 +170,12 @@ export function CustomerListScreen({
           </div>
         )}
         {!loading && error && (
-          <p className="text-red-400 text-xs p-4 bg-red-400/10 rounded-xl m-2">{error}</p>
+          <p className="text-error-text text-sm p-4 bg-[#f87171]/10 rounded-xl m-2">{error}</p>
         )}
         {!loading && !error && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-white/25 gap-2">
-            <Users className="w-7 h-7" />
-            <p className="text-sm font-medium">{search ? 'Không tìm thấy hội viên.' : 'Chưa có hội viên nào.'}</p>
-            <p className="text-xs text-white/15">{search ? 'Thử tìm với từ khóa khác.' : 'Hội viên mới sẽ xuất hiện khi đăng ký.'}</p>
+          <div className="flex flex-col items-center justify-center py-12 text-white/60 gap-2">
+            <Users className="w-7 h-7" aria-hidden="true" />
+            <p className="text-sm font-medium">{hasConstraint ? 'Không tìm thấy hội viên.' : 'Chưa có hội viên nào.'}</p>
           </div>
         )}
         {!loading &&
@@ -164,14 +184,14 @@ export function CustomerListScreen({
       </PullToRefresh>
 
       {!loading && (
-        <div className="shrink-0 px-4 py-2.5 border-t border-white/6 bg-[#0A0A0A]/95 backdrop-blur-sm flex items-center justify-between">
-          <p className="text-white/25 text-xs">
-            {customers.length} hội viên
+        <div className="app-chrome shrink-0 px-4 py-2.5 border-t border-white/6 bg-[#0A0A0A]/95 backdrop-blur-sm flex items-center justify-between">
+          <p className="text-white/60 text-xs tabular-nums">
+            {hasConstraint ? `${filtered.length} / ${customers.length} hội viên` : `${customers.length} hội viên`}
           </p>
           {onCreateMember && (
             <button type="button" onClick={onCreateMember}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-[#0F6B3E] bg-[#0F6B3E]/10 border border-[#0F6B3E]/20 hover:bg-[#0F6B3E]/20 transition-all">
-              <Plus className="w-3.5 h-3.5" /> Tạo hội viên
+              className="tap-target flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-primary-text bg-[#0F6B3E]/10 border border-[#0F6B3E]/20 hover:bg-[#0F6B3E]/20 transition-colors">
+              <Plus className="w-3.5 h-3.5" aria-hidden="true" /> Tạo hội viên
             </button>
           )}
         </div>

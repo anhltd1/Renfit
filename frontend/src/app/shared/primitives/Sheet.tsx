@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from './cn';
 import { useFocusTrap } from './useFocusTrap';
+import { useBodyScrollLock } from './useBodyScrollLock';
 
 /**
  * Sheet primitive (U1 Foundation) — mobile bottom sheet, native-app style.
@@ -15,10 +17,12 @@ export interface SheetProps {
   onClose: () => void;
   title?: string;
   className?: string;
+  /** PT/ops sheet: adds `ops-surface` to the panel so hover-scale is neutralised inside the portal. */
+  ops?: boolean;
   children: React.ReactNode;
 }
 
-export function Sheet({ open, onClose, title, className, children }: SheetProps) {
+export function Sheet({ open, onClose, title, className, ops = false, children }: SheetProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(open, dialogRef);
 
@@ -29,12 +33,17 @@ export function Sheet({ open, onClose, title, className, children }: SheetProps)
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
+  useBodyScrollLock(open);
+
   if (!open) return null;
 
-  return (
+  // Portalled to <body>: a transformed ancestor (e.g. a screen mid-entrance
+  // animation) would otherwise become the containing block for `fixed` and
+  // clip the sheet to the content area, leaving the tab bar exposed.
+  return createPortal(
     <div
       data-testid="sheet-overlay"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm overscroll-contain"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
@@ -45,7 +54,11 @@ export function Sheet({ open, onClose, title, className, children }: SheetProps)
         tabIndex={-1}
         className={cn(
           'w-full max-w-lg rounded-t-3xl border-t border-x border-white/10 bg-[#0F0F0F]/95 backdrop-blur-xl',
+          // Tall forms scroll inside the sheet instead of running off-screen
+          // (matters most with the keyboard open, where --app-height shrinks).
+          'max-h-[calc(var(--app-height,100dvh)-1.5rem)] overflow-y-auto overscroll-contain',
           'p-6 pb-[calc(1.5rem+var(--safe-bottom,0px))] shadow-2xl animate-slide-up',
+          ops && 'ops-surface',
           className,
         )}
       >
@@ -54,6 +67,7 @@ export function Sheet({ open, onClose, title, className, children }: SheetProps)
         {title && <h3 className="text-white font-bold text-lg mb-4 leading-relaxed">{title}</h3>}
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

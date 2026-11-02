@@ -40,3 +40,11 @@ def blocked_slots_collection() -> Collection:
 
 def push_subscriptions_collection() -> Collection:
     return get_renfit_database()[col.PUSH_SUBSCRIPTION]
+
+
+def site_content_collection() -> Collection:
+    return get_renfit_database()[col.SITE_CONTENT]
+
+
+def inbody_photos_collection() -> Collection:
+    return get_renfit_database()[col.INBODY_PHOTO]

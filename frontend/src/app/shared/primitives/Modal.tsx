@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { cn } from './cn';
 import { useFocusTrap } from './useFocusTrap';
+import { useBodyScrollLock } from './useBodyScrollLock';
 
 /**
  * Modal primitive (U1 Foundation) — desktop-oriented centered dialog.
@@ -18,10 +20,12 @@ export interface ModalProps {
   onClose: () => void;
   title?: string;
   className?: string;
+  /** PT/ops dialog: adds `ops-surface` to the panel so hover-scale is neutralised inside the portal. */
+  ops?: boolean;
   children: React.ReactNode;
 }
 
-export function Modal({ open, onClose, title, className, children }: ModalProps) {
+export function Modal({ open, onClose, title, className, ops = false, children }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(open, dialogRef);
 
@@ -32,12 +36,15 @@ export function Modal({ open, onClose, title, className, children }: ModalProps)
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
+  useBodyScrollLock(open);
+
   if (!open) return null;
 
-  return (
+  // Portalled to <body> so transformed ancestors can't clip the overlay.
+  return createPortal(
     <div
       data-testid="modal-overlay"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overscroll-contain"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
@@ -48,6 +55,8 @@ export function Modal({ open, onClose, title, className, children }: ModalProps)
         tabIndex={-1}
         className={cn(
           'w-full max-w-md rounded-3xl border border-white/10 bg-[#0F0F0F]/95 backdrop-blur-xl p-8 shadow-2xl',
+          'max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain',
+          ops && 'ops-surface',
           className,
         )}
       >
@@ -58,7 +67,7 @@ export function Modal({ open, onClose, title, className, children }: ModalProps)
               type="button"
               data-testid="modal-close"
               onClick={onClose}
-              className="text-white/40 hover:text-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#0F6B3E] rounded"
+              className="tap-target inline-flex items-center justify-center text-white/60 hover:text-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A] rounded"
               aria-label="Đóng"
             >
               <X className="w-5 h-5" />
@@ -67,6 +76,7 @@ export function Modal({ open, onClose, title, className, children }: ModalProps)
         )}
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

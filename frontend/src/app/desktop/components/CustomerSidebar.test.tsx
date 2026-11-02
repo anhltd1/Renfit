@@ -89,6 +89,48 @@ describe('CustomerSidebar', () => {
     expect(screen.getByText('Tải dữ liệu thất bại.')).toBeInTheDocument();
   });
 
+  describe('compact controls', () => {
+    const baseProps = {
+      customers,
+      selectedId: null,
+      search: '',
+      onSearchChange: vi.fn(),
+      onSelect: vi.fn(),
+      loading: false,
+      error: '',
+    };
+
+    it('uses a filter select and a sort select instead of wrapped chips and pills', () => {
+      render(<CustomerSidebar {...baseProps} />);
+      expect(screen.getByTestId('select-client-filter')).toHaveValue('active');
+      expect(screen.getByTestId('select-client-sort')).toHaveValue('alpha');
+      expect(screen.queryByTestId('client-filter-active')).toBeNull();
+      expect(screen.getByRole('combobox', { name: 'Lọc hội viên' })).toBeInTheDocument();
+      expect(screen.getByRole('combobox', { name: 'Sắp xếp hội viên' })).toBeInTheDocument();
+    });
+
+    it('filter select switches to archived members and updates the count', () => {
+      const withArchived: CustomerSummary[] = [
+        ...customers,
+        { id: 'Le Van C', phone_number: '0900000003', goal: '', health_note: '', address: '', height: '', weight: '', avatar: '', age: 40, active: false },
+      ];
+      render(<CustomerSidebar {...baseProps} customers={withArchived} />);
+      expect(screen.queryByText('Le Van C')).toBeNull();
+      expect(screen.getByText('2 / 3 hội viên')).toBeInTheDocument();
+
+      fireEvent.change(screen.getByTestId('select-client-filter'), { target: { value: 'archived' } });
+      expect(screen.getByText('Le Van C')).toBeInTheDocument();
+      expect(screen.queryByText('Nguyen Van A')).toBeNull();
+    });
+
+    it('create is a compact icon button with an accessible name', () => {
+      const onCreateMember = vi.fn();
+      render(<CustomerSidebar {...baseProps} onCreateMember={onCreateMember} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Tạo hội viên' }));
+      expect(onCreateMember).toHaveBeenCalledOnce();
+    });
+  });
+
   it('calls onSearchChange when typing in the search input', () => {
     const onSearchChange = vi.fn();
     render(

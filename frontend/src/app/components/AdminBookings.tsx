@@ -11,7 +11,6 @@ import {
   Lock,
   Plus,
   RefreshCw,
-  RotateCcw,
   Search,
   UserRound,
   X,
@@ -24,7 +23,6 @@ import {
   assignBooking,
   fetchBookings,
   fetchCustomers,
-  updateBookingStatus,
   type AdminBookingItem,
   type AdminBookings as AdminBookingsData,
   type AdminBookingDay,
@@ -32,7 +30,14 @@ import {
   type CustomerSummary,
 } from '../../lib/api/admin';
 import { useFocusTrap } from '../shared/primitives/useFocusTrap';
-import { haptic } from '../shared/primitives/haptics';
+import { cn } from '../shared/primitives/cn';
+import { bookingAccessibleName, bookingStatusMeta } from '../shared/booking/statusMeta';
+import { StatusBadge } from '../shared/booking/StatusBadge';
+import { BookingStatusActions, useBookingStatusChange } from '../shared/booking/BookingStatusActions';
+import { matchesQuery } from '../shared/text/normalizeVi';
+import { useToast } from '../shared/hooks/useToast';
+import { useFreshness } from '../shared/hooks/useFreshness';
+import { FreshnessIndicator } from '../shared/components/FreshnessIndicator';
 
 /**
  * U8 Accessibility — this component's two hand-rolled overlays (status-
@@ -81,28 +86,33 @@ function withSundays(days: AdminBookingDay[]): RenderAdminDay[] {
   return result;
 }
 
-const STATUS_META: Record<BookingStatus, { label: string; pill: string }> = {
-  pending: {
-    label: 'Chờ duyệt',
-    pill: 'bg-amber-500/30 border-amber-400/70 text-amber-200 hover:bg-amber-500/45',
-  },
-  approved: {
-    label: 'Đã duyệt',
-    pill: 'bg-emerald-600/40 border-emerald-400/80 text-emerald-200 hover:bg-emerald-600/55',
-  },
-  rejected: {
-    label: 'Từ chối',
-    pill: 'bg-red-600/40 border-red-400/80 text-red-200 hover:bg-red-600/55',
-  },
+/** Capacity-consuming bookings (U22: completed / no_show keep their seat). */
+function occupiedCount(bookings: AdminBookingItem[]): number {
+  return bookings.filter((b) => b.status !== 'rejected').length;
+}
+
+const EMPTY_TOTALS: Record<BookingStatus, number> = {
+  pending: 0,
+  approved: 0,
+  rejected: 0,
+  completed: 0,
+  no_show: 0,
 };
 
 interface Selected {
   booking: AdminBookingItem;
   dateIso: string;
   hour: number;
+  /** Slot wall-clock time ("YYYY-MM-DDTHH:00", ICT) — decides attendance actions. */
+  time: string;
 }
 
-export function AdminBookings() {
+export interface AdminBookingsProps {
+  /** Rendered at the right end of the sub-header (U23). */
+  headerActions?: React.ReactNode;
+}
+
+export function AdminBookings({ headerActions }: AdminBookingsProps = {}) {
   const todayIso = new Date().toISOString().slice(0, 10);
 
   const [data, setData] = useState<AdminBookingsData | null>(null);
@@ -112,8 +122,8 @@ export function AdminBookings() {
   const [slideDir, setSlideDir] = useState<'left' | 'right' | null>(null);
   const [slideKey, setSlideKey] = useState(0);
   const [selected, setSelected] = useState<Selected | null>(null);
-  const [acting, setActing] = useState(false);
-  const [toast, setToast] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const { show: showToast, node: toastNode } = useToast();
+  const { lastUpdatedAt, offline } = useFreshness({ loading, error, data });
 
   // ── Assign-booking state ────────────────────────────────────────────────
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
@@ -143,14 +153,18 @@ export function AdminBookings() {
   const currentHour = nowHCM.getHours();
 
   const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    setError('');
+    if (!silent) {
+      setLoading(true);
+      setError('');
+    }
     try {
       setData(await fetchBookings());
+      setError('');
     } catch (err) {
+      if (silent) return; // background refresh never replaces the calendar with an error
       setError(err instanceof Error ? err.message : 'Không tải được lịch đặt.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
@@ -195,31 +209,21 @@ export function AdminBookings() {
     return () => clearInterval(id);
   }, [load]);
 
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3500);
-    return () => clearTimeout(t);
-  }, [toast]);
-
   useEscapeToClose(!!selected, () => setSelected(null));
   useEscapeToClose(!!assigning, () => setAssigning(null));
   useFocusTrap(!!selected, statusDialogRef);
   useFocusTrap(!!assigning, assignDialogRef);
 
-  const changeStatus = async (status: BookingStatus) => {
+  const refreshSilently = useCallback(() => load(true), [load]);
+  const { change: changeBookingStatus, pending: acting } = useBookingStatusChange({
+    show: showToast,
+    refresh: refreshSilently,
+  });
+
+  const changeStatus = async (next: BookingStatus, prev: BookingStatus) => {
     if (!selected) return;
-    setActing(true);
-    haptic();
-    try {
-      const r = await updateBookingStatus(selected.booking.id, status);
-      setToast({ kind: 'ok', text: r.message });
-      setSelected(null);
-      await load(true);
-    } catch (err) {
-      setToast({ kind: 'err', text: err instanceof Error ? err.message : 'Cập nhật thất bại.' });
-    } finally {
-      setActing(false);
-    }
+    const ok = await changeBookingStatus(selected.booking, next, prev);
+    if (ok) setSelected(null);
   };
 
   const visibleDays = data?.days.slice(offset, offset + WINDOW) ?? [];
@@ -232,54 +236,60 @@ export function AdminBookings() {
     ? data.days.reduce(
         (acc, day) => {
           day.slots.forEach((s) =>
-            s.bookings.forEach((b) => { acc[b.status] += 1; }),
+            s.bookings.forEach((b) => {
+              if (b.status in acc) acc[b.status] += 1;
+            }),
           );
           return acc;
         },
-        { pending: 0, approved: 0, rejected: 0 } as Record<BookingStatus, number>,
+        { ...EMPTY_TOTALS },
       )
-    : { pending: 0, approved: 0, rejected: 0 };
+    : EMPTY_TOTALS;
 
   return (
-    <div ref={calendarRef} className="flex flex-col h-full overflow-hidden scroll-mt-4">
-      {/* Sub-header */}
-      <div className="shrink-0 px-4 py-3 border-b border-white/10 flex flex-wrap items-center justify-between gap-2">
+    <div ref={calendarRef} className="flex flex-col h-full min-h-0 overflow-hidden scroll-mt-4">
+      {/* Sub-header (clears the notch on the mobile PWA; --safe-top is 0 on desktop) */}
+      <div
+        className="shrink-0 px-4 pb-3 border-b border-white/10 flex flex-wrap items-center justify-between gap-2"
+        style={{ paddingTop: 'max(0.75rem, var(--safe-top, 0px))' }}
+      >
         <div>
           <h2 className="text-white font-bold text-base">Lịch đặt — 2 tuần</h2>
-          <p className="text-white/50 text-xs mt-0.5">
-            08:00–20:00 mỗi ngày (nghỉ Chủ Nhật) · tối đa {data?.capacity ?? 4} người / giờ
-          </p>
         </div>
         <div className="flex items-center gap-3">
+          <FreshnessIndicator lastUpdatedAt={lastUpdatedAt} offline={offline} />
           <div className="hidden md:flex items-center gap-2 text-sm">
-            <StatPill cls="bg-amber-500/25 border-amber-400/60 text-amber-200" label={`Chờ: ${totals.pending}`} />
-            <StatPill cls="bg-emerald-600/30 border-emerald-400/60 text-emerald-200" label={`Duyệt: ${totals.approved}`} />
-            <StatPill cls="bg-red-600/30 border-red-400/60 text-red-200" label={`Từ chối: ${totals.rejected}`} />
+            <StatPill status="pending" label={`Chờ: ${totals.pending}`} />
+            <StatPill status="approved" label={`Duyệt: ${totals.approved}`} />
+            <StatPill status="rejected" label={`Từ chối: ${totals.rejected}`} />
+            {totals.completed > 0 && <StatPill status="completed" label={`Đã tập: ${totals.completed}`} />}
+            {totals.no_show > 0 && <StatPill status="no_show" label={`Vắng: ${totals.no_show}`} />}
           </div>
           <button type="button" onClick={() => setKioskOpen(true)} title="Lịch để bàn" aria-label="Lịch để bàn"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white/50 hover:text-[#0F6B3E] hover:bg-[#0F6B3E]/10 border border-white/10 hover:border-[#0F6B3E]/30 transition-all text-sm">
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white/60 hover:text-primary-text hover:bg-[#0F6B3E]/10 border border-white/10 hover:border-[#0F6B3E]/30 transition-all text-sm tap-target">
             <CalendarDays className="w-4 h-4" />
             <span className="hidden lg:inline">Lịch để bàn</span>
           </button>
           <button type="button" onClick={() => { const today = new Date().toISOString().slice(0, 10); setBlockOff({ date: today }); }} title="Chặn giờ" aria-label="Chặn giờ"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white/50 hover:text-amber-400 hover:bg-amber-400/10 border border-white/10 hover:border-amber-400/30 transition-all text-sm">
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white/60 hover:text-amber-400 hover:bg-amber-400/10 border border-white/10 hover:border-amber-400/30 transition-all text-sm tap-target">
             <Lock className="w-4 h-4" />
             <span className="hidden lg:inline">Chặn giờ</span>
           </button>
-          <button type="button" onClick={batch.active ? batch.deactivate : batch.activate}
+          <button type="button" onClick={() => (batch.active ? batch.deactivate() : batch.activate())}
             title={batch.active ? 'Thoát chế độ đặt loạt' : 'Đặt lịch loạt'} aria-label="Đặt lịch loạt"
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all text-sm ${
+            className={`tap-target flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all text-sm ${
               batch.active
-                ? 'text-[#0F6B3E] bg-[#0F6B3E]/15 border-[#0F6B3E]/40'
-                : 'text-white/50 hover:text-[#0F6B3E] hover:bg-[#0F6B3E]/10 border-white/10 hover:border-[#0F6B3E]/30'
+                ? 'text-primary-text bg-[#0F6B3E]/15 border-[#0F6B3E]/40'
+                : 'text-white/60 hover:text-primary-text hover:bg-[#0F6B3E]/10 border-white/10 hover:border-[#0F6B3E]/30'
             }`}>
             <Layers className="w-4 h-4" />
             <span className="hidden lg:inline">{batch.active ? 'Đang đặt loạt' : 'Đặt lịch loạt'}</span>
           </button>
           <button type="button" onClick={() => load()} title="Làm mới" aria-label="Làm mới"
-            className="p-2 rounded-xl text-white/50 hover:text-white hover:bg-white/5 transition-all">
+            className="tap-target flex items-center justify-center p-2 rounded-xl text-white/60 hover:text-white hover:bg-white/5 transition-all">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
+          {headerActions}
         </div>
       </div>
 
@@ -300,20 +310,20 @@ export function AdminBookings() {
           className="p-2 rounded-lg border border-white/15 text-white/60 hover:text-white hover:border-[#0F6B3E]/60 disabled:opacity-25 transition-all">
           <ChevronRight className="w-4 h-4" />
         </button>
-        <span className="text-white/30 text-xs ml-1">
+        <span className="text-white/60 text-xs ml-1">
           {data ? `${offset + 1}–${Math.min(offset + WINDOW, data.days.length)} / ${data.days.length} ngày` : ''}
         </span>
       </div>
 
       {/* Calendar */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-auto p-4">
+      <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-auto overscroll-contain p-4">
         {loading && !data ? (
-          <div className="flex flex-col items-center justify-center py-24 text-white/40 gap-3">
+          <div className="flex flex-col items-center justify-center py-24 text-white/60 gap-3">
             <Loader2 className="w-7 h-7 animate-spin" />
             <p className="text-base">Đang tải...</p>
           </div>
-        ) : error ? (
-          <div className="bg-red-400/10 border border-red-400/25 text-red-300 rounded-xl px-5 py-4 text-base">{error}</div>
+        ) : error && !data ? (
+          <div className="bg-red-400/10 border border-red-400/25 text-error-text rounded-xl px-5 py-4 text-base">{error}</div>
         ) : data ? (
           <div
             key={slideKey}
@@ -323,17 +333,17 @@ export function AdminBookings() {
             {/* Header row */}
             <div className="grid sticky top-0 z-10"
               style={{ gridTemplateColumns: `72px repeat(${renderDays.length}, minmax(150px, 1fr))` }}>
-              <div className="bg-[#0A0A0A] border-b border-r border-white/10 p-3 flex items-center justify-center">
-                <Clock className="w-4 h-4 text-white/40" />
+              <div className="bg-[#0B0B0B] border-b border-r border-white/10 p-3 flex items-center justify-center sticky left-0 z-20">
+                <Clock className="w-4 h-4 text-white/60" />
               </div>
               {renderDays.map((entry) => {
                 if (entry.kind === 'sunday') {
                   return (
-                    <div key={entry.date} className="border-b border-white/10 p-3 text-center bg-[#0A0A0A] relative overflow-hidden">
+                    <div key={entry.date} className="border-b border-white/10 p-3 text-center bg-[#0B0B0B] relative overflow-hidden">
                       <div className="absolute inset-0 opacity-[0.07]" style={{ background: 'repeating-linear-gradient(-45deg, #fff 0px, #fff 1px, transparent 1px, transparent 8px)' }} />
-                      <p className="font-bold text-base leading-tight text-red-400/50">CN</p>
-                      <p className="text-sm mt-0.5 font-medium text-white/25">{fmtDayLabel(entry.date)}</p>
-                      <span className="inline-block mt-1 text-[11px] bg-red-500/10 text-red-400/60 px-2 py-0.5 rounded-full font-semibold border border-red-500/15">
+                      <p className="font-bold text-base leading-tight text-error-text">CN</p>
+                      <p className="text-sm mt-0.5 font-medium text-white/60">{fmtDayLabel(entry.date)}</p>
+                      <span className="inline-block mt-1 text-xs bg-red-500/10 text-error-text px-2 py-0.5 rounded-full font-semibold border border-red-500/15">
                         Nghỉ
                       </span>
                     </div>
@@ -345,16 +355,16 @@ export function AdminBookings() {
                 return (
                   <div key={day.date}
                     className={`border-b border-white/10 p-3 text-center transition-colors ${
-                      isToday ? 'bg-[#0F6B3E]' : 'bg-[#0A0A0A]'
+                      isToday ? 'bg-[#0F6B3E]' : 'bg-[#0B0B0B]'
                     }`}>
                     <p className={`font-bold text-base leading-tight ${isToday ? 'text-white' : 'text-white/90'}`}>
                       {VIET_DAYS[dowIdx]}
                     </p>
-                    <p className={`text-sm mt-0.5 font-medium ${isToday ? 'text-white/80' : 'text-white/50'}`}>
+                    <p className={`text-sm mt-0.5 font-medium ${isToday ? 'text-white/80' : 'text-white/60'}`}>
                       {fmtDayLabel(day.date)}
                     </p>
                     {isToday && (
-                      <span className="inline-block mt-1 text-[11px] bg-white/20 text-white px-2 py-0.5 rounded-full font-semibold">
+                      <span className="inline-block mt-1 text-xs bg-white/20 text-white px-2 py-0.5 rounded-full font-semibold">
                         Hôm nay
                       </span>
                     )}
@@ -374,12 +384,12 @@ export function AdminBookings() {
                 style={{ gridTemplateColumns: `72px repeat(${renderDays.length}, minmax(150px, 1fr))` }}
               >
                 {/* Hour label */}
-                <div className={`border-r border-white/10 px-3 flex items-center justify-center text-sm font-semibold ${
+                <div className={`border-r border-white/10 px-3 flex items-center justify-center text-sm font-semibold tabular-nums sticky left-0 z-[5] ${
                   isCurrentHour
-                    ? 'bg-[#0F6B3E]/15 text-[#0F6B3E] border-r-[#0F6B3E]/30'
-                    : `text-white/70 ${rowIdx % 2 === 0 ? 'bg-white/[0.02]' : ''}`
+                    ? 'bg-[#0B1B12] text-primary-text border-r-[#0F6B3E]/30'
+                    : `text-white/70 ${rowIdx % 2 === 0 ? 'bg-[#0C0C0C]' : 'bg-[#0B0B0B]'}`
                 }`}>
-                  {isCurrentHour && <span className="w-1.5 h-1.5 rounded-full bg-[#0F6B3E] animate-pulse mr-1.5 shrink-0" />}
+                  {isCurrentHour && <span className="w-1.5 h-1.5 rounded-full bg-[#0F6B3E] mr-1.5 shrink-0" />}
                   {String(hour).padStart(2, '0')}:00
                 </div>
                 {/* Booking cells */}
@@ -420,7 +430,7 @@ export function AdminBookings() {
                       >
                         <div className="absolute inset-0" style={{ background: 'repeating-linear-gradient(-45deg, transparent 0px, transparent 6px, rgba(239,68,68,0.06) 6px, rgba(239,68,68,0.06) 7px)' }} />
                         <div className="relative flex items-center justify-center h-full p-2">
-                          <span className="text-[10px] bg-red-500/15 text-red-400/70 px-2 py-0.5 rounded-full font-semibold border border-red-500/20">
+                          <span className="text-xs bg-red-500/15 text-error-text px-2 py-0.5 rounded-full font-semibold border border-red-500/20">
                             Đã chặn
                           </span>
                         </div>
@@ -439,34 +449,52 @@ export function AdminBookings() {
                         openAssign();
                       }}
                       aria-label={`Đặt lịch tập lúc ${String(hour).padStart(2, '0')}:00 ${fmtDayLabel(day.date)}`}
-                      className={`border-b border-r border-white/8 p-2 min-h-[88px] space-y-1.5 relative group/cell cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0F6B3E] ${
+                      className={`border-b border-r border-white/8 p-2 min-h-[88px] space-y-1.5 relative group/cell cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#3DBE7A] ${
                         isStaged
-                          ? 'bg-[#0F6B3E]/15 border-2 border-dashed border-[#0F6B3E]/60 animate-stage-bounce'
+                          ? 'bg-[#0F6B3E]/15 border-2 border-dashed border-[#0F6B3E]/60'
                           : isNowCell
                           ? 'bg-[#0F6B3E]/30 border-t-2 border-t-[#0F6B3E] border-l-2 border-l-[#0F6B3E]'
                           : isToday
                           ? 'bg-[#0F6B3E]/[0.05] border-l-2 border-l-[#0F6B3E]/40 hover:bg-[#0F6B3E]/10'
                           : rowIdx % 2 === 0 ? 'bg-white/[0.02] hover:bg-white/[0.05]' : 'hover:bg-white/[0.03]'
                       }`}>
-                      {/* Hover ring overlay */}
+                      {isStaged && <Check data-testid="staged-check" aria-hidden="true" className="w-4 h-4 text-primary-text absolute right-2 top-2 pointer-events-none" />}
+                      {/* Hover ring overlay (border colour only, no transform) */}
                       <div className="absolute inset-0 border-2 border-[#0F6B3E]/0 group-hover/cell:border-[#0F6B3E]/25 rounded transition-all pointer-events-none" />
 
                       {slot.bookings.map((b) => {
-                        const meta = STATUS_META[b.status];
+                        const meta = bookingStatusMeta[b.status] ?? bookingStatusMeta.pending;
+                        const Icon = meta.Icon;
                         return (
                           <button key={b.id} type="button"
-                            onClick={(e) => { e.stopPropagation(); setSelected({ booking: b, dateIso: day.date, hour }); }}
-                            className={`w-full text-left px-3 py-1.5 rounded-lg border text-sm leading-tight font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F6B3E] ${meta.pill}`}
-                            title={`${b.customer_id} · ${meta.label}`}>
-                            <span className="block truncate">{b.customer_id}</span>
+                            data-testid={`booking-pill-${b.status}`}
+                            onClick={(e) => { e.stopPropagation(); setSelected({ booking: b, dateIso: day.date, hour, time: slot.time }); }}
+                            aria-label={bookingAccessibleName({ customer_id: b.customer_id, time: slot.time, status: b.status })}
+                            className={cn(
+                              'w-full flex items-center gap-1.5 text-left px-3 py-1.5 rounded-lg text-sm leading-tight font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]',
+                              'tap-target',
+                              meta.pillClass,
+                              'no-underline',
+                            )}>
+                            <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                            <span className={cn('block truncate', meta.strike && 'line-through')}>{b.customer_id}</span>
                           </button>
                         );
                       })}
 
+                      {/* Persistent faint "+" while the slot has free capacity */}
+                      {slot.bookings.length === 0 && data.capacity > 0 && (
+                        <Plus
+                          data-testid="cell-free-plus"
+                          aria-hidden="true"
+                          className="w-4 h-4 text-white/60 group-hover/cell:text-primary-text absolute right-2 top-2 pointer-events-none"
+                        />
+                      )}
+
                       {/* Count + hover assign hint */}
                       <div className="flex items-center justify-between pt-0.5">
-                        <span className="text-white/35 text-xs">{slot.bookings.length} / {data.capacity}</span>
-                        <span className="flex items-center gap-0.5 text-[#0F6B3E]/0 group-hover/cell:text-[#0F6B3E] text-xs font-semibold transition-colors">
+                        <span className="text-white/60 text-xs tabular-nums">{occupiedCount(slot.bookings)} / {data.capacity}</span>
+                        <span className="flex items-center gap-0.5 text-primary-text/0 group-hover/cell:text-primary-text text-xs font-semibold transition-colors">
                           <Plus className="w-3 h-3" /> Đặt lịch
                         </span>
                       </div>
@@ -488,13 +516,14 @@ export function AdminBookings() {
             className="bg-[#111] border border-white/12 rounded-2xl w-full max-w-sm shadow-2xl p-6">
             <div className="flex items-start justify-between mb-5">
               <h3 className="text-white font-bold text-xl">Cập nhật lịch đặt</h3>
-              <button type="button" onClick={() => setSelected(null)} aria-label="Đóng" className="text-white/40 hover:text-white transition-colors">
+              <button type="button" onClick={() => setSelected(null)} aria-label="Đóng cập nhật lịch đặt"
+                className="tap-target flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="bg-[#0F6B3E]/10 border border-[#0F6B3E]/25 rounded-xl p-4 mb-5 flex items-start gap-4">
               <div className="w-11 h-11 rounded-xl bg-[#0F6B3E]/25 flex items-center justify-center shrink-0">
-                <CalendarCheck className="w-5 h-5 text-[#0F6B3E]" />
+                <CalendarCheck className="w-5 h-5 text-primary-text" />
               </div>
               <div>
                 <p className="text-white font-semibold text-base">{selected.booking.customer_id}</p>
@@ -505,39 +534,27 @@ export function AdminBookings() {
                 <p className="text-white/60 text-sm">
                   {String(selected.hour).padStart(2, '0')}:00 – {String(selected.hour + 1).padStart(2, '0')}:00
                 </p>
-                <span className={`inline-block mt-2 px-2.5 py-0.5 rounded-full border text-xs font-medium ${STATUS_META[selected.booking.status].pill}`}>
-                  {STATUS_META[selected.booking.status].label}
-                </span>
+                <StatusBadge status={selected.booking.status} size="md" className="mt-2" />
               </div>
             </div>
-            <p className="text-white/50 text-sm mb-3">Đổi trạng thái thành:</p>
-            <div className="grid grid-cols-3 gap-2">
-              <button type="button" disabled={acting} onClick={() => changeStatus('approved')}
-                className="flex flex-col items-center gap-1.5 py-3 rounded-xl border border-[#0F6B3E]/50 bg-[#0F6B3E]/15 hover:bg-[#0F6B3E]/30 text-[#6ee7b7] transition-all disabled:opacity-50">
-                <Check className="w-5 h-5" />
-                <span className="text-sm font-semibold">Chấp nhận</span>
-              </button>
-              <button type="button" disabled={acting} onClick={() => changeStatus('rejected')}
-                className="flex flex-col items-center gap-1.5 py-3 rounded-xl border border-red-500/50 bg-red-500/10 hover:bg-red-500/25 text-red-300 transition-all disabled:opacity-50">
-                <X className="w-5 h-5" />
-                <span className="text-sm font-semibold">Từ chối</span>
-              </button>
-              <button type="button" disabled={acting} onClick={() => changeStatus('pending')}
-                className="flex flex-col items-center gap-1.5 py-3 rounded-xl border border-white/20 bg-white/5 hover:bg-white/12 text-white/70 transition-all disabled:opacity-50">
-                <RotateCcw className="w-5 h-5" />
-                <span className="text-sm font-semibold">Chờ duyệt</span>
-              </button>
-            </div>
+            <p className="text-white/60 text-sm mb-3">Đổi trạng thái thành:</p>
+            <BookingStatusActions
+              booking={{
+                id: selected.booking.id,
+                customer_id: selected.booking.customer_id,
+                time: selected.time,
+                status: selected.booking.status,
+              }}
+              onChange={changeStatus}
+              busy={acting}
+            />
           </div>
         </div>
       )}
 
       {/* Assign-booking modal */}
       {assigning && (() => {
-        const filtered = customers.filter((c) =>
-          assignSearch === '' ||
-          c.id.toLowerCase().includes(assignSearch.toLowerCase()),
-        );
+        const filtered = customers.filter((c) => matchesQuery([c.id, c.phone_number], assignSearch));
         return (
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={(e) => e.target === e.currentTarget && setAssigning(null)}>
@@ -546,7 +563,8 @@ export function AdminBookings() {
               {/* Header */}
               <div className="flex items-start justify-between">
                 <h3 className="text-white font-bold text-xl">Đặt lịch tập cho hội viên</h3>
-                <button type="button" onClick={() => setAssigning(null)} aria-label="Đóng" className="text-white/40 hover:text-white transition-colors">
+                <button type="button" onClick={() => setAssigning(null)} aria-label="Đóng đặt lịch tập"
+                  className="tap-target flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -554,7 +572,7 @@ export function AdminBookings() {
               {/* Time info */}
               <div className="bg-[#0F6B3E]/10 border border-[#0F6B3E]/25 rounded-xl p-4 flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-[#0F6B3E]/25 flex items-center justify-center shrink-0">
-                  <CalendarCheck className="w-5 h-5 text-[#0F6B3E]" />
+                  <CalendarCheck className="w-5 h-5 text-primary-text" />
                 </div>
                 <div>
                   <p className="text-white font-semibold text-sm">
@@ -569,11 +587,13 @@ export function AdminBookings() {
 
               {/* Customer search + select */}
               <div>
-                <p className="text-white/70 text-sm font-semibold mb-2">Chọn hội viên</p>
+                <label htmlFor="assign-member-search" className="block text-white/70 text-sm font-semibold mb-2">Chọn hội viên</label>
                 <div className="relative mb-2">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" aria-hidden="true" />
                   <input
-                    type="text" placeholder="Tìm theo tên..."
+                    id="assign-member-search"
+                    data-testid="input-assign-search"
+                    type="search" placeholder="Tìm theo tên hoặc số điện thoại..."
                     value={assignSearch}
                     onChange={(e) => setAssignSearch(e.target.value)}
                     className="w-full bg-white/[0.06] border border-white/12 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#0F6B3E]/60 transition-colors"
@@ -581,7 +601,7 @@ export function AdminBookings() {
                 </div>
                 <div className="max-h-[160px] overflow-y-auto flex flex-col gap-1 pr-0.5">
                   {filtered.length === 0 ? (
-                    <p className="text-white/30 text-sm text-center py-3">Không tìm thấy hội viên</p>
+                    <p className="text-white/60 text-sm text-center py-3">Không tìm thấy hội viên</p>
                   ) : (
                     filtered.map((c) => (
                       <button key={c.id} type="button"
@@ -591,9 +611,9 @@ export function AdminBookings() {
                             ? 'bg-[#0F6B3E]/20 border-[#0F6B3E]/50 text-white'
                             : 'bg-white/[0.04] border-white/8 text-white/70 hover:border-white/20 hover:text-white'
                         }`}>
-                        <UserRound className="w-4 h-4 shrink-0 text-white/40" />
+                        <UserRound className="w-4 h-4 shrink-0 text-white/60" />
                         <span className="truncate font-medium">{c.id}</span>
-                        {assignCustomerId === c.id && <Check className="w-4 h-4 ml-auto shrink-0 text-[#0F6B3E]" />}
+                        {assignCustomerId === c.id && <Check className="w-4 h-4 ml-auto shrink-0 text-primary-text" />}
                       </button>
                     ))
                   )}
@@ -614,9 +634,20 @@ export function AdminBookings() {
                       await assignBooking(assignCustomerId, assigning.time);
                       setAssigning(null);
                       await load(true);
-                      setToast({ kind: 'ok', text: `Đã đặt lịch tập cho ${assignCustomerId}.` });
+                      const assignedId = assignCustomerId;
+                      showToast({
+                        kind: 'ok',
+                        text: `Đã đặt lịch tập cho ${assignedId}.`,
+                        action: {
+                          label: 'Đặt thêm buổi',
+                          onClick: () => {
+                            const m = customers.find((c) => c.id === assignedId);
+                            if (m) batch.activate(m);
+                          },
+                        },
+                      });
                     } catch (err) {
-                      setToast({ kind: 'err', text: err instanceof Error ? err.message : 'Đặt lịch thất bại.' });
+                      showToast({ kind: 'err', text: err instanceof Error ? err.message : 'Đặt lịch thất bại.' });
                     } finally {
                       setAssignActing(false);
                     }
@@ -630,17 +661,8 @@ export function AdminBookings() {
         );
       })()}
 
-      {/* Toast */}
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 w-full max-w-sm flex justify-center animate-toast-in">
-          <div className={`w-full px-6 py-3.5 rounded-xl border shadow-2xl flex items-center gap-2.5 text-base font-medium ${
-            toast.kind === 'ok' ? 'bg-[#0F6B3E] border-[#0F6B3E]/60 text-white' : 'bg-red-500 border-red-500/60 text-white'
-          }`}>
-            {toast.kind === 'ok' ? <Check className="w-5 h-5 shrink-0" /> : <X className="w-5 h-5 shrink-0" />}
-            {toast.text}
-          </div>
-        </div>
-      )}
+      {/* Toast (shared useToast — undo action for status changes) */}
+      {toastNode}
 
       {/* Kiosk mode */}
       {kioskOpen && <CalendarKiosk onClose={() => setKioskOpen(false)} />}
@@ -665,11 +687,11 @@ export function AdminBookings() {
           onSubmit={async () => {
             const result = await batch.submit();
             if (result && result.success_count > 0) {
-              setToast({ kind: 'ok', text: `Đã đặt ${result.success_count} buổi tập.` });
+              showToast({ kind: 'ok', text: `Đã đặt ${result.success_count} buổi tập.` });
               batch.deactivate();
               await load(true);
             } else {
-              setToast({ kind: 'err', text: 'Đặt lịch thất bại.' });
+              showToast({ kind: 'err', text: 'Đặt lịch thất bại.' });
             }
           }}
           onCancel={batch.deactivate}
@@ -681,6 +703,13 @@ export function AdminBookings() {
   );
 }
 
-function StatPill({ cls, label }: { cls: string; label: string }) {
-  return <span className={`px-3 py-1 rounded-full border text-sm font-medium ${cls}`}>{label}</span>;
+function StatPill({ status, label }: { status: BookingStatus; label: string }) {
+  const meta = bookingStatusMeta[status];
+  const Icon = meta.Icon;
+  return (
+    <span className={cn('inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium tabular-nums leading-relaxed', meta.pillClass, 'no-underline')}>
+      <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+      {label}
+    </span>
+  );
 }

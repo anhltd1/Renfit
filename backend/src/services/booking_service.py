@@ -5,8 +5,9 @@ Business rules
 * The gym is open 08:00–20:00, in 1-hour slots (08:00 … 19:00), every day
   except Sunday.
 * Each hourly slot can hold at most ``CAPACITY`` customers. A slot counts as
-  occupied while a booking is ``pending`` or ``approved``; ``rejected`` (and
-  cancelled/deleted) bookings free the slot again.
+  occupied while a booking is ``pending``, ``approved``, ``completed`` or
+  ``no_show``; ``rejected`` (and cancelled/deleted) bookings free the slot
+  again.
 * Only the rolling two-week window is bookable: from Monday of the *current*
   week through Saturday of *next* week (Sundays excluded).
 """
@@ -42,7 +43,33 @@ OPEN_HOUR = 8          # first slot starts at 08:00
 CLOSE_HOUR = 20        # gym closes at 20:00 → last slot starts at 19:00
 CAPACITY = 4           # max customers per hourly slot
 DEFAULT_TRAINER_ID = "admin"
-ACTIVE_STATUSES = (BookingStatus.PENDING.value, BookingStatus.APPROVED.value)
+# Statuses that occupy slot capacity. Attendance statuses (completed /
+# no_show) keep occupying the slot: a held session never reopens it.
+ACTIVE_STATUSES = (
+    BookingStatus.PENDING.value,
+    BookingStatus.APPROVED.value,
+    BookingStatus.COMPLETED.value,
+    BookingStatus.NO_SHOW.value,
+)
+# Bookings that are still "open" (not yet held/marked): the only ones a
+# member can cancel or a blocked slot can reject.
+OPEN_STATUSES = (BookingStatus.PENDING.value, BookingStatus.APPROVED.value)
+# Attendance statuses — only settable once the session has started.
+ATTENDANCE_STATUSES = (BookingStatus.COMPLETED.value, BookingStatus.NO_SHOW.value)
+
+# Allowed status transitions (single source of truth, see docs/data-model.md).
+_TRANSITIONS: dict[str, set[str]] = {
+    BookingStatus.PENDING.value: {BookingStatus.APPROVED.value, BookingStatus.REJECTED.value},
+    BookingStatus.APPROVED.value: {
+        BookingStatus.PENDING.value,
+        BookingStatus.REJECTED.value,
+        BookingStatus.COMPLETED.value,
+        BookingStatus.NO_SHOW.value,
+    },
+    BookingStatus.REJECTED.value: {BookingStatus.PENDING.value, BookingStatus.APPROVED.value},
+    BookingStatus.COMPLETED.value: {BookingStatus.NO_SHOW.value, BookingStatus.APPROVED.value},
+    BookingStatus.NO_SHOW.value: {BookingStatus.COMPLETED.value, BookingStatus.APPROVED.value},
+}
 
 
 def slot_hours() -> list[int]:
@@ -110,7 +137,7 @@ def is_valid_slot(key: str, today: date | None = None) -> bool:
 # ── Counting ─────────────────────────────────────────────────────────────────
 
 def active_counts() -> dict[str, int]:
-    """Number of active (pending+approved) bookings keyed by slot."""
+    """Number of capacity-consuming bookings (ACTIVE_STATUSES) keyed by slot."""
     counts: dict[str, int] = {}
     cursor = bookings_collection().find({"status": {"$in": list(ACTIVE_STATUSES)}})
     for doc in cursor:
@@ -260,6 +287,9 @@ def admin_assign_booking(
 
     # Re-activate or update an existing booking for this customer + slot.
     existing = coll.find_one({"customer_id": name, "time": key})
+    if existing is not None and existing.get("status") in ATTENDANCE_STATUSES:
+        # Never overwrite a marked attendance by re-assigning the slot.
+        return {"success": False, "message": "Buổi tập này đã được điểm danh."}
     if existing is not None:
         coll.update_one(
             {"_id": existing["_id"]},
@@ -387,7 +417,9 @@ def build_ai_availability(customer_id: str, date_filter: str | None = None) -> d
     if name:
         for doc in bookings_collection().find({"customer_id": name}):
             key = _normalize_time(doc.get("time"))
-            if key and doc.get("status") in ACTIVE_STATUSES:
+            # Only open (cancellable) bookings — attendance-marked ones are
+            # history, not "upcoming".
+            if key and doc.get("status") in OPEN_STATUSES:
                 my_bookings.append(
                     {
                         "booking_id": doc.get("id", ""),
@@ -455,6 +487,9 @@ def cancel_customer_booking(*, customer_id: str, booking_id: str) -> dict:
     doc = coll.find_one({"id": booking_id, "customer_id": name})
     if doc is None:
         return {"success": False, "message": "Không tìm thấy lịch đặt."}
+    if doc.get("status") in ATTENDANCE_STATUSES:
+        # Attendance history must not be erased by a member cancel.
+        return {"success": False, "message": "Không thể hủy buổi tập đã điểm danh."}
     coll.delete_one({"_id": doc["_id"]})
     # A cancelled slot should never remind (docs/notifications.md §3.2).
     retract_session_reminder(booking_id=booking_id)
@@ -479,10 +514,31 @@ def set_booking_status(*, booking_id: str, status: str) -> dict:
         return {"success": False, "message": "Không tìm thấy lịch đặt."}
 
     previous_status = doc.get("status")
+    target = new_status.value
 
-    # Guard capacity when (re)activating a booking.
-    if new_status in (BookingStatus.PENDING, BookingStatus.APPROVED):
-        key = _normalize_time(doc.get("time"))
+    def _ok() -> dict:
+        return {
+            "success": True,
+            "booking_id": booking_id,
+            "status": target,
+            "message": "Đã cập nhật trạng thái.",
+        }
+
+    # Same → same: idempotent no-op (no write, no notification).
+    if previous_status == target:
+        return _ok()
+
+    if target not in _TRANSITIONS.get(previous_status or "", set()):
+        return {"success": False, "message": "Không thể chuyển trạng thái này."}
+
+    # Attendance can only be marked once the session has started (ICT).
+    if target in ATTENDANCE_STATUSES and not _slot_started(doc.get("time")):
+        return {"success": False, "message": "Buổi tập chưa bắt đầu."}
+
+    # Guard capacity only when (re)activating a booking that did not hold a
+    # seat (rejected → pending/approved). Moves between capacity-consuming
+    # statuses don't change the slot's occupancy.
+    if target in OPEN_STATUSES and previous_status not in ACTIVE_STATUSES:
         active_others = sum(
             1
             for d in coll.find({"time": doc.get("time"), "status": {"$in": list(ACTIVE_STATUSES)}})
@@ -490,33 +546,49 @@ def set_booking_status(*, booking_id: str, status: str) -> dict:
         )
         if active_others >= CAPACITY:
             return {"success": False, "message": "Khung giờ này đã đầy."}
-        _ = key
 
-    coll.update_one({"_id": doc["_id"]}, {"$set": {"status": new_status.value}})
+    coll.update_one({"_id": doc["_id"]}, {"$set": {"status": target}})
 
-    if (
-        new_status == BookingStatus.APPROVED
-        and previous_status != BookingStatus.APPROVED.value
-    ):
-        # pending -> approved (docs/notifications.md §3.1).
+    # Attendance changes (into, out of, or between completed/no_show) send
+    # nothing and retract nothing (docs/notifications.md).
+    if target in ATTENDANCE_STATUSES or previous_status in ATTENDANCE_STATUSES:
+        return _ok()
+
+    if new_status == BookingStatus.APPROVED:
+        # pending/rejected -> approved (docs/notifications.md §3.1).
         notify_booking_approved(
             customer_id=doc.get("customer_id", ""),
             booking_id=booking_id,
             time_key=_normalize_time(doc.get("time")),
         )
-    elif (
-        previous_status == BookingStatus.APPROVED.value
-        and new_status != BookingStatus.APPROVED
-    ):
-        # No longer approved (e.g. reset to pending/rejected) — an unfired
+    elif previous_status == BookingStatus.APPROVED.value:
+        # No longer approved (reset to pending/rejected) — an unfired
         # reminder for this slot is now stale.
         retract_session_reminder(booking_id=booking_id)
 
+    return _ok()
+
+
+def _slot_started(raw_time: datetime | str | None) -> bool:
+    """True when the booking's slot start time is <= now (Asia/Ho_Chi_Minh)."""
+    parsed = _parse_slot_key(_normalize_time(raw_time))
+    if parsed is None:
+        return False
+    d, hour = parsed
+    return datetime(d.year, d.month, d.day, hour, tzinfo=ICT) <= now_ict()
+
+
+def attendance_summary(customer_id: str) -> dict[str, int]:
+    """Count a customer's attendance-marked bookings (all stored bookings)."""
+    coll = bookings_collection()
+    name = customer_id.strip()
     return {
-        "success": True,
-        "booking_id": booking_id,
-        "status": new_status.value,
-        "message": "Đã cập nhật trạng thái.",
+        "completed": coll.count_documents(
+            {"customer_id": name, "status": BookingStatus.COMPLETED.value}
+        ),
+        "no_show": coll.count_documents(
+            {"customer_id": name, "status": BookingStatus.NO_SHOW.value}
+        ),
     }
 
 

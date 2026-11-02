@@ -1,4 +1,4 @@
-"""Anthropic tool definitions and execution handlers.
+"""OpenAI tool definitions and execution handlers.
 
 All tools are scoped to the logged-in customer bound server-side
 (``customer_id``, taken from the authenticated session — never from model
@@ -26,72 +26,87 @@ def _field(tool_input: dict[str, Any], *keys: str) -> str:
     return ""
 
 
-ANTHROPIC_TOOLS: list[dict[str, Any]] = [
+OPENAI_TOOLS: list[dict[str, Any]] = [
     {
-        "name": "get_my_profile",
-        "description": (
-            "Xem hồ sơ cá nhân của khách đang chat (mục tiêu tập luyện, ghi chú sức khỏe, "
-            "chiều cao, cân nặng, tuổi...). CHỈ ĐỌC — dùng để cá nhân hoá lời khuyên, trả lời "
-            "khi khách hỏi 'bạn có biết thông tin của tôi không', hoặc động viên. "
-            "KHÔNG dùng để thay đổi thông tin — chat không thể cập nhật hồ sơ."
-        ),
-        "input_schema": {"type": "object", "properties": {}, "required": []},
+        "type": "function",
+        "function": {
+            "name": "get_my_profile",
+            "description": (
+                "Xem hồ sơ cá nhân của khách đang chat (mục tiêu tập luyện, ghi chú sức khỏe, "
+                "chiều cao, cân nặng, tuổi...). CHỈ ĐỌC — dùng để cá nhân hoá lời khuyên, trả lời "
+                "khi khách hỏi 'bạn có biết thông tin của tôi không', hoặc động viên. "
+                "KHÔNG dùng để thay đổi thông tin — chat không thể cập nhật hồ sơ."
+            ),
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
     },
     {
-        "name": "get_my_inbody_history",
-        "description": (
-            "Xem lịch sử chỉ số InBody (chiều cao, cân nặng, khối lượng cơ SMM, khối lượng mỡ BFM) "
-            "của khách đang chat, do HLV đo và cập nhật sau mỗi lần scan. Bao gồm số liệu mới nhất "
-            "và mức thay đổi so với lần đo đầu tiên — dùng để động viên và nhận xét tiến độ."
-        ),
-        "input_schema": {"type": "object", "properties": {}, "required": []},
+        "type": "function",
+        "function": {
+            "name": "get_my_inbody_history",
+            "description": (
+                "Xem lịch sử chỉ số InBody (chiều cao, cân nặng, khối lượng cơ SMM, khối lượng mỡ BFM) "
+                "của khách đang chat, do HLV đo và cập nhật sau mỗi lần scan. Bao gồm số liệu mới nhất "
+                "và mức thay đổi so với lần đo đầu tiên — dùng để động viên và nhận xét tiến độ."
+            ),
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
     },
     {
-        "name": "get_booking_availability",
-        "description": (
-            "Xem khung giờ còn trống (08:00–20:00, trừ Chủ Nhật) và lịch tập hiện tại của "
-            "khách đang chat (kèm trạng thái và booking_id). Nếu khách nêu một ngày cụ thể, "
-            "TRUYỀN date đúng ngày đó — công cụ chỉ trả về khung giờ của ngày đó, không phải cả "
-            "2 tuần. Nếu khách chưa nói ngày, để date trống — công cụ tự trả về hôm nay + ngày mai. "
-            "Luôn gọi công cụ này trước khi đặt hoặc hủy lịch."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "date": {
-                    "type": "string",
-                    "description": "YYYY-MM-DD — chỉ truyền khi khách đã nêu rõ ngày cụ thể",
+        "type": "function",
+        "function": {
+            "name": "get_booking_availability",
+            "description": (
+                "Xem khung giờ còn trống (08:00–20:00, trừ Chủ Nhật) và lịch tập hiện tại của "
+                "khách đang chat (kèm trạng thái và booking_id). Nếu khách nêu một ngày cụ thể, "
+                "TRUYỀN date đúng ngày đó — công cụ chỉ trả về khung giờ của ngày đó, không phải cả "
+                "2 tuần. Nếu khách chưa nói ngày, để date trống — công cụ tự trả về hôm nay + ngày mai. "
+                "Luôn gọi công cụ này trước khi đặt hoặc hủy lịch."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "date": {
+                        "type": "string",
+                        "description": "YYYY-MM-DD — chỉ truyền khi khách đã nêu rõ ngày cụ thể",
+                    },
                 },
+                "required": [],
             },
-            "required": [],
         },
     },
     {
-        "name": "book_slot",
-        "description": (
-            "Đặt lịch tập cho khách đang chat vào một khung giờ còn trống cụ thể. "
-            "Luôn gọi get_booking_availability trước để xác nhận khung giờ còn trống. "
-            "Lịch mới sẽ ở trạng thái 'pending' chờ HLV xác nhận."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "date": {"type": "string", "description": "YYYY-MM-DD"},
-                "time": {"type": "string", "description": "HH:MM (giờ tròn, 08:00-19:00)"},
-                "note": {"type": "string", "description": "Ghi chú buổi tập (tuỳ chọn)"},
+        "type": "function",
+        "function": {
+            "name": "book_slot",
+            "description": (
+                "Đặt lịch tập cho khách đang chat vào một khung giờ còn trống cụ thể. "
+                "Luôn gọi get_booking_availability trước để xác nhận khung giờ còn trống. "
+                "Lịch mới sẽ ở trạng thái 'pending' chờ HLV xác nhận."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "date": {"type": "string", "description": "YYYY-MM-DD"},
+                    "time": {"type": "string", "description": "HH:MM (giờ tròn, 08:00-19:00)"},
+                    "note": {"type": "string", "description": "Ghi chú buổi tập (tuỳ chọn)"},
+                },
+                "required": ["date", "time"],
             },
-            "required": ["date", "time"],
         },
     },
     {
-        "name": "cancel_booking",
-        "description": "Hủy một lịch tập đã đặt của khách đang chat, theo booking_id.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "booking_id": {"type": "string"},
+        "type": "function",
+        "function": {
+            "name": "cancel_booking",
+            "description": "Hủy một lịch tập đã đặt của khách đang chat, theo booking_id.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "booking_id": {"type": "string"},
+                },
+                "required": ["booking_id"],
             },
-            "required": ["booking_id"],
         },
     },
 ]

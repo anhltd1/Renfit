@@ -224,10 +224,7 @@ export function SignupPage() {
         </div>
 
         <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 shadow-[0_0_50px_rgba(15,107,62,0.15)]">
-          <h1 className="text-2xl font-bold text-white mb-1">Tạo tài khoản</h1>
-          <p className="text-white/50 text-sm mb-8">
-            Điền thông tin để cá nhân hóa trải nghiệm của bạn
-          </p>
+          <h1 className="text-2xl font-bold text-white mb-6">Tạo tài khoản</h1>
 
           <form onSubmit={handleSubmit} className="space-y-5" data-testid="signup-form">
             <div className="flex flex-col items-center gap-2 pb-5 border-b border-white/8">
@@ -237,7 +234,6 @@ export function SignupPage() {
                 size={132}
                 disabled={loading}
               />
-              <p className="text-white/30 text-xs">Nhấn để chọn ảnh đại diện</p>
             </div>
 
             <div className="space-y-4 pb-5 border-b border-white/8">

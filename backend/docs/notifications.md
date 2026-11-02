@@ -100,6 +100,15 @@ Each of these already knows the customer id and the record id at the point
 of the write, so this is a single extra `insert_one` call — no coupling to
 the AI agent or any other subsystem.
 
+**Attendance changes send nothing (V5 / U22).** Any `set_booking_status()`
+transition into, out of, or between `completed` / `no_show` creates no
+customer or trainer notification and retracts nothing: `approved →
+completed/no_show` leaves the (already fired or irrelevant) session reminder
+alone, and the undo `completed/no_show → approved` does **not** send
+`booking_approved` (guarded explicitly in code, on top of the `(type,
+related_id)` idempotency key). Members see attendance only as a read-only
+label on their own bookings. Same-status re-PATCHes are no-ops.
+
 ### 3.2 Session reminder (time-based)
 
 There is no single write to hook — "1 hour before start" is a fact about the

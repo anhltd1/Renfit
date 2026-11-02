@@ -1,6 +1,6 @@
 """
 Load configuration from backend/env/.env
-Used by API, Anthropic chat, and MongoDB layers.
+Used by API, OpenAI chat, and MongoDB layers.
 """
 
 from functools import lru_cache
@@ -19,10 +19,10 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # Anthropic
-    anthropic_api_key: str = ""
-    anthropic_model: str = "claude-3-5-haiku-20241022"
-    anthropic_max_tokens: int = 1024
+    # OpenAI
+    openai_api_key: str = ""
+    openai_model: str = "gpt-5.6-luna"
+    openai_max_tokens: int = 1024
 
     # MongoDB
     mongodb_uri: str = ""

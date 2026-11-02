@@ -6,47 +6,49 @@
   --motion-base: 250ms;
   --motion-slow: 400ms;
   --ease-enter: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  --ease-exit: cubic-bezier(0.0, 0.0, 0.2, 1);
+  --ease-exit: cubic-bezier(0, 0, 0.2, 1);
 
   --font-size: 16px;
-  --font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --background: #0B0B0B;
-  --foreground: #FFFFFF;
+  --font-family:
+    "Be Vietnam Pro", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --background: #0b0b0b;
+  --foreground: #ffffff;
   --card: rgba(15, 15, 15, 0.8);
-  --card-foreground: #FFFFFF;
+  --card-foreground: #ffffff;
   --popover: rgba(15, 15, 15, 0.95);
-  --popover-foreground: #FFFFFF;
-  --primary: #0F6B3E;
-  --primary-foreground: #FFFFFF;
+  --popover-foreground: #ffffff;
+  --primary: #0f6b3e;
+  --primary-foreground: #ffffff;
   --secondary: rgba(255, 255, 255, 0.1);
-  --secondary-foreground: #FFFFFF;
+  --secondary-foreground: #ffffff;
   --muted: rgba(255, 255, 255, 0.05);
   --muted-foreground: rgba(255, 255, 255, 0.6);
-  --accent: #0F6B3E;
-  --accent-foreground: #FFFFFF;
+  --accent: #0f6b3e;
+  --accent-foreground: #ffffff;
   --destructive: #ef4444;
-  --destructive-foreground: #FFFFFF;
+  --destructive-foreground: #ffffff;
   --border: rgba(255, 255, 255, 0.1);
   --input: rgba(255, 255, 255, 0.05);
   --input-background: rgba(255, 255, 255, 0.05);
   --switch-background: rgba(255, 255, 255, 0.2);
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #0F6B3E;
-  --chart-1: #0F6B3E;
+  --ring: #0f6b3e;
+  --chart-1: #0f6b3e;
   --chart-2: #22c55e;
   --chart-3: #86efac;
-  --chart-4: #FFFFFF;
+  --chart-4: #ffffff;
   --chart-5: rgba(255, 255, 255, 0.6);
   --radius: 1rem;
-  --sidebar: #0B0B0B;
-  --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #0F6B3E;
-  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar: #0b0b0b;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #0f6b3e;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(255, 255, 255, 0.05);
-  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: #0F6B3E;
+  --sidebar-ring: #0f6b3e;
 
   /* ── Motion tokens ────────────────────────────────────────────────────
      Three durations only. Everything animated in the app picks one of them
@@ -60,6 +62,29 @@
   --motion-base: 250ms;
   --motion-slow: 400ms;
   --motion-enter: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* ── Text-safe colour tokens (U20, DESIGN.md v1.1.0) ──────────────────
+     `--primary` (#0F6B3E) is 2.99:1 on #0B0B0B — fills only. Green text,
+     thin icons and the focus ring use `primary-text`; red text uses
+     `error-text` (#ef4444 stays for fills/icons). The `--color-*` copies make
+     the Tailwind classes `text-primary-text`, `border-primary-text`,
+     `text-error-text`, `border-error-text` available (see @theme below). */
+  --primary-text: #3dbe7a;
+  --error-text: #f87171;
+  --color-primary-text: #3dbe7a;
+  --color-error-text: #f87171;
+
+  /* Booking status tones (DESIGN.md `booking_status`). Consumed through
+     `shared/booking/statusMeta.ts` — don't hand-roll status colours. */
+  --status-pending: #f59e0b;
+  --status-approved: #3dbe7a;
+  --status-completed: rgba(255, 255, 255, 0.6);
+  --status-no-show: #f87171;
+  --status-rejected: rgba(255, 255, 255, 0.6);
+
+  /* View/tab switch duration. Base everywhere; `.ops-surface` drops it to
+     `--motion-fast` (DESIGN.md ops_surface.motion.view_switch). */
+  --motion-view: var(--motion-base);
 }
 
 /* NOTE: A previous default `.dark` token block (oklch values) was removed in U1
@@ -106,6 +131,10 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  /* U20 — literal values (not var()) so they never self-reference the
+     same-named :root properties above. */
+  --color-primary-text: #3dbe7a;
+  --color-error-text: #f87171;
 }
 
 @layer base {
@@ -142,14 +171,23 @@
     scroll-behavior: smooth;
     font-size: var(--font-size);
     /* Safety net against 1-2px horizontal overflow from full-bleed sections
-       (100vw backgrounds, negative margins, etc.) on mobile viewports. */
+       (100vw backgrounds, negative margins, etc.) on mobile viewports.
+       `clip` (not `hidden`) so html/body don't become extra scroll
+       containers — `hidden` forced overflow-y to `auto` on body, giving the
+       page a second, bouncy scroller. `hidden` stays as the fallback for
+       browsers without `clip`. */
     overflow-x: hidden;
+    overflow-x: clip;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-family);
     overflow-x: hidden;
+    overflow-x: clip;
   }
 
   /* U8 Accessibility — A11Y-1: every focusable element gets a visible green
@@ -157,9 +195,11 @@
      elements outside the shared primitives (Button/Tabs/Input/Modal, which
      define their own focus-visible ring) automatically comply without
      needing the class added file-by-file. Primitives' own ring utilities
-     layer on top of this without conflict (box-shadow vs. outline). */
+     layer on top of this without conflict (box-shadow vs. outline).
+     U20: ring colour moved to primary-text #3DBE7A (DESIGN.md v1.1.0) —
+     #0F6B3E was 2.99:1 and vanished on green cells. */
   :focus-visible {
-    outline: 2px solid #0F6B3E;
+    outline: 2px solid #3dbe7a;
     outline-offset: 2px;
   }
 
@@ -213,38 +253,79 @@
 
 /* ── Calendar slide animations ──────────────────────────────────────────── */
 @keyframes slide-in-left {
-  from { opacity: 0; transform: translateX(28px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes slide-in-right {
-  from { opacity: 0; transform: translateX(-28px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-.animate-slide-in-left  { animation: slide-in-left  var(--motion-base) var(--motion-enter) both; }
-.animate-slide-in-right { animation: slide-in-right var(--motion-base) var(--motion-enter) both; }
+.animate-slide-in-left {
+  animation: slide-in-left var(--motion-base) var(--motion-enter) both;
+}
+.animate-slide-in-right {
+  animation: slide-in-right var(--motion-base) var(--motion-enter) both;
+}
 
 /* ── Top-center notification popup ────────────────────────────────────── */
 @keyframes popup-in {
-  from { opacity: 0; transform: translateY(-12px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-.animate-popup-in { animation: popup-in var(--motion-base) var(--motion-enter) both; }
+.animate-popup-in {
+  animation: popup-in var(--motion-base) var(--motion-enter) both;
+}
 
 /* ── Mobile bottom-sheet slide-up ─────────────────────────────────────── */
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(100%); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.animate-slide-up { animation: slide-up var(--motion-base) var(--motion-enter) both; }
+/* `backwards` (not `both`): once the entrance ends the element drops its
+   transform, so it never becomes the containing block for `position: fixed`
+   descendants (date pickers, popovers) or keeps an extra compositing layer. */
+.animate-slide-up {
+  animation: slide-up var(--motion-base) var(--motion-enter) backwards;
+}
 
 /* ── List entrance stagger (U10 Polish) ───────────────────────────────── */
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-up {
@@ -254,7 +335,9 @@
 
 /* ── Pull-to-refresh indicator ────────────────────────────────────────── */
 @keyframes ptr-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .animate-ptr-spin {
@@ -267,11 +350,23 @@
    up 4px. Used by the shared TabPanel primitive and by view swaps that
    remount their subtree. */
 @keyframes panel-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.animate-panel-in { animation: panel-in var(--motion-base) var(--motion-enter) both; }
+/* `backwards` (not `both`): a lingering `transform: translateY(0)` on the
+   screen wrapper made it the containing block for every `position: fixed`
+   child (sheets, toasts, kiosk view, popups), clipping them to the content
+   area so the tab bar stayed visible and tappable underneath. */
+.animate-panel-in {
+  animation: panel-in var(--motion-base) var(--motion-enter) backwards;
+}
 
 /* Transition-driven variant for panels that stay mounted (TabPanel) — an
    animation with `both` fill would pin opacity/transform and block re-entry. */
@@ -292,11 +387,19 @@
    silent re-render. Must be an animation, not a transition: the entrance
    `animate-fade-up` fills forwards and would otherwise win the cascade. */
 @keyframes row-leave {
-  from { opacity: 1; transform: scale(1); }
-  to   { opacity: 0; transform: scale(0.97); }
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
 }
 
-.animate-row-leave { animation: row-leave var(--motion-fast) ease-out both; }
+.animate-row-leave {
+  animation: row-leave var(--motion-fast) ease-out both;
+}
 
 /* ── Reduced motion ──────────────────────────────────────────────────────
    DESIGN.md requires honouring prefers-reduced-motion. Collapsing durations
@@ -327,8 +430,14 @@
 
 /* ── Tab panel crossfade (U18) ────────────────────────────────────────── */
 @keyframes tab-enter {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-tab-enter {
@@ -337,8 +446,12 @@
 
 /* ── Content reveal (skeleton → data) ─────────────────────────────────── */
 @keyframes content-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .animate-content-in {
@@ -347,22 +460,42 @@
 
 /* ── Toast slide ──────────────────────────────────────────────────────── */
 @keyframes toast-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes toast-out {
-  from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(8px); }
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 
-.animate-toast-in  { animation: toast-in  var(--motion-base) var(--ease-enter) both; }
-.animate-toast-out { animation: toast-out var(--motion-fast) var(--ease-exit) both; }
+.animate-toast-in {
+  animation: toast-in var(--motion-base) var(--ease-enter) both;
+}
+.animate-toast-out {
+  animation: toast-out var(--motion-fast) var(--ease-exit) both;
+}
 
 /* ── Batch slot staging bounce (U18) ──────────────────────────────────── */
 @keyframes stage-bounce {
-  from { transform: scale(0.94); }
-  to   { transform: scale(1); }
+  from {
+    transform: scale(0.94);
+  }
+  to {
+    transform: scale(1);
+  }
 }
 
 .animate-stage-bounce {
@@ -371,8 +504,13 @@
 
 /* ── Kiosk now-line ambient glow (U18) ────────────────────────────────── */
 @keyframes glow-pulse {
-  0%, 100% { opacity: 0.5; }
-  50%      { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .animate-glow-pulse {
@@ -381,17 +519,31 @@
 
 /* ── Modal scale entrance (U18) ───────────────────────────────────────── */
 @keyframes modal-in {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes backdrop-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-.animate-modal-in    { animation: modal-in    var(--motion-base) var(--ease-enter) both; }
-.animate-backdrop-in { animation: backdrop-in var(--motion-slow)  var(--ease-enter) both; }
+.animate-modal-in {
+  animation: modal-in var(--motion-base) var(--ease-enter) both;
+}
+.animate-backdrop-in {
+  animation: backdrop-in var(--motion-slow) var(--ease-enter) both;
+}
 
 /* ── Accessibility: respect reduced motion preference ─────────────────── */
 @media (prefers-reduced-motion: reduce) {
@@ -407,27 +559,49 @@
 
 /* ── AI Coach typing indicator (U19) ──────────────────────────────────── */
 @keyframes dot-bounce {
-  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-  40% { transform: translateY(-4px); opacity: 1; }
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
 }
 
 .typing-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #0F6B3E;
+  background-color: #0f6b3e;
   animation: dot-bounce 1.2s ease-in-out infinite;
 }
 
 /* ── Notification bell ring (U19) ─────────────────────────────────────── */
 @keyframes bell-ring {
-  0%   { transform: rotate(0deg); }
-  15%  { transform: rotate(15deg); }
-  30%  { transform: rotate(-12deg); }
-  45%  { transform: rotate(8deg); }
-  60%  { transform: rotate(-5deg); }
-  75%  { transform: rotate(2deg); }
-  100% { transform: rotate(0deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(15deg);
+  }
+  30% {
+    transform: rotate(-12deg);
+  }
+  45% {
+    transform: rotate(8deg);
+  }
+  60% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(2deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
 }
 
 .animate-bell-ring {
@@ -436,8 +610,13 @@
 
 /* ── SVG empty-state wobble (U19) ─────────────────────────────────────── */
 @keyframes wobble {
-  0%, 100% { transform: rotate(-2deg); }
-  50%      { transform: rotate(2deg); }
+  0%,
+  100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
 }
 
 .animate-wobble {
@@ -446,8 +625,12 @@
 
 /* ── SVG stroke draw (U19) ────────────────────────────────────────────── */
 @keyframes stroke-draw {
-  from { stroke-dashoffset: 100; }
-  to   { stroke-dashoffset: 0; }
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 .animate-stroke-draw {
@@ -458,8 +641,12 @@
 
 /* ── Body composition ring arc draw (U19) ─────────────────────────────── */
 @keyframes draw-arc {
-  from { stroke-dashoffset: var(--arc-length, 300); }
-  to   { stroke-dashoffset: 0; }
+  from {
+    stroke-dashoffset: var(--arc-length, 300);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 .animate-draw-arc {
@@ -476,9 +663,130 @@
 }
 
 @keyframes fade-out {
-  to { opacity: 0; }
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
+  from {
+    opacity: 0;
+  }
+}
+
+/* ── Landing page: ambient glow drift (transform-only, collapsed by reduced-motion) ── */
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(12px, -8px);
+  }
+}
+
+.animate-drift {
+  animation: drift 20s ease-in-out infinite;
+}
+
+/* ── Landing page: hide scrollbar on carousel tracks ──────────────────── */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Mobile app shell (customer + PT dashboards) ─────────────────────────
+   Toggled by `useAppShell()` while a mobile dashboard is mounted. The
+   document itself never scrolls or rubber-bands: the shell is pinned to the
+   viewport and only each screen's own scroll area moves, so the header and
+   bottom tab bar stay fixed like a native app. Landing/auth pages keep normal
+   document scrolling because the class is absent there. */
+html.app-shell,
+html.app-shell body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.app-shell-root {
+  position: fixed;
+  inset: 0 0 auto 0;
+  /* Visual-viewport height (keyboard-aware) published by useAppShell. */
+  height: var(--app-height, 100dvh);
+  width: 100%;
+}
+
+/* Non-scrolling chrome (headers, tab bars, footers): a drag that starts here
+   must not pan or bounce anything. Taps still work. */
+.app-chrome {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Toast position: above the tab bar inside the app shell, near the bottom
+   edge elsewhere. Both clear the home indicator. */
+.toast-anchor {
+  bottom: calc(1.5rem + var(--safe-bottom, 0px));
+}
+html.app-shell .toast-anchor {
+  bottom: calc(4.5rem + var(--safe-bottom, 0px));
+}
+
+/* iOS zooms the page when a focused field's text is under 16px, which shifts
+   the whole layout (header included). Touch devices get 16px fields. This is
+   unlayered on purpose so it wins over Tailwind's `text-sm` utilities. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+      [type="file"]
+    ),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* ── Touch target utility (U20, DESIGN.md ops_surface.touch_target_*) ────
+   `tap-target` guarantees a minimum hit area: 44×44px on any coarse-pointer
+   device (phones AND tablets), 32×32px with a mouse. Pair with flex centring
+   when the visible icon is smaller. Declared with @utility so it lives in the
+   utilities layer and supports variants (`sm:tap-target`, etc.). */
+@utility tap-target {
+  min-width: 32px;
+  min-height: 32px;
+  @media (pointer: coarse) {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ── Operations surface scope (U20, DESIGN.md "Operations Surfaces") ─────
+   Put `ops-surface` on the root of a trainer/PT work screen. Inside it:
+     1. View/tab entrances run at --motion-fast (150ms) instead of base.
+     2. Hover scale is neutralised on rows, cells and pills — change
+        background/border instead. Press feedback (`active:scale-*`) is kept.
+   Unlayered on purpose so it wins over Tailwind utilities without !important;
+   the global reduced-motion block still collapses durations (it uses
+   !important). */
+.ops-surface {
+  --motion-view: var(--motion-fast);
+}
+
+.ops-surface .animate-panel-in,
+.ops-surface .animate-tab-enter {
+  animation-duration: var(--motion-fast);
+}
+
+.ops-surface .tab-panel {
+  transition-duration: var(--motion-fast);
+}
+
+/* Tailwind 4 hover scale uses the `scale` property; reset it on hover for any
+   `hover:scale-*` utility (e.g. the Button/Card primitives' 1.05).
+   `:not(:active)` keeps the `active:scale-[0.97]` press dip working. */
+.ops-surface [class*='hover:scale-']:hover:not(:active) {
+  scale: none;
 }

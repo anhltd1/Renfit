@@ -12,3 +12,9 @@ export { useTrainerNotifications } from './useTrainerNotifications';
 export { useAuth } from './useAuth';
 export { useAdminAuth } from './useAdminAuth';
 export type { QueryState } from './useQuery';
+// U20 Ops Foundation — feedback + form-safety building blocks.
+export { useToast, type ToastInput, type ToastState, type UseToastResult } from './useToast';
+export { useUndoableAction, type UndoableActionOptions } from './useUndoableAction';
+export { useDirtyGuard } from './useDirtyGuard';
+// U22 Attendance.
+export { useAttendance } from './useAttendance';

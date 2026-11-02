@@ -63,7 +63,7 @@ class ChatMessage(BaseModel):
     role: ChatMessageRole
     content: str | dict | list = Field(
         ...,
-        description="Plain text or structured blocks (e.g. Anthropic message content)",
+        description="Plain text or structured blocks (e.g. OpenAI message content)",
     )
     sequence: int = Field(
         ...,

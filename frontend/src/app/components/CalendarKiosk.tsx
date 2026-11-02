@@ -15,24 +15,28 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   CalendarCheck,
-  Check,
   ChevronLeft,
   ChevronRight,
   Clock,
   Maximize2,
   Minimize2,
-  RotateCcw,
   Users,
   X,
 } from 'lucide-react';
 import {
   fetchBookings,
-  updateBookingStatus,
   type AdminBookingItem,
   type AdminBookings,
   type AdminBookingSlot,
   type BookingStatus,
 } from '../../lib/api/admin';
+import { cn } from '../shared/primitives/cn';
+import { bookingAccessibleName, bookingStatusMeta } from '../shared/booking/statusMeta';
+import { StatusBadge } from '../shared/booking/StatusBadge';
+import { BookingStatusActions, useBookingStatusChange } from '../shared/booking/BookingStatusActions';
+import { useToast } from '../shared/hooks/useToast';
+import { useFreshness } from '../shared/hooks/useFreshness';
+import { FreshnessIndicator } from '../shared/components/FreshnessIndicator';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -73,31 +77,28 @@ function dateFromOffset(offset: number) {
 /** Max forward days: 2 weeks (14 days) from today. */
 const MAX_FORWARD_DAYS = 14;
 
-const STATUS_META: Record<BookingStatus, { label: string; pill: string }> = {
-  pending: {
-    label: 'Chờ duyệt',
-    pill: 'bg-amber-500/30 border-amber-400/70 text-amber-200',
-  },
-  approved: {
-    label: 'Đã duyệt',
-    pill: 'bg-emerald-600/40 border-emerald-400/80 text-emerald-200',
-  },
-  rejected: {
-    label: 'Từ chối',
-    pill: 'bg-red-600/40 border-red-400/80 text-red-200',
-  },
+/** Display order inside an hour row: attention states first, finished last. */
+const KIOSK_ORDER: Record<BookingStatus, number> = {
+  approved: 0,
+  pending: 1,
+  no_show: 2,
+  completed: 3,
+  rejected: 4,
 };
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface TodaySlot {
   hour: number;
+  /** Slot wall-clock time ("YYYY-MM-DDTHH:00", ICT). Empty for fallback rows. */
+  time: string;
   bookings: AdminBookingItem[];
 }
 
 interface SelectedBooking {
   booking: AdminBookingItem;
   hour: number;
+  time: string;
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -113,8 +114,10 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
   const [capacity, setCapacity] = useState(4);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selected, setSelected] = useState<SelectedBooking | null>(null);
-  const [acting, setActing] = useState(false);
-  const [toast, setToast] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const { show: showToast, node: toastNode } = useToast();
+  const [snapshot, setSnapshot] = useState<object | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const { lastUpdatedAt, offline } = useFreshness({ loading: false, error: loadFailed, data: snapshot });
   const containerRef = useRef<HTMLDivElement>(null);
   const currentRowRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -146,16 +149,23 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
         setSlots(
           day.slots.map((s: AdminBookingSlot) => ({
             hour: s.hour,
-            bookings: s.bookings.filter((b) => b.status === 'approved' || b.status === 'pending'),
+            time: s.time,
+            // U22: everything except rejected — attendance (Đã tập / Vắng) stays visible.
+            bookings: s.bookings
+              .filter((b) => b.status !== 'rejected')
+              .sort((a, b) => (KIOSK_ORDER[a.status] ?? 9) - (KIOSK_ORDER[b.status] ?? 9)),
           })),
         );
       } else {
         // Date might be Sunday or outside the booking window
-        setSlots(HOURS.map((h) => ({ hour: h, bookings: [] })));
+        setSlots(HOURS.map((h) => ({ hour: h, time: '', bookings: [] })));
       }
       setCapacity(data.capacity);
+      setLoadFailed(false);
+      setSnapshot({});
     } catch {
-      // Silently retry on next poll — kiosk should be resilient
+      // Silent retry on next poll — kiosk stays resilient; show the offline state.
+      setLoadFailed(true);
     }
   }, [dateOffset]);
 
@@ -192,12 +202,6 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
     return () => window.removeEventListener('keydown', handler);
   }, [onClose, selected]);
 
-  // Toast auto-dismiss
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3000);
-    return () => clearTimeout(t);
-  }, [toast]);
 
   // Fullscreen API
   const toggleFullscreen = async () => {
@@ -217,19 +221,15 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
   }, []);
 
   // Status change action
-  const changeStatus = async (status: BookingStatus) => {
+  const { change: changeBookingStatus, pending: acting } = useBookingStatusChange({
+    show: showToast,
+    refresh: loadData,
+  });
+
+  const changeStatus = async (next: BookingStatus, prev: BookingStatus) => {
     if (!selected) return;
-    setActing(true);
-    try {
-      const r = await updateBookingStatus(selected.booking.id, status);
-      setToast({ kind: 'ok', text: r.message });
-      setSelected(null);
-      await loadData();
-    } catch (err) {
-      setToast({ kind: 'err', text: err instanceof Error ? err.message : 'Cập nhật thất bại.' });
-    } finally {
-      setActing(false);
-    }
+    const ok = await changeBookingStatus(selected.booking, next, prev);
+    if (ok) setSelected(null);
   };
 
   // Current time position for the "now" line (fraction within 08–20 range)
@@ -245,7 +245,7 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
   const viewDateStr = fmtDate(viewDate);
 
   // Determine active slots (use data or fallback)
-  const displaySlots = slots.length > 0 ? slots : HOURS.map((h) => ({ hour: h, bookings: [] }));
+  const displaySlots: TodaySlot[] = slots.length > 0 ? slots : HOURS.map((h) => ({ hour: h, time: '', bookings: [] }));
 
   return (
     <div
@@ -253,26 +253,26 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
       className="fixed inset-0 z-[100] bg-[#060606] text-white flex flex-col overflow-hidden"
     >
       {/* Header */}
-      <header className="shrink-0 flex items-center justify-between px-8 py-5 border-b border-white/8">
+      <header className="shrink-0 flex items-center justify-between px-3 py-2 md:px-5 md:py-3 lg:px-8 lg:py-5 border-b border-white/8">
         {/* Left: date info + navigation */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-3 lg:gap-4">
           <button
             type="button"
             disabled={!canGoBack}
             onClick={() => setDateOffset((o) => o - 1)}
-            className="p-2 rounded-lg border border-white/15 text-white/60 hover:text-white hover:border-[#0F6B3E]/60 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+            className="p-1.5 md:p-2 rounded-lg border border-white/15 text-white/60 hover:text-white hover:border-[#0F6B3E]/60 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
             aria-label="Ngày trước"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
           </button>
-          <div className="flex flex-col items-center min-w-[80px]">
-            <span className="text-white/50 text-sm font-medium tracking-wide">{viewDayOfWeek}</span>
-            <span className="text-5xl font-bold text-white tabular-nums leading-none mt-1">
+          <div className="flex flex-col items-center min-w-[56px] md:min-w-[70px] lg:min-w-[80px]">
+            <span className="text-white/60 text-xs md:text-sm font-medium tracking-wide">{viewDayOfWeek}</span>
+            <span className="text-3xl md:text-4xl lg:text-5xl font-bold text-white tabular-nums leading-none mt-1">
               {pad(viewDate.getDate())}
             </span>
-            <span className="text-white/40 text-xs mt-1">{viewDateStr}</span>
+            <span className="text-white/60 text-xs mt-1">{viewDateStr}</span>
             {isToday && (
-              <span className="mt-1 text-[10px] bg-[#0F6B3E]/30 text-[#0F6B3E] px-2 py-0.5 rounded-full font-semibold border border-[#0F6B3E]/40">
+              <span className="mt-1 text-xs bg-[#0F6B3E]/30 text-primary-text px-2 py-0.5 rounded-full font-semibold border border-[#0F6B3E]/40">
                 Hôm nay
               </span>
             )}
@@ -281,61 +281,64 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
             type="button"
             disabled={!canGoForward}
             onClick={() => setDateOffset((o) => o + 1)}
-            className="p-2 rounded-lg border border-white/15 text-white/60 hover:text-white hover:border-[#0F6B3E]/60 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+            className="p-1.5 md:p-2 rounded-lg border border-white/15 text-white/60 hover:text-white hover:border-[#0F6B3E]/60 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
             aria-label="Ngày sau"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
           </button>
-          <div className="h-14 w-px bg-white/10 mx-2" />
-          <div className="text-white/30 text-xs">GMT+07 · TP. Hồ Chí Minh</div>
+          <div className="hidden md:block h-14 w-px bg-white/10 mx-2" />
+          <div className="hidden md:flex flex-col gap-0.5 text-white/60 text-xs">
+            <span>GMT+07 · TP. Hồ Chí Minh</span>
+            <FreshnessIndicator lastUpdatedAt={lastUpdatedAt} offline={offline} />
+          </div>
         </div>
 
         {/* Center: clock */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#0F6B3E]/20 border border-[#0F6B3E]/30 flex items-center justify-center">
-            <Clock className="w-5 h-5 text-[#0F6B3E]" />
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#0F6B3E]/20 border border-[#0F6B3E]/30 flex items-center justify-center">
+            <Clock className="w-4 h-4 md:w-5 md:h-5 text-primary-text" />
           </div>
-          <span className="text-4xl font-bold tracking-wider tabular-nums text-white">
-            {hh}<span className="text-[#0F6B3E]">:</span>{mm}
-            <span className="text-xl text-white/30 font-normal ml-1">:{ss}</span>
+          <span className="text-xl md:text-2xl lg:text-4xl font-bold tracking-wider tabular-nums text-white">
+            {hh}<span className="text-primary-text">:</span>{mm}
+            <span className="text-sm md:text-lg lg:text-xl text-white/60 font-normal ml-1">:{ss}</span>
           </span>
         </div>
 
         {/* Right: controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 transition-all"
+            className="p-2 md:p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all"
             title={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
             aria-label={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
           >
-            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+            {isFullscreen ? <Minimize2 className="w-4 h-4 md:w-5 md:h-5" /> : <Maximize2 className="w-4 h-4 md:w-5 md:h-5" />}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/50 hover:text-red-400 hover:bg-red-400/10 transition-all"
+            className="p-2 md:p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-error-text hover:bg-red-400/10 transition-all"
             title="Đóng lịch để bàn (Esc)"
             aria-label="Đóng lịch để bàn"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 md:w-5 md:h-5" />
           </button>
         </div>
       </header>
 
       {/* Day timeline */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-4 relative">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-2 md:px-5 md:py-3 lg:px-8 lg:py-4 relative">
         {/* Now indicator line — only shown when viewing today */}
         {isToday && currentMinutes >= dayStartMin && currentMinutes <= dayEndMin && (
           <div
             className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
             style={{ top: `calc(${nowFraction * 100}% + 1rem)` }}
           >
-            <div className="w-20 flex items-center justify-end pr-2">
-              <div className="w-3 h-3 rounded-full bg-[#0F6B3E] shadow-[0_0_10px_rgba(15,107,62,0.8)]" />
+            <div className="w-[62px] md:w-[65px] lg:w-20 flex items-center justify-end pr-2">
+              <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-[#0F6B3E] shadow-[0_0_10px_rgba(15,107,62,0.8)]" />
             </div>
-            <div className="flex-1 h-0.5 bg-[#0F6B3E] shadow-[0_0_8px_rgba(15,107,62,0.5)] animate-glow-pulse" />
+            <div className="flex-1 h-0.5 bg-[#0F6B3E] shadow-[0_0_8px_rgba(15,107,62,0.5)]" />
           </div>
         )}
 
@@ -343,86 +346,81 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
         {displaySlots.map((slot) => {
           const isCurrentHour = isToday && slot.hour === currentHour;
           const isPast = isToday && slot.hour < currentHour;
-          const approvedBookings = slot.bookings.filter((b) => b.status === 'approved');
-          const pendingBookings = slot.bookings.filter((b) => b.status === 'pending');
+          // Every non-rejected booking occupies a seat (completed / no_show included).
           const totalCount = slot.bookings.length;
 
           return (
             <div
               key={slot.hour}
               ref={isCurrentHour ? currentRowRef : undefined}
-              className={`grid grid-cols-[80px_1fr] gap-4 min-h-[100px] border-b border-white/6 transition-all ${
+              className={`grid grid-cols-[62px_1fr] md:grid-cols-[65px_1fr] lg:grid-cols-[80px_1fr] gap-2 md:gap-3 lg:gap-4 min-h-[60px] md:min-h-[80px] lg:min-h-[100px] border-b border-white/6 transition-all ${
                 isCurrentHour
                   ? 'bg-[#0F6B3E]/8 border-l-4 border-l-[#0F6B3E] rounded-r-xl'
                   : isPast
-                  ? 'opacity-40'
+                  ? 'bg-white/[0.015]'
                   : ''
               }`}
             >
               {/* Hour label */}
               <div className="flex flex-col items-center justify-center py-4">
-                <span className={`text-lg font-bold tabular-nums ${
-                  isCurrentHour ? 'text-[#0F6B3E]' : 'text-white/60'
+                <span className={`text-base lg:text-lg font-bold tabular-nums ${
+                  isCurrentHour ? 'text-primary-text' : 'text-white/60'
                 }`}>
                   {pad(slot.hour)}:00
                 </span>
                 {isCurrentHour && (
-                  <span className="mt-1 text-[10px] bg-[#0F6B3E]/30 text-[#0F6B3E] px-2 py-0.5 rounded-full font-semibold border border-[#0F6B3E]/40">
+                  <span className="mt-1 text-xs leading-relaxed bg-[#0F6B3E]/30 text-primary-text px-2 py-0.5 rounded-full font-semibold border border-[#0F6B3E]/40">
                     Hiện tại
                   </span>
                 )}
                 {totalCount > 0 && (
-                  <span className="mt-1.5 flex items-center gap-1 text-xs text-white/40">
-                    <Users className="w-3 h-3" />
+                  <span className="mt-1.5 flex items-center gap-1 text-sm text-white/60 tabular-nums">
+                    <Users className="w-3.5 h-3.5" aria-hidden="true" />
                     {totalCount}/{capacity}
                   </span>
                 )}
               </div>
 
-              {/* Booking cards */}
+              {/* Booking cards — colour + icon + label for every status (FR-6) */}
               <div className="flex flex-wrap items-center gap-3 py-4 pr-4">
-                {approvedBookings.map((b) => (
-                  <button
-                    key={b.id}
-                    type="button"
-                    onClick={() => setSelected({ booking: b, hour: slot.hour })}
-                    className={`flex items-center gap-3 px-5 py-3 rounded-xl border transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${
-                      isCurrentHour
-                        ? 'bg-[#0F6B3E]/20 border-[#0F6B3E]/50 shadow-[0_0_15px_rgba(15,107,62,0.2)] hover:bg-[#0F6B3E]/30'
-                        : 'bg-white/5 border-white/10 hover:bg-white/8 hover:border-white/20'
-                    }`}
-                  >
-                    <div className={`w-2 h-2 rounded-full shrink-0 ${
-                      isCurrentHour ? 'bg-[#0F6B3E] animate-pulse' : 'bg-emerald-400'
-                    }`} />
-                    <span className={`font-semibold text-base leading-relaxed ${
-                      isCurrentHour ? 'text-white' : 'text-white/80'
-                    }`}>
-                      {b.customer_id}
-                    </span>
-                    {b.note && (
-                      <span className="text-white/30 text-sm ml-1 truncate max-w-[150px]">
-                        · {b.note}
+                {slot.bookings.map((b) => {
+                  const meta = bookingStatusMeta[b.status] ?? bookingStatusMeta.pending;
+                  const Icon = meta.Icon;
+                  return (
+                    <button
+                      key={b.id}
+                      type="button"
+                      data-testid={`kiosk-booking-${b.status}`}
+                      onClick={() => setSelected({ booking: b, hour: slot.hour, time: slot.time })}
+                      aria-label={bookingAccessibleName({ customer_id: b.customer_id, time: slot.time, status: b.status })}
+                      className={cn(
+                        'tap-target flex items-center gap-2 md:gap-3 px-4 py-2.5 lg:px-5 lg:py-3 rounded-xl border transition-colors cursor-pointer active:scale-[0.98]',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]',
+                        b.status === 'approved' && isCurrentHour
+                          ? 'bg-[#0F6B3E]/20 border-[#0F6B3E]/50 hover:bg-[#0F6B3E]/30'
+                          : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20',
+                      )}
+                    >
+                      <Icon className={cn('w-5 h-5 shrink-0', meta.textClass)} aria-hidden="true" />
+                      <span className={cn(
+                        'font-semibold text-base lg:text-lg leading-relaxed',
+                        meta.recede ? 'text-white/70' : 'text-white',
+                      )}>
+                        {b.customer_id}
                       </span>
-                    )}
-                  </button>
-                ))}
-                {pendingBookings.map((b) => (
-                  <button
-                    key={b.id}
-                    type="button"
-                    onClick={() => setSelected({ booking: b, hour: slot.hour })}
-                    className="flex items-center gap-3 px-5 py-3 rounded-xl border border-amber-400/30 bg-amber-500/10 transition-all cursor-pointer hover:scale-[1.02] hover:bg-amber-500/20 hover:border-amber-400/50 active:scale-[0.98]"
-                  >
-                    <div className="w-2 h-2 rounded-full shrink-0 bg-amber-400 animate-pulse" />
-                    <span className="font-semibold text-base text-amber-200/80 leading-relaxed">
-                      {b.customer_id}
-                    </span>
-                    <span className="text-amber-400/60 text-xs ml-1">(chờ duyệt)</span>
-                  </button>
-                ))}
+                      <span className={cn('text-base leading-relaxed', meta.textClass)}>
+                        · {meta.label}
+                      </span>
+                      {b.note && (
+                        <span className="text-white/60 text-base ml-1 truncate max-w-[120px] lg:max-w-[180px]">
+                          · {b.note}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
                 {totalCount === 0 && !isPast && (
-                  <span className="text-white/20 text-sm italic">Trống</span>
+                  <span className="text-white/60 text-base italic">Trống</span>
                 )}
               </div>
             </div>
@@ -430,11 +428,7 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
         })}
       </div>
 
-      {/* Footer */}
-      <footer className="shrink-0 px-8 py-3 border-t border-white/8 flex items-center justify-between text-xs text-white/30">
-        <span>Lịch để bàn · Renfit Gym</span>
-        <span>Nhấn vào lịch hẹn để thay đổi trạng thái · Esc để đóng</span>
-      </footer>
+
 
       {/* Status-change modal */}
       {selected && (
@@ -453,74 +447,45 @@ export function CalendarKiosk({ onClose }: CalendarKioskProps) {
               <button
                 type="button"
                 onClick={() => setSelected(null)}
-                aria-label="Đóng"
-                className="text-white/40 hover:text-white transition-colors"
+                aria-label="Đóng cập nhật lịch đặt"
+                className="tap-target flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
 
             <div className="bg-[#0F6B3E]/10 border border-[#0F6B3E]/25 rounded-xl p-4 mb-5 flex items-start gap-4">
               <div className="w-11 h-11 rounded-xl bg-[#0F6B3E]/25 flex items-center justify-center shrink-0">
-                <CalendarCheck className="w-5 h-5 text-[#0F6B3E]" />
+                <CalendarCheck className="w-5 h-5 text-primary-text" />
               </div>
               <div>
-                <p className="text-white font-semibold text-base">{selected.booking.customer_id}</p>
-                <p className="text-white/60 text-sm mt-0.5 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5" />
+                <p className="text-white font-semibold text-lg leading-relaxed">{selected.booking.customer_id}</p>
+                <p className="text-white/60 text-base mt-0.5 flex items-center gap-1.5 tabular-nums">
+                  <Clock className="w-4 h-4" aria-hidden="true" />
                   {pad(selected.hour)}:00 – {pad(selected.hour + 1)}:00
                 </p>
-                <span className={`inline-block mt-2 px-2.5 py-0.5 rounded-full border text-xs font-medium ${STATUS_META[selected.booking.status].pill}`}>
-                  {STATUS_META[selected.booking.status].label}
-                </span>
+                <StatusBadge status={selected.booking.status} size="md" className="mt-2" />
               </div>
             </div>
 
-            <p className="text-white/50 text-sm mb-3">Đổi trạng thái thành:</p>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                disabled={acting}
-                onClick={() => changeStatus('approved')}
-                className="flex flex-col items-center gap-1.5 py-3 rounded-xl border border-[#0F6B3E]/50 bg-[#0F6B3E]/15 hover:bg-[#0F6B3E]/30 text-[#6ee7b7] transition-all disabled:opacity-50"
-              >
-                <Check className="w-5 h-5" />
-                <span className="text-sm font-semibold">Chấp nhận</span>
-              </button>
-              <button
-                type="button"
-                disabled={acting}
-                onClick={() => changeStatus('rejected')}
-                className="flex flex-col items-center gap-1.5 py-3 rounded-xl border border-red-500/50 bg-red-500/10 hover:bg-red-500/25 text-red-300 transition-all disabled:opacity-50"
-              >
-                <X className="w-5 h-5" />
-                <span className="text-sm font-semibold">Từ chối</span>
-              </button>
-              <button
-                type="button"
-                disabled={acting}
-                onClick={() => changeStatus('pending')}
-                className="flex flex-col items-center gap-1.5 py-3 rounded-xl border border-white/20 bg-white/5 hover:bg-white/12 text-white/70 transition-all disabled:opacity-50"
-              >
-                <RotateCcw className="w-5 h-5" />
-                <span className="text-sm font-semibold">Chờ duyệt</span>
-              </button>
-            </div>
+            <p className="text-white/60 text-base mb-3">Đổi trạng thái thành:</p>
+            <BookingStatusActions
+              booking={{
+                id: selected.booking.id,
+                customer_id: selected.booking.customer_id,
+                time: selected.time,
+                status: selected.booking.status,
+              }}
+              onChange={changeStatus}
+              busy={acting}
+              size="lg"
+            />
           </div>
         </div>
       )}
 
-      {/* Toast */}
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[120] px-4 w-full max-w-sm flex justify-center">
-          <div className={`w-full px-6 py-3.5 rounded-xl border shadow-2xl flex items-center gap-2.5 text-base font-medium ${
-            toast.kind === 'ok' ? 'bg-[#0F6B3E] border-[#0F6B3E]/60 text-white' : 'bg-red-500 border-red-500/60 text-white'
-          }`}>
-            {toast.kind === 'ok' ? <Check className="w-5 h-5 shrink-0" /> : <X className="w-5 h-5 shrink-0" />}
-            {toast.text}
-          </div>
-        </div>
-      )}
+      {/* Toast (shared useToast, with undo for reject / attendance) — above the kiosk overlay */}
+      {toastNode && <div className="relative z-[120]">{toastNode}</div>}
     </div>
   );
 }

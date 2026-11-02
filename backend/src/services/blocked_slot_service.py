@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from src.db.mongo import blocked_slots_collection, bookings_collection
-from src.services.booking_service import slot_hours
+from src.services.booking_service import OPEN_STATUSES, slot_hours
 
 
 def _now_iso() -> str:
@@ -85,7 +85,9 @@ def get_affected_bookings(*, slot_id: str) -> list[dict[str, Any]]:
     for hour in hours_set:
         time_prefix = f"{date}T{hour:02d}:00"
         for booking in bookings_collection().find(
-            {"time": time_prefix, "status": {"$in": ["pending", "approved"]}},
+            # Only open bookings — attendance-marked (completed/no_show)
+            # sessions already happened and are never auto-rejected.
+            {"time": time_prefix, "status": {"$in": list(OPEN_STATUSES)}},
             {"_id": 0},
         ):
             affected.append(booking)

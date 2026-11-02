@@ -55,32 +55,32 @@ export function BatchBookingMode({
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#111] border-t border-white/12 shadow-2xl rounded-t-2xl p-4 max-h-[50vh] flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h4 className="text-white font-bold text-sm">Chọn hội viên để đặt lịch loạt</h4>
-          <button type="button" onClick={onCancel} className="text-white/40 hover:text-white transition-colors" aria-label="Huỷ">
+          <button type="button" onClick={onCancel} className="text-white/60 hover:text-white transition-colors tap-target inline-flex items-center justify-center" aria-label="Huỷ">
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
           <input
             type="text"
             placeholder="Tìm theo tên..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#0F6B3E]/60 transition-colors"
+            className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-white/40 outline-none focus:border-[#3DBE7A] transition-colors"
           />
         </div>
         <div className="flex-1 overflow-y-auto space-y-1">
           {filtered.length === 0 ? (
-            <p className="text-white/30 text-sm text-center py-4">Không tìm thấy</p>
+            <p className="text-white/60 text-sm text-center py-4">Không tìm thấy</p>
           ) : (
             filtered.map((c) => (
               <button
                 key={c.id}
                 type="button"
                 onClick={() => { haptic(); onSelectMember(c); }}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl border border-white/8 bg-white/[0.03] hover:border-[#0F6B3E]/30 hover:bg-[#0F6B3E]/5 text-left transition-all"
+                className="w-full tap-target flex items-center gap-3 px-3 py-2 rounded-xl border border-white/8 bg-white/[0.03] hover:border-[#0F6B3E]/30 hover:bg-[#0F6B3E]/5 text-left transition-all"
               >
-                <UserRound className="w-4 h-4 text-white/40 shrink-0" />
+                <UserRound className="w-4 h-4 text-white/60 shrink-0" />
                 <span className="text-white/80 text-sm font-medium truncate">{c.id}</span>
               </button>
             ))
@@ -97,7 +97,7 @@ export function BatchBookingMode({
         <p className="text-white font-semibold text-sm truncate">
           {member.id}
         </p>
-        <p className="text-white/50 text-xs mt-0.5">
+        <p className="text-white/60 text-xs mt-0.5">
           {stagedSlots.size > 0
             ? `${stagedSlots.size} buổi đã chọn`
             : 'Nhấn vào khung giờ trống để chọn'}
@@ -114,7 +114,7 @@ export function BatchBookingMode({
       <button
         type="button"
         onClick={onCancel}
-        className="px-3 py-2 rounded-xl bg-white/5 border border-white/12 text-white/60 hover:text-white text-sm transition-all"
+        className="px-3 py-2 tap-target rounded-xl bg-white/5 border border-white/12 text-white/60 hover:text-white text-sm transition-all"
       >
         Huỷ
       </button>
@@ -122,7 +122,7 @@ export function BatchBookingMode({
         type="button"
         onClick={() => { haptic(); onSubmit(); }}
         disabled={stagedSlots.size === 0 || submitting}
-        className="px-4 py-2 rounded-xl bg-[#0F6B3E] text-white text-sm font-semibold hover:bg-[#0F6B3E]/80 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+        className="px-4 py-2 tap-target rounded-xl bg-[#0F6B3E] text-white text-sm font-semibold hover:bg-[#0F6B3E]/80 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
       >
         {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 inline mr-1" />}
         {submitting ? '' : 'Xác nhận'}

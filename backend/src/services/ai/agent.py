@@ -1,4 +1,4 @@
-"""Anthropic agent with tool use, conversation memory, and artifact rendering.
+"""OpenAI agent with tool use, conversation memory, and artifact rendering.
 
 The chat endpoint is only reachable by a logged-in customer (see
 ``AuthGuard`` on the frontend and ``ChatRequest.customer_id``). Every tool is
@@ -9,17 +9,18 @@ structured **artifacts** (read-only panels or action confirmations) that the
 frontend displays next to the reply.
 """
 
+import json
 import uuid
 from typing import Any
 
-import anthropic
+import openai
 
 from src.config.settings import Settings, get_settings
 from src.schema.chat import ChatArtifact, ChatResponse
 from src.services.ai.memory import get_conversation_memory
 from src.services.ai.prompts import build_system_prompt
 from src.services.ai.suggestions import build_suggestions
-from src.services.ai.tools import ANTHROPIC_TOOLS, execute_tool, tool_result_content
+from src.services.ai.tools import OPENAI_TOOLS, execute_tool, tool_result_content
 
 # Tool name -> artifact kind, in priority order (last matching tool call wins).
 _ARTIFACT_KIND_BY_TOOL = {
@@ -42,17 +43,10 @@ _ARTIFACT_TITLE = {
 class ChatAgent:
     def __init__(self, settings: Settings | None = None):
         self.settings = settings or get_settings()
-        if not self.settings.anthropic_api_key:
-            raise RuntimeError("ANTHROPIC_API_KEY is not set in env/.env")
-        self.client = anthropic.Anthropic(api_key=self.settings.anthropic_api_key)
+        if not self.settings.openai_api_key:
+            raise RuntimeError("OPENAI_API_KEY is not set in env/.env")
+        self.client = openai.OpenAI(api_key=self.settings.openai_api_key)
         self.memory = get_conversation_memory()
-
-    def _extract_text(self, content_blocks: list[Any]) -> str:
-        parts: list[str] = []
-        for block in content_blocks:
-            if getattr(block, "type", None) == "text":
-                parts.append(block.text)
-        return "\n".join(parts).strip()
 
     def _run_tool_loop(
         self,
@@ -66,37 +60,67 @@ class ChatAgent:
         # each new request — never a stale value baked in at import time.
         system_prompt = build_system_prompt()
 
+        # Prepend the system message for this request
+        request_messages = [{"role": "system", "content": system_prompt}] + messages
+
         for _ in range(max_iterations):
-            response = self.client.messages.create(
-                model=self.settings.anthropic_model,
-                max_tokens=self.settings.anthropic_max_tokens,
-                system=system_prompt,
-                messages=messages,
-                tools=ANTHROPIC_TOOLS,
+            response = self.client.chat.completions.create(
+                model=self.settings.openai_model,
+                max_completion_tokens=self.settings.openai_max_tokens,
+                messages=request_messages,
+                tools=OPENAI_TOOLS,
+                reasoning_effort="none",
             )
 
-            assistant_content = response.content
-            messages.append({"role": "assistant", "content": assistant_content})
+            choice = response.choices[0]
+            assistant_message = choice.message
 
-            if response.stop_reason != "tool_use":
-                text = self._extract_text(assistant_content)
-                return text or "Xin lỗi, tôi chưa có phản hồi. Bạn thử hỏi lại nhé.", tool_results_log
-
-            tool_use_blocks = [b for b in assistant_content if b.type == "tool_use"]
-            result_blocks: list[dict[str, Any]] = []
-
-            for block in tool_use_blocks:
-                result = execute_tool(block.name, block.input, customer_id=customer_id)
-                tool_results_log.append({"tool": block.name, "result": result})
-                result_blocks.append(
+            # Build the assistant message dict to append to history
+            assistant_msg_dict: dict[str, Any] = {
+                "role": "assistant",
+                "content": assistant_message.content or "",
+            }
+            if assistant_message.tool_calls:
+                assistant_msg_dict["tool_calls"] = [
                     {
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        },
+                    }
+                    for tc in assistant_message.tool_calls
+                ]
+
+            request_messages.append(assistant_msg_dict)
+
+            # If no tool calls, we're done
+            if not assistant_message.tool_calls:
+                text = assistant_message.content or ""
+                return (
+                    text.strip() or "Xin lỗi, tôi chưa có phản hồi. Bạn thử hỏi lại nhé.",
+                    tool_results_log,
+                )
+
+            # Execute each tool call and append results
+            for tool_call in assistant_message.tool_calls:
+                fn_name = tool_call.function.name
+                try:
+                    fn_args = json.loads(tool_call.function.arguments)
+                except (json.JSONDecodeError, TypeError):
+                    fn_args = {}
+
+                result = execute_tool(fn_name, fn_args, customer_id=customer_id)
+                tool_results_log.append({"tool": fn_name, "result": result})
+
+                request_messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
                         "content": tool_result_content(result),
                     }
                 )
-
-            messages.append({"role": "user", "content": result_blocks})
 
         return (
             "Xin lỗi, hệ thống xử lý quá nhiều bước. Vui lòng thử lại.",
@@ -140,7 +164,12 @@ class ChatAgent:
         assistant_text, tool_results_log = self._run_tool_loop(
             messages, customer_id=customer_id
         )
-        self.memory.extend(conversation_id, messages[len(history) :])
+
+        # Store only the user message and a simple assistant reply in memory
+        # (tool call details are ephemeral to the request)
+        new_messages = [{"role": "user", "content": message}]
+        new_messages.append({"role": "assistant", "content": assistant_text})
+        self.memory.extend(conversation_id, new_messages)
 
         return ChatResponse(
             conversation_id=conversation_id,

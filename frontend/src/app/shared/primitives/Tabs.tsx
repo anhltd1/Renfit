@@ -33,7 +33,7 @@ export function Tabs({ items, value, onChange, className }: TabsProps) {
             onClick={() => onChange(item.key)}
             className={cn(
               'flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium',
-              'transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#0F6B3E]',
+              'transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]',
               active ? 'bg-[#0F6B3E] text-white' : 'text-white/60 hover:text-white hover:bg-white/5',
             )}
           >

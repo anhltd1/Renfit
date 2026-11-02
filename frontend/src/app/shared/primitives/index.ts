@@ -6,5 +6,5 @@ export { Card, type CardProps } from './Card';
 export { Input, type InputProps } from './Input';
 export { Modal, type ModalProps } from './Modal';
 export { Sheet, type SheetProps } from './Sheet';
-export { Toast, type ToastProps } from './Toast';
+export { Toast, type ToastProps, type ToastAction } from './Toast';
 export { Tabs, type TabItem, type TabsProps } from './Tabs';

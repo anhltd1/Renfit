@@ -1,6 +1,6 @@
-import { getAdminToken } from '../adminAuth';
+import { getAdminToken } from "../adminAuth";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? '';
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 function url(path: string) {
   return API_BASE ? `${API_BASE}${path}` : path;
@@ -8,16 +8,16 @@ function url(path: string) {
 
 function adminHeaders(): HeadersInit {
   return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${getAdminToken() ?? ''}`,
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${getAdminToken() ?? ""}`,
   };
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { detail?: unknown };
-    if (typeof err.detail === 'string') throw new Error(err.detail);
-    throw new Error('Lỗi server. Vui lòng thử lại.');
+    const err = (await res.json().catch(() => ({}))) as { detail?: unknown };
+    if (typeof err.detail === "string") throw new Error(err.detail);
+    throw new Error("Lỗi server. Vui lòng thử lại.");
   }
   return res.json();
 }
@@ -40,6 +40,8 @@ export interface CustomerSummary {
 // ── Today screen ────────────────────────────────────────────────────────────
 
 export interface TodaySession {
+  /** Booking id (U22 backend). */
+  id: string;
   time: string;
   hour: number;
   customer_id: string;
@@ -59,10 +61,12 @@ export interface TodayData {
   date: string;
   sessions: TodaySession[];
   pending: PendingBooking[];
+  /** Started, still-approved sessions not yet marked (U22 backend). */
+  unmarked_count?: number;
 }
 
 export async function fetchToday(): Promise<TodayData> {
-  const res = await fetch(url('/api/v1/admin/today'), {
+  const res = await fetch(url("/api/v1/admin/today"), {
     headers: adminHeaders(),
   });
   return handleResponse<TodayData>(res);
@@ -78,6 +82,8 @@ export interface InbodyRecord {
   SMM: number;
   BFM: number;
   date_recorded: string;
+  /** Progress-photo URLs (first = cover). Absent on responses from older backends. */
+  photos?: string[];
 }
 
 export interface AddInbodyPayload {
@@ -86,12 +92,17 @@ export interface AddInbodyPayload {
   SMM: number;
   BFM: number;
   date_recorded?: string;
+  /** Base64 JPEG data-URLs (max 6), first = cover. */
+  photos?: string[];
 }
 
-export async function adminLogin(username: string, password: string): Promise<string> {
-  const res = await fetch(url('/api/v1/admin/login'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+export async function adminLogin(
+  username: string,
+  password: string,
+): Promise<string> {
+  const res = await fetch(url("/api/v1/admin/login"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
   });
   const data = await handleResponse<{ token: string; name?: string }>(res);
@@ -100,7 +111,12 @@ export async function adminLogin(username: string, password: string): Promise<st
 
 // ── Bookings (trainer view) ─────────────────────────────────────────────────
 
-export type BookingStatus = 'pending' | 'approved' | 'rejected';
+export type BookingStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "completed"
+  | "no_show";
 
 export interface AdminBookingItem {
   id: string;
@@ -129,7 +145,7 @@ export interface AdminBookings {
 }
 
 export async function fetchBookings(): Promise<AdminBookings> {
-  const res = await fetch(url('/api/v1/admin/bookings'), {
+  const res = await fetch(url("/api/v1/admin/bookings"), {
     headers: adminHeaders(),
   });
   return handleResponse<AdminBookings>(res);
@@ -139,21 +155,24 @@ export async function updateBookingStatus(
   bookingId: string,
   status: BookingStatus,
 ): Promise<{ message: string }> {
-  const res = await fetch(url(`/api/v1/admin/bookings/${encodeURIComponent(bookingId)}`), {
-    method: 'PATCH',
-    headers: adminHeaders(),
-    body: JSON.stringify({ status }),
-  });
+  const res = await fetch(
+    url(`/api/v1/admin/bookings/${encodeURIComponent(bookingId)}`),
+    {
+      method: "PATCH",
+      headers: adminHeaders(),
+      body: JSON.stringify({ status }),
+    },
+  );
   return handleResponse(res);
 }
 
 export async function assignBooking(
   customerId: string,
   time: string,
-  note = '',
+  note = "",
 ): Promise<{ message: string }> {
-  const res = await fetch(url('/api/v1/admin/bookings/assign'), {
-    method: 'POST',
+  const res = await fetch(url("/api/v1/admin/bookings/assign"), {
+    method: "POST",
     headers: adminHeaders(),
     body: JSON.stringify({ customer_id: customerId, time, note }),
   });
@@ -178,16 +197,34 @@ export async function batchAssign(
   customerId: string,
   times: string[],
 ): Promise<BatchAssignResponse> {
-  const res = await fetch(url('/api/v1/admin/bookings/batch-assign'), {
-    method: 'POST',
+  const res = await fetch(url("/api/v1/admin/bookings/batch-assign"), {
+    method: "POST",
     headers: adminHeaders(),
     body: JSON.stringify({ customer_id: customerId, times }),
   });
   return handleResponse<BatchAssignResponse>(res);
 }
 
+// -- Attendance (U22) --------------------------------------------------------
+
+export interface AttendanceSummary {
+  customer_id: string;
+  completed: number;
+  no_show: number;
+}
+
+export async function fetchAttendance(
+  customerId: string,
+): Promise<AttendanceSummary> {
+  const res = await fetch(
+    url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}/attendance`),
+    { headers: adminHeaders() },
+  );
+  return handleResponse<AttendanceSummary>(res);
+}
+
 export async function fetchCustomers(): Promise<CustomerSummary[]> {
-  const res = await fetch(url('/api/v1/admin/customers'), {
+  const res = await fetch(url("/api/v1/admin/customers"), {
     headers: adminHeaders(),
   });
   return handleResponse<CustomerSummary[]>(res);
@@ -208,9 +245,11 @@ export interface CreateMemberResponse extends CustomerSummary {
   temporary_password: string;
 }
 
-export async function createMember(payload: CreateMemberPayload): Promise<CreateMemberResponse> {
-  const res = await fetch(url('/api/v1/admin/customers'), {
-    method: 'POST',
+export async function createMember(
+  payload: CreateMemberPayload,
+): Promise<CreateMemberResponse> {
+  const res = await fetch(url("/api/v1/admin/customers"), {
+    method: "POST",
     headers: adminHeaders(),
     body: JSON.stringify(payload),
   });
@@ -227,53 +266,74 @@ export interface EditMemberPayload {
   avatar?: string;
 }
 
-export async function editMember(customerId: string, payload: EditMemberPayload): Promise<CustomerSummary> {
-  const res = await fetch(url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}`), {
-    method: 'PATCH',
-    headers: adminHeaders(),
-    body: JSON.stringify(payload),
-  });
+export async function editMember(
+  customerId: string,
+  payload: EditMemberPayload,
+): Promise<CustomerSummary> {
+  const res = await fetch(
+    url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}`),
+    {
+      method: "PATCH",
+      headers: adminHeaders(),
+      body: JSON.stringify(payload),
+    },
+  );
   return handleResponse<CustomerSummary>(res);
 }
 
 export async function archiveMember(customerId: string): Promise<void> {
-  const res = await fetch(url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}/archive`), {
-    method: 'POST',
-    headers: adminHeaders(),
-  });
+  const res = await fetch(
+    url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}/archive`),
+    {
+      method: "POST",
+      headers: adminHeaders(),
+    },
+  );
   await handleResponse(res);
 }
 
 export async function restoreMember(customerId: string): Promise<void> {
-  const res = await fetch(url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}/restore`), {
-    method: 'POST',
-    headers: adminHeaders(),
-  });
+  const res = await fetch(
+    url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}/restore`),
+    {
+      method: "POST",
+      headers: adminHeaders(),
+    },
+  );
   await handleResponse(res);
 }
 
 export async function fetchInbody(customerId: string): Promise<InbodyRecord[]> {
-  const res = await fetch(url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}/inbody`), {
-    headers: adminHeaders(),
-  });
+  const res = await fetch(
+    url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}/inbody`),
+    {
+      headers: adminHeaders(),
+    },
+  );
   return handleResponse<InbodyRecord[]>(res);
 }
 
-export async function addInbody(customerId: string, payload: AddInbodyPayload): Promise<InbodyRecord> {
-  const res = await fetch(url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}/inbody`), {
-    method: 'POST',
-    headers: adminHeaders(),
-    body: JSON.stringify(payload),
-  });
+export async function addInbody(
+  customerId: string,
+  payload: AddInbodyPayload,
+): Promise<InbodyRecord> {
+  const res = await fetch(
+    url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}/inbody`),
+    {
+      method: "POST",
+      headers: adminHeaders(),
+      body: JSON.stringify(payload),
+    },
+  );
   return handleResponse<InbodyRecord>(res);
 }
 
 // ── Notifications (trainer-facing, broadcast) ───────────────────────────────
 
 export type TrainerNotificationType =
-  | 'booking_created'
-  | 'booking_cancelled'
-  | 'trainee_registered';
+  | "booking_created"
+  | "booking_cancelled"
+  | "trainee_registered";
 
 /**
  * `target` is a "page:tab" string (see backend/docs/notifications.md §4),
@@ -295,7 +355,7 @@ export interface TrainerNotification {
 export async function fetchTrainerNotifications(
   unreadOnly = false,
 ): Promise<TrainerNotification[]> {
-  const params = unreadOnly ? '?unread_only=true' : '';
+  const params = unreadOnly ? "?unread_only=true" : "";
   const res = await fetch(url(`/api/v1/admin/notifications${params}`), {
     headers: adminHeaders(),
   });
@@ -303,24 +363,28 @@ export async function fetchTrainerNotifications(
 }
 
 export async function fetchTrainerUnreadCount(): Promise<number> {
-  const res = await fetch(url('/api/v1/admin/notifications/unread-count'), {
+  const res = await fetch(url("/api/v1/admin/notifications/unread-count"), {
     headers: adminHeaders(),
   });
   const data = await handleResponse<{ count: number }>(res);
   return data.count;
 }
 
-export async function markTrainerNotificationRead(notificationId: string): Promise<void> {
+export async function markTrainerNotificationRead(
+  notificationId: string,
+): Promise<void> {
   const res = await fetch(
-    url(`/api/v1/admin/notifications/${encodeURIComponent(notificationId)}/read`),
-    { method: 'POST', headers: adminHeaders() },
+    url(
+      `/api/v1/admin/notifications/${encodeURIComponent(notificationId)}/read`,
+    ),
+    { method: "POST", headers: adminHeaders() },
   );
   await handleResponse(res);
 }
 
 export async function markAllTrainerNotificationsRead(): Promise<void> {
-  const res = await fetch(url('/api/v1/admin/notifications/read-all'), {
-    method: 'POST',
+  const res = await fetch(url("/api/v1/admin/notifications/read-all"), {
+    method: "POST",
     headers: adminHeaders(),
   });
   await handleResponse(res);
@@ -328,11 +392,10 @@ export async function markAllTrainerNotificationsRead(): Promise<void> {
 
 /** "admin:bookings" -> "bookings" (the AdminDashboardPage view key). */
 export function parseAdminNotificationTarget(target: string): string | null {
-  const [page, view] = target.split(':');
-  if (page !== 'admin' || !view) return null;
+  const [page, view] = target.split(":");
+  if (page !== "admin" || !view) return null;
   return view;
 }
-
 
 // ── Trainer Notes (per-customer, admin-only) ────────────────────────────────
 
@@ -345,25 +408,39 @@ export interface TrainerNote {
 }
 
 export async function fetchNotes(customerId: string): Promise<TrainerNote[]> {
-  const res = await fetch(url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}/notes`), {
-    headers: adminHeaders(),
-  });
+  const res = await fetch(
+    url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}/notes`),
+    {
+      headers: adminHeaders(),
+    },
+  );
   return handleResponse<TrainerNote[]>(res);
 }
 
-export async function addNote(customerId: string, content: string): Promise<TrainerNote> {
-  const res = await fetch(url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}/notes`), {
-    method: 'POST',
-    headers: adminHeaders(),
-    body: JSON.stringify({ content }),
-  });
+export async function addNote(
+  customerId: string,
+  content: string,
+): Promise<TrainerNote> {
+  const res = await fetch(
+    url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}/notes`),
+    {
+      method: "POST",
+      headers: adminHeaders(),
+      body: JSON.stringify({ content }),
+    },
+  );
   return handleResponse<TrainerNote>(res);
 }
 
-export async function deleteNote(customerId: string, noteId: string): Promise<void> {
+export async function deleteNote(
+  customerId: string,
+  noteId: string,
+): Promise<void> {
   const res = await fetch(
-    url(`/api/v1/admin/customers/${encodeURIComponent(customerId)}/notes/${encodeURIComponent(noteId)}`),
-    { method: 'DELETE', headers: adminHeaders() },
+    url(
+      `/api/v1/admin/customers/${encodeURIComponent(customerId)}/notes/${encodeURIComponent(noteId)}`,
+    ),
+    { method: "DELETE", headers: adminHeaders() },
   );
   await handleResponse(res);
 }
@@ -373,14 +450,14 @@ export async function deleteNote(customerId: string, noteId: string): Promise<vo
 export interface BlockedSlot {
   id: string;
   date: string;
-  hours: number[] | 'all';
+  hours: number[] | "all";
   reason: string;
   created_at: string;
   created_by: string;
 }
 
 export async function fetchBlockedSlots(): Promise<BlockedSlot[]> {
-  const res = await fetch(url('/api/v1/admin/blocked-slots'), {
+  const res = await fetch(url("/api/v1/admin/blocked-slots"), {
     headers: adminHeaders(),
   });
   return handleResponse<BlockedSlot[]>(res);
@@ -388,11 +465,11 @@ export async function fetchBlockedSlots(): Promise<BlockedSlot[]> {
 
 export async function createBlockedSlot(
   date: string,
-  hours: number[] | 'all',
+  hours: number[] | "all",
   reason: string,
 ): Promise<BlockedSlot> {
-  const res = await fetch(url('/api/v1/admin/blocked-slots'), {
-    method: 'POST',
+  const res = await fetch(url("/api/v1/admin/blocked-slots"), {
+    method: "POST",
     headers: adminHeaders(),
     body: JSON.stringify({ date, hours, reason }),
   });
@@ -400,17 +477,27 @@ export async function createBlockedSlot(
 }
 
 export async function deleteBlockedSlot(id: string): Promise<void> {
-  const res = await fetch(url(`/api/v1/admin/blocked-slots/${encodeURIComponent(id)}`), {
-    method: 'DELETE',
-    headers: adminHeaders(),
-  });
+  const res = await fetch(
+    url(`/api/v1/admin/blocked-slots/${encodeURIComponent(id)}`),
+    {
+      method: "DELETE",
+      headers: adminHeaders(),
+    },
+  );
   await handleResponse(res);
 }
 
-export async function cancelBlockedSlotBookings(id: string): Promise<{ cancelled: number }> {
-  const res = await fetch(url(`/api/v1/admin/blocked-slots/${encodeURIComponent(id)}/cancel-bookings`), {
-    method: 'POST',
-    headers: adminHeaders(),
-  });
+export async function cancelBlockedSlotBookings(
+  id: string,
+): Promise<{ cancelled: number }> {
+  const res = await fetch(
+    url(
+      `/api/v1/admin/blocked-slots/${encodeURIComponent(id)}/cancel-bookings`,
+    ),
+    {
+      method: "POST",
+      headers: adminHeaders(),
+    },
+  );
   return handleResponse(res);
 }

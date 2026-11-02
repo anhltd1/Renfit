@@ -60,12 +60,14 @@ export function ProgressScreen({ customerId, onBack }: ProgressScreenProps) {
   const chartData = records.map((r) => ({
     date: fmtDate(r.date_recorded),
     value: r[metric],
+    photos: r.photos,
+    fullDate: r.date_recorded.slice(0, 10).split('-').reverse().join('/'),
   }));
 
   return (
     <div className="flex flex-col min-h-0 flex-1">
       <StackHeader title="Chỉ số InBody" onBack={onBack} />
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto overscroll-y-contain p-4 space-y-4">
         {loading ? (
           <div className="flex justify-center py-8 text-white/25">
             <RefreshCw className="w-5 h-5 animate-spin" />

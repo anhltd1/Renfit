@@ -8,6 +8,12 @@ import { useNavigate } from 'react-router';
 import { OnboardingTour, type OnboardingStep } from '../../components/OnboardingTour';
 import { consumeNewAccountFlag, clearAuthUser } from '../../../lib/auth';
 import { useProfile } from '../../shared/hooks/useProfile';
+import { useAppShell } from '../../shared/hooks/useAppShell';
+import {
+  readParam,
+  useInitialSearchParams,
+  useSyncSearchParams,
+} from '../../shared/hooks/useDashboardUrlState';
 import { BottomTabBar, type MobileTabKey } from './BottomTabBar';
 import { useStack } from './useStack';
 import { OverviewScreen } from '../screens/OverviewScreen';
@@ -18,6 +24,15 @@ import { BookingScreen } from '../screens/BookingScreen';
 import { CoachScreen } from '../screens/CoachScreen';
 
 type ProfileStackScreen = 'root' | 'profile' | 'progress';
+
+const MOBILE_TABS: readonly MobileTabKey[] = ['overview', 'booking', 'coach', 'profile'];
+const PROFILE_SCREENS: readonly ProfileStackScreen[] = ['root', 'profile', 'progress'];
+/** Desktop-tree tab keys → mobile equivalents (survives a device switch). */
+const MOBILE_TAB_ALIASES: Partial<Record<string, MobileTabKey>> = {
+  home: 'overview',
+  bookings: 'booking',
+  chat: 'coach',
+};
 
 const MOBILE_ONBOARDING_STEPS: OnboardingStep<MobileTabKey>[] = [
   {
@@ -59,20 +74,36 @@ const MOBILE_ONBOARDING_STEPS: OnboardingStep<MobileTabKey>[] = [
 export function MobileShell() {
   const navigate = useNavigate();
   const { user } = useProfile();
-  const [activeTab, setActiveTab] = useState<MobileTabKey>('overview');
+  const initialParams = useInitialSearchParams();
+  const [activeTab, setActiveTab] = useState<MobileTabKey>(() =>
+    readParam(initialParams, 'tab', MOBILE_TABS, 'overview', MOBILE_TAB_ALIASES),
+  );
   const [chatKey, setChatKey] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  const profileStack = useStack<ProfileStackScreen>('root');
+  const profileStack = useStack<ProfileStackScreen>(
+    'root',
+    activeTab === 'profile' ? readParam(initialParams, 'screen', PROFILE_SCREENS, 'root') : undefined,
+  );
+
+  // Mirror the open screen into the URL so a refresh lands back on it.
+  useSyncSearchParams({
+    tab: activeTab === 'overview' ? null : activeTab,
+    screen: activeTab === 'profile' && profileStack.current !== 'root' ? profileStack.current : null,
+  });
+
+  useAppShell();
 
   useEffect(() => {
     if (consumeNewAccountFlag()) setShowOnboarding(true);
   }, []);
 
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
+  // Redirect in an effect — navigating during render is a React side-effect bug.
+  useEffect(() => {
+    if (!user) navigate('/login');
+  }, [user, navigate]);
+
+  if (!user) return null;
 
   const handleLogout = () => {
     clearAuthUser();
@@ -108,7 +139,7 @@ export function MobileShell() {
   }
 
   return (
-    <div className="h-[100dvh] w-full flex flex-col overflow-hidden bg-[#0B0B0B] text-white">
+    <div className="app-shell-root flex flex-col overflow-hidden bg-[#0B0B0B] text-white">
       {/* Keyed on tab + stack position so the entrance replays on every
           navigation (the screens already remount, the wrapper would not). */}
       <div

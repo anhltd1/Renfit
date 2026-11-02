@@ -1,0 +1,128 @@
+{
+  "pbtResults": {
+    "1. Write bug condition exploration test": {
+      "status": "passed",
+      "failingExample": "Counterexample: [null] (user=null, mobile viewport, menu open)\nGot AssertionError: expected 'w-full bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white px-6 py-2 rounded-full transition-all duration-300 text-center' to contain 'block'\n\nThe \"Đặt Lịch Ngay\" link has className \"w-full bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white px-6 py-2 rounded-full transition-all duration-300 text-center\" — no \"block\" class present.\nThe \"Đăng nhập\" link has className \"flex items-center gap-2 text-white/70 hover:text-white transition-colors\" — no \"block\" class present.\n\nBoth links render as inline elements (default <a> display), failing to participate in the parent's space-y-4 block-level flow, confirming bug conditions 1.1 and 1.2.",
+      "lastRunTimestamp": 1787381225432
+    },
+    "2. Write preservation property tests (BEFORE implementing fix)": {
+      "status": "passed",
+      "lastRunTimestamp": 1787381371603
+    },
+    "3.2 Verify bug condition exploration test now passes": {
+      "status": "passed",
+      "lastRunTimestamp": 1787381503910
+    }
+  },
+  "executionHistory": {
+    "1. Write bug condition exploration test": [
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381102123
+      },
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381114354
+      },
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381241906
+      }
+    ],
+    "2. Write preservation property tests (BEFORE implementing fix)": [
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381102307
+      },
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381254153
+      },
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381389765
+      }
+    ],
+    "3.1 Implement the CSS fix in Navigation.tsx": [
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381102403
+      },
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381396539
+      },
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381456325
+      }
+    ],
+    "3.2 Verify bug condition exploration test now passes": [
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381102454
+      },
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381462100
+      },
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381517212
+      }
+    ],
+    "3.3 Verify preservation tests still pass": [
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381102501
+      },
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381523139
+      },
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381530000
+      }
+    ],
+    "4. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381102591
+      },
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381536373
+      },
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381694273
+      }
+    ],
+    "3. Fix mobile sidebar button overlap": [
+      {
+        "executionId": "336e778d-5844-4abd-981e-5b0ff3391f69",
+        "chatSessionId": "sess_2126fb81-5331-42a3-a5ec-bf643680fc58",
+        "timestamp": 1787381530093
+      }
+    ]
+  }
+}

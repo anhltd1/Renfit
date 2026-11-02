@@ -13,7 +13,7 @@ MongoDB runs as a local container (`mongo:7`) with data persisted in a named Doc
 ### Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose plugin)
-- `backend/env/.env` filled in — at minimum `ANTHROPIC_API_KEY` (MongoDB is self-hosted, no URI needed)
+- `backend/env/.env` filled in — at minimum `OPENAI_API_KEY` (MongoDB is self-hosted, no URI needed)
 
 ### Quick Start
 
@@ -71,7 +71,7 @@ git clone <repo-url> renfit && cd renfit
 
 # 2. Backend secrets (never committed)
 cp backend/env/.env.example backend/env/.env
-# edit backend/env/.env — fill in ANTHROPIC_API_KEY
+# edit backend/env/.env — fill in OPENAI_API_KEY
 
 # 3. Deployment config (domain + CORS, non-secret)
 cp .env.example .env
@@ -213,7 +213,7 @@ Set in `backend/env/.env` (secrets, not in compose):
 
 | Variable | Purpose |
 |---|---|
-| `ANTHROPIC_API_KEY` | Claude API key for AI Coach |
+| `OPENAI_API_KEY` | OpenAI API key for AI Coach |
 | `VAPID_PUBLIC_KEY` | Web Push VAPID public key (generate: `npx web-push generate-vapid-keys`) |
 | `VAPID_PRIVATE_KEY` | Web Push VAPID private key |
 | `VAPID_CONTACT_EMAIL` | Contact email for VAPID (default: `mailto:admin@renfit.local`) |

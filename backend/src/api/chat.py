@@ -1,6 +1,6 @@
 """Chat API routes."""
 
-import anthropic
+import openai
 from fastapi import APIRouter, HTTPException
 
 from src.schema.chat import ChatRequest, ChatResponse
@@ -27,7 +27,7 @@ def post_chat(body: ChatRequest) -> ChatResponse:
             conversation_id=body.conversation_id,
             customer_id=body.customer_id,
         )
-    except anthropic.APIError as exc:
+    except openai.APIError as exc:
         raise HTTPException(
             status_code=502,
             detail="AI service error. Please try again later.",

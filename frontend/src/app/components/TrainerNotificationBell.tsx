@@ -21,8 +21,9 @@ import {
   type TrainerNotification,
   type TrainerNotificationType,
 } from '../../lib/api/admin';
+import { usePushNotifications } from '../shared/hooks/usePushNotifications';
+import { useNotificationRefresh } from '../shared/hooks/useTrainerNotifications';
 
-const POLL_INTERVAL_MS = 10_000;
 const POPUP_DURATION_MS = 5_000;
 
 const ICON_BY_TYPE: Record<TrainerNotificationType, React.ComponentType<{ className?: string }>> = {
@@ -75,11 +76,10 @@ export function TrainerNotificationBell({ onNavigate }: TrainerNotificationBellP
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    poll();
-    const id = setInterval(poll, POLL_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, [poll]);
+  // Push active -> no interval (refetch on tab visible / push message); otherwise 10 s polling.
+  const { supported, permission, subscribed } = usePushNotifications('trainer', true);
+  const pushActive = supported && permission === 'granted' && subscribed;
+  useNotificationRefresh(poll, pushActive);
 
   // Auto-dismiss each popup independently after POPUP_DURATION_MS.
   useEffect(() => {
@@ -160,10 +160,10 @@ export function TrainerNotificationBell({ onNavigate }: TrainerNotificationBellP
                 handlePopupClick(p);
               }}
               aria-label={`${p.title}: ${p.message}`}
-              className="pointer-events-auto flex items-center gap-3 bg-[#141414] border border-[#0F6B3E]/40 rounded-2xl shadow-2xl px-4 py-3 w-full cursor-pointer hover:border-[#0F6B3E] transition-all animate-popup-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F6B3E]"
+              className="pointer-events-auto flex items-center gap-3 bg-[#141414] border border-[#0F6B3E]/40 rounded-2xl shadow-2xl px-4 py-3 w-full cursor-pointer hover:border-[#0F6B3E] transition-all animate-popup-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]"
             >
               <div className="w-9 h-9 rounded-full bg-[#0F6B3E]/20 flex items-center justify-center shrink-0">
-                <Icon className="w-[18px] h-[18px] text-[#0F6B3E]" />
+                <Icon className="w-[18px] h-[18px] text-primary-text" />
               </div>
               <div className="min-w-0">
                 <p className="text-white text-sm font-medium truncate">{p.title}</p>
@@ -175,7 +175,7 @@ export function TrainerNotificationBell({ onNavigate }: TrainerNotificationBellP
                   e.stopPropagation();
                   setPopups((prev) => prev.filter((x) => x.id !== p.id));
                 }}
-                className="text-white/30 hover:text-white transition-colors shrink-0"
+                className="text-white/60 hover:text-white transition-colors shrink-0 tap-target inline-flex items-center justify-center"
                 aria-label="Đóng"
               >
                 <X className="w-4 h-4" />
@@ -190,12 +190,12 @@ export function TrainerNotificationBell({ onNavigate }: TrainerNotificationBellP
         <button
           type="button"
           onClick={handleToggle}
-          className="relative w-9 h-9 rounded-xl text-white/40 hover:text-white hover:bg-white/5 flex items-center justify-center transition-all"
+          className="relative w-9 h-9 tap-target rounded-xl text-white/60 hover:text-white hover:bg-white/5 flex items-center justify-center transition-all"
           aria-label="Thông báo"
         >
           <Bell className="w-4 h-4" />
           {unread > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[#0F6B3E] border-2 border-[#0A0A0A] text-[9px] font-bold text-white flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] tabular-nums px-1 rounded-full bg-[#0F6B3E] border-2 border-[#0B0B0B] text-xs font-bold text-white flex items-center justify-center">
               {unread > 9 ? '9+' : unread}
             </span>
           )}
@@ -209,7 +209,7 @@ export function TrainerNotificationBell({ onNavigate }: TrainerNotificationBellP
                 <button
                   type="button"
                   onClick={handleMarkAllRead}
-                  className="text-[#0F6B3E] text-xs hover:underline"
+                  className="text-primary-text text-xs hover:underline tap-target"
                 >
                   Đánh dấu đã đọc tất cả
                 </button>
@@ -217,12 +217,12 @@ export function TrainerNotificationBell({ onNavigate }: TrainerNotificationBellP
             </div>
 
             {loading ? (
-              <p className="text-white/40 text-sm text-center py-8">Đang tải...</p>
+              <p className="text-white/60 text-sm text-center py-8">Đang tải...</p>
             ) : notifications.length === 0 ? (
-              <div className="flex flex-col items-center py-8 text-white/25 gap-1.5">
+              <div className="flex flex-col items-center py-8 text-white/60 gap-1.5">
                 <Bell className="w-6 h-6" />
                 <p className="text-sm">Không có thông báo mới.</p>
-                <p className="text-xs text-white/15">Thông báo sẽ hiển thị khi hội viên đặt lịch.</p>
+                <p className="text-xs text-white/60">Thông báo sẽ hiển thị khi hội viên đặt lịch.</p>
               </div>
             ) : (
               <div className="divide-y divide-white/5">
@@ -238,14 +238,14 @@ export function TrainerNotificationBell({ onNavigate }: TrainerNotificationBellP
                       }`}
                     >
                       <div className="w-8 h-8 rounded-full bg-[#0F6B3E]/15 flex items-center justify-center shrink-0 mt-0.5">
-                        <Icon className="w-4 h-4 text-[#0F6B3E]" />
+                        <Icon className="w-4 h-4 text-primary-text" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className={`text-sm ${!n.read ? 'text-white font-medium' : 'text-white/70'}`}>
                           {n.title}
                         </p>
-                        <p className="text-white/50 text-xs mt-0.5 leading-relaxed">{n.message}</p>
-                        <p className="text-white/30 text-[11px] mt-1">{relativeTime(n.created_at)}</p>
+                        <p className="text-white/60 text-xs mt-0.5 leading-relaxed">{n.message}</p>
+                        <p className="text-white/60 text-xs mt-1">{relativeTime(n.created_at)}</p>
                       </div>
                     </button>
                   );

@@ -11,7 +11,7 @@ from src.services.ai.agent import ChatAgent
 def agent():
     with patch.object(ChatAgent, "__init__", lambda self, settings=None: None):
         a = ChatAgent()
-        a.settings = MagicMock(anthropic_api_key="test", anthropic_model="m", anthropic_max_tokens=100)
+        a.settings = MagicMock(openai_api_key="test", openai_model="m", openai_max_tokens=100)
         a.memory = MagicMock()
         a.memory.get.return_value = []
         a.client = MagicMock()
@@ -22,7 +22,7 @@ def test_chat_requires_customer_id(agent):
     response = agent.chat("Xin chào", conversation_id="conv-1", customer_id=None)
     assert response.artifact is None
     assert "đăng nhập" in response.message.lower()
-    agent.client.messages.create.assert_not_called()
+    agent.client.chat.completions.create.assert_not_called()
 
 
 def test_chat_requires_customer_id_still_returns_three_suggestions(agent):
@@ -33,13 +33,14 @@ def test_chat_requires_customer_id_still_returns_three_suggestions(agent):
 def test_chat_first_turn_returns_fixed_suggestions(agent):
     from unittest.mock import MagicMock
 
-    text_block = MagicMock()
-    text_block.type = "text"
-    text_block.text = "Chào bạn!"
+    mock_message = MagicMock()
+    mock_message.content = "Chào bạn!"
+    mock_message.tool_calls = None
+    mock_choice = MagicMock()
+    mock_choice.message = mock_message
     mock_response = MagicMock()
-    mock_response.content = [text_block]
-    mock_response.stop_reason = "end_turn"
-    agent.client.messages.create.return_value = mock_response
+    mock_response.choices = [mock_choice]
+    agent.client.chat.completions.create.return_value = mock_response
 
     from src.services.ai.suggestions import FIXED_SUGGESTIONS
 
@@ -52,16 +53,17 @@ def test_chat_later_turn_returns_contextual_suggestions(agent):
 
     agent.memory.get.return_value = [
         {"role": "user", "content": "hi"},
-        {"role": "assistant", "content": [{"type": "text", "text": "hello"}]},
+        {"role": "assistant", "content": "hello"},
     ]
 
-    text_block = MagicMock()
-    text_block.type = "text"
-    text_block.text = "Đây là các khung giờ trống."
+    mock_message = MagicMock()
+    mock_message.content = "Đây là các khung giờ trống."
+    mock_message.tool_calls = None
+    mock_choice = MagicMock()
+    mock_choice.message = mock_message
     mock_response = MagicMock()
-    mock_response.content = [text_block]
-    mock_response.stop_reason = "end_turn"
-    agent.client.messages.create.return_value = mock_response
+    mock_response.choices = [mock_choice]
+    agent.client.chat.completions.create.return_value = mock_response
 
     response = agent.chat("Đặt lịch giúp tôi", conversation_id="conv-1", customer_id="Real User")
     assert len(response.suggestions) == 3

@@ -5,7 +5,7 @@ from typing import Any
 
 
 class ConversationMemory:
-    """Thread-safe store: conversation_id -> list of Anthropic message dicts."""
+    """Thread-safe store: conversation_id -> list of OpenAI message dicts."""
 
     def __init__(self, max_turns: int = 40):
         self._store: dict[str, list[dict[str, Any]]] = {}

@@ -5,12 +5,16 @@
  * lib/api/admin::adminLogin + setAdminToken directly.
  */
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { useAdminAuth } from '../../shared/hooks/useAdminAuth';
+import { SessionExpiredNotice } from '../../shared/components/SessionExpiredNotice';
 
 export function AdminLoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [expiredDismissed, setExpiredDismissed] = useState(false);
+  const showExpired = searchParams.get('expired') === '1' && !expiredDismissed;
   const { login } = useAdminAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -34,7 +38,7 @@ export function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080808] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#0B0B0B] flex items-center justify-center px-4">
       {/* subtle grid background */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.03]"
@@ -49,8 +53,8 @@ export function AdminLoginPage() {
         {/* Badge */}
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-2.5 bg-[#0F6B3E]/10 border border-[#0F6B3E]/30 rounded-full px-5 py-2">
-            <ShieldCheck className="w-4 h-4 text-[#0F6B3E]" />
-            <span className="text-[#0F6B3E] text-sm font-semibold tracking-wide">
+            <ShieldCheck className="w-4 h-4 text-primary-text" />
+            <span className="text-primary-text text-sm font-semibold tracking-wide">
               RENFIT ADMIN
             </span>
           </div>
@@ -59,7 +63,7 @@ export function AdminLoginPage() {
         {/* Card */}
         <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-[0_0_60px_rgba(15,107,62,0.12)]">
           <h1 className="text-2xl font-bold text-white mb-1">Coach Dashboard</h1>
-          <p className="text-white/40 text-sm mb-8">
+          <p className="text-white/60 text-sm mb-8">
             Đăng nhập để quản lý hội viên và lịch tập.
           </p>
 
@@ -69,11 +73,11 @@ export function AdminLoginPage() {
               <input
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => { setUsername(e.target.value); setExpiredDismissed(true); }}
                 placeholder="admin"
                 autoComplete="username"
                 data-testid="input-username"
-                className="w-full bg-white/5 border border-white/10 focus:border-[#0F6B3E] rounded-2xl px-4 py-3 text-white placeholder:text-white/25 outline-none transition-colors text-sm"
+                className="w-full bg-white/5 border border-white/10 focus:border-primary-text rounded-2xl px-4 py-3 text-white placeholder:text-white/40 outline-none transition-colors text-sm"
               />
             </div>
 
@@ -83,16 +87,16 @@ export function AdminLoginPage() {
                 <input
                   type={showPw ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); setExpiredDismissed(true); }}
                   placeholder="••••••"
                   autoComplete="current-password"
                   data-testid="input-password"
-                  className="w-full bg-white/5 border border-white/10 focus:border-[#0F6B3E] rounded-2xl px-4 py-3 text-white placeholder:text-white/25 outline-none transition-colors text-sm pr-12"
+                  className="w-full bg-white/5 border border-white/10 focus:border-primary-text rounded-2xl px-4 py-3 text-white placeholder:text-white/40 outline-none transition-colors text-sm pr-12"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw(!showPw)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 tap-target inline-flex items-center justify-center text-white/60 hover:text-white transition-colors"
                   aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 >
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -100,8 +104,10 @@ export function AdminLoginPage() {
               </div>
             </div>
 
+            {showExpired && <SessionExpiredNotice />}
+
             {error && (
-              <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-2.5" data-testid="admin-login-error">
+              <p className="text-error-text text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-2.5" data-testid="admin-login-error">
                 {error}
               </p>
             )}
@@ -117,9 +123,6 @@ export function AdminLoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-white/40 text-xs mt-6">
-          Trang quản trị — không dành cho hội viên
-        </p>
       </div>
     </div>
   );

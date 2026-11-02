@@ -12,7 +12,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useState } from 'react';
 import { fmtDate } from './inbodyFormat';
+import { InbodyPhotoTick, PHOTO_TICK_EXTRA } from './InbodyPhotoTick';
+import { PhotoLightbox } from '../shared/components/PhotoLightbox';
+import { resolveApiAsset } from '../../lib/api/profile';
 
 export interface InbodyRecord {
   id: string;
@@ -22,7 +26,11 @@ export interface InbodyRecord {
   SMM: number;
   BFM: number;
   date_recorded: string;
+  /** Progress-photo URLs (first = cover), shown under the record's date. */
+  photos?: string[];
 }
+
+type MetricKey = 'height' | 'weight' | 'SMM' | 'BFM';
 
 interface ChartRow {
   date: string;
@@ -31,7 +39,7 @@ interface ChartRow {
 }
 
 interface MetricDef {
-  key: keyof InbodyRecord;
+  key: MetricKey;
   label: string;
   unit: string;
   color: string;
@@ -197,25 +205,50 @@ function MetricRow({
   );
 }
 
-// ── X-axis date strip ───────────────────────────────────────────────────────
-function XAxisRow({ dates, displayDates, chartWidth }: { dates: string[]; displayDates: string[]; chartWidth: number }) {
+// ── X-axis date strip (+ photo thumbnails under each date) ─────────────────
+function XAxisRow({
+  dates,
+  displayDates,
+  photos,
+  chartWidth,
+  onOpenPhotos,
+}: {
+  dates: string[];
+  displayDates: string[];
+  photos: (string[] | undefined)[];
+  chartWidth: number;
+  onOpenPhotos: (index: number) => void;
+}) {
   const data = dates.map((d, i) => ({ date: d, value: 0, displayDate: displayDates[i] ?? '' }));
+  const hasPhotos = photos.some((p) => (p?.length ?? 0) > 0);
+  const height = 44 + (hasPhotos ? PHOTO_TICK_EXTRA : 0);
   return (
     <div className="flex items-stretch border-t border-white/[0.06]">
-      <div className="w-32 shrink-0" />
+      <div className="w-32 shrink-0 flex items-end px-4 pb-4">
+        {hasPhotos && <span className="text-white/30 text-xs leading-relaxed">Ảnh buổi đo</span>}
+      </div>
       <div className="flex-1 min-w-0 overflow-x-auto">
         <div style={{ minWidth: chartWidth }}>
-          <ResponsiveContainer width="100%" height={44}>
+          <ResponsiveContainer width="100%" height={height}>
             <LineChart data={data} margin={{ top: 0, right: 20, bottom: 0, left: 0 }} syncId="inbody">
               <XAxis
-                dataKey="displayDate"
+                dataKey="date"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: 'rgba(255,255,255,0.40)', fontSize: 11, fontWeight: 500 }}
                 padding={{ left: 20, right: 20 }}
                 interval={0}
-                height={44}
-                tickFormatter={(v: string) => (v.startsWith(PHANTOM) || !v ? '' : v)}
+                height={height}
+                tick={(props: { x?: number; y?: number; index?: number }) => (
+                  <InbodyPhotoTick
+                    key={`tick-${props.index}`}
+                    x={props.x}
+                    y={props.y}
+                    index={props.index}
+                    labels={displayDates}
+                    photos={photos}
+                    onOpen={onOpenPhotos}
+                  />
+                )}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -223,6 +256,11 @@ function XAxisRow({ dates, displayDates, chartWidth }: { dates: string[]; displa
       </div>
     </div>
   );
+}
+
+function fmtFullDate(iso: string): string {
+  const [y, m, d] = iso.slice(0, 10).split('-');
+  return d && m && y ? `${d}/${m}/${y}` : iso;
 }
 
 // ── Public component ────────────────────────────────────────────────────────
@@ -233,6 +271,8 @@ export function StackedInbodyChart({
   records: InbodyRecord[];
   emptyLabel?: string;
 }) {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
   if (records.length === 0) {
     return (
       <p className="text-white/20 text-xs text-center py-10">
@@ -252,8 +292,10 @@ export function StackedInbodyChart({
     ...Array.from({ length: phantomCount }, () => ''),
   ];
 
-  // 80px per point, minimum 5 points wide
+  // 90px per point, minimum 5 points wide
   const chartWidth = Math.max(allDates.length, MIN_CHART_POINTS) * 90;
+
+  const opened = openIndex !== null ? records[openIndex] ?? null : null;
 
   return (
     <div className="rounded-2xl overflow-hidden border border-white/8 bg-[#0D0D0D]">
@@ -280,7 +322,19 @@ export function StackedInbodyChart({
           />
         );
       })}
-      <XAxisRow dates={allDates} displayDates={displayDates} chartWidth={chartWidth} />
+      <XAxisRow
+        dates={allDates}
+        displayDates={displayDates}
+        photos={records.map((r) => r.photos)}
+        chartWidth={chartWidth}
+        onOpenPhotos={setOpenIndex}
+      />
+      <PhotoLightbox
+        open={opened !== null}
+        photos={(opened?.photos ?? []).map(resolveApiAsset)}
+        title={opened ? `Ngày đo ${fmtFullDate(opened.date_recorded)}` : undefined}
+        onClose={() => setOpenIndex(null)}
+      />
     </div>
   );
 }

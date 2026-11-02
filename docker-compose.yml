@@ -45,7 +45,7 @@ services:
       MONGODB_URI: "mongodb://mongo:27017/renfit"
       DB_NAME: "renfit"
       # Allow the public domain (production) + local dev origins
-      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000}"
+      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,https://crib-decibel-backslid.ngrok-free.dev}"
     depends_on:
       mongo:
         condition: service_healthy

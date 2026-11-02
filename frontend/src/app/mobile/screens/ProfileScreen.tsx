@@ -96,7 +96,7 @@ export function ProfileScreen({ onBack }: ProfileScreenProps) {
   return (
     <div className="flex flex-col min-h-0 flex-1">
       <StackHeader title="Hồ sơ cá nhân" onBack={onBack} />
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto overscroll-y-contain p-4">
         <form onSubmit={handleSubmit} className="space-y-5" data-testid="mobile-profile-form">
           <div className="flex flex-col items-center gap-3 pb-5 border-b border-white/8">
             <AvatarUpload value={avatar} onChange={setAvatar} size={88} disabled={loading} />

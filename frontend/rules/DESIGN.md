@@ -9,9 +9,10 @@ brand:
   tagline: "Nâng Tầm Thể Chất. Kiến Tạo Phiên Bản Tốt Nhất Của Bạn."
 
 colors:
-  primary: "#0F6B3E"
+  primary: "#0F6B3E"            # fills, buttons, active backgrounds — NOT for text/icons (2.99:1 on background)
   primary_hover: "#0d5a33"
   primary_light: "rgba(15, 107, 62, 0.2)"
+  primary_text: "#3DBE7A"       # same hue (≈148°) lifted for text, icons, focus ring on dark — 8.29:1 on background
   secondary: "rgba(255, 255, 255, 0.1)"
   background: "#0B0B0B"
   surface: "rgba(15, 15, 15, 0.8)"
@@ -19,13 +20,25 @@ colors:
   accent: "#0F6B3E"
   accent_glow: "rgba(15, 107, 62, 0.5)"
   text_primary: "#FFFFFF"
-  text_secondary: "rgba(255, 255, 255, 0.6)"
-  text_tertiary: "rgba(255, 255, 255, 0.4)"
+  text_secondary: "rgba(255, 255, 255, 0.6)"   # 7.26:1 — minimum for any text that carries information
+  text_tertiary: "rgba(255, 255, 255, 0.4)"    # 3.8:1 — decoration only (dividers, disabled, placeholder), never information
   border: "rgba(255, 255, 255, 0.1)"
   border_accent: "rgba(15, 107, 62, 0.3)"
   success: "#22c55e"
   warning: "#f59e0b"
   error: "#ef4444"
+  error_text: "#f87171"   # error-coloured text on dark — 7.12:1 (#ef4444 is 5.23:1, fills/icons only)
+
+# Booking status visual language. Every status = colour + icon + label; colour is never the only signal.
+# Icons are lucide-react names. "recede" statuses are visually quieter than "active" ones.
+booking_status:
+  pending:   { label: "Chờ duyệt", color: "warning",      icon: "Clock",         border: "solid",  emphasis: "active" }
+  approved:  { label: "Đã duyệt",  color: "primary_text", icon: "CalendarCheck", border: "solid",  emphasis: "active" }
+  completed: { label: "Đã tập",    color: "text_secondary", icon: "CheckCheck",  border: "solid",  emphasis: "recede" }
+  no_show:   { label: "Vắng",      color: "error_text",   icon: "UserX",         border: "solid",  emphasis: "active" }
+  rejected:  { label: "Từ chối",   color: "text_secondary", icon: "X",           border: "dashed", emphasis: "recede", text_decoration: "line-through" }
+  # "Today" / "now" highlighting in calendars uses primary fills; approved pills must stay
+  # distinguishable from it through the icon + solid primary_text border, not the fill colour.
 
 typography:
   heading_font: "'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
@@ -48,7 +61,8 @@ typography:
     body_lg: "1.25rem"   # 20px - Large body
     body: "1rem"         # 16px - Default
     body_sm: "0.875rem"  # 14px - Small text
-    caption: "0.75rem"   # 12px - Captions
+    caption: "0.75rem"   # 12px - Captions — absolute minimum size anywhere in the app (no 10/11px)
+  numeric: "tabular-nums"  # all times, counts, weights, and measurements
 
 layout:
   max_width: "1280px"   # 7xl container
@@ -147,11 +161,36 @@ motion:
   animation_style: "subtle_premium"
   scroll_behavior: "smooth"
 
+# Operations surfaces = authenticated trainer/PT work screens (admin dashboard: Hôm nay, Hội viên,
+# Lịch đặt, Lịch để bàn, member forms). Same theme, tuned for repeated daily use.
+# Marketing and member surfaces keep the defaults above.
+ops_surface:
+  type_scale:
+    body: "0.875rem"       # 14px
+    min: "0.75rem"         # 12px
+    emphasis: "1rem bold"  # member name + session time
+    kiosk_min: "1.25rem"   # Lịch để bàn — readable from ~2 m
+  glass_tier: "ambient"    # flat, no backdrop-blur on work screens; card/elevated tiers only for dialogs and sheets
+  hover_scale: 1           # no hover scale on list rows, calendar cells, pills
+  touch_target_coarse: "44px"   # min target on any pointer: coarse device (phones AND tablets)
+  touch_target_fine: "32px"     # desktop with mouse
+  motion:
+    view_switch: "150ms fade"   # tab/stack entrance — never longer on ops surfaces
+    looping: "none"             # no infinite animations except the kiosk now-line and loading spinners
+    result_feedback: "row-leave + undo toast"   # every state change confirms visually
+    polling_refresh: "silent"   # background refreshes never spin, flash, or re-stagger rows
+  destructive_actions:
+    frequent_reversible: "undo_toast_5s"   # reject booking, delete note
+    rare_or_hard_to_reverse: "confirm_dialog"  # archive member
+  data_freshness: "show last-updated time next to refresh; offline state on fetch failure"
+
 accessibility:
   contrast_strategy: "WCAG_AAA"
-  min_contrast_ratio: 7
-  focus_visible: "2px solid #0F6B3E"
+  min_contrast_ratio: 7          # body text target; 4.5 for large text; 3 for non-text UI
+  focus_visible: "2px solid #3DBE7A"   # primary_text — #0F6B3E was 2.99:1 and vanished on green cells
   focus_offset: "2px"
+  color_only_information: false  # status/state always also has an icon or text
+  live_regions: "toasts use role=status / aria-live=polite"
   vietnamese_typography_support:
     enabled: true
     fonts:
@@ -250,6 +289,30 @@ Use green strategically:
 - **Data visualization** — Progress bars, charts, achievements
 - **AI indicators** — Showing when AI is active or responding
 
+### Two greens: fill vs. text
+
+`#0F6B3E` is a deep emerald. It works as a **fill** (buttons, active tab background, today
+column) but only reaches 2.99:1 against `#0B0B0B`, so it fails as text or as a thin icon.
+
+`primary_text` (`#3DBE7A`) is the same hue lifted for legibility (8.29:1). Use it for:
+- Green text and labels (active tab label, links, "Đã duyệt")
+- Icons that carry meaning
+- The keyboard focus ring
+
+Rule of thumb: **green background → `#0F6B3E`; green foreground → `#3DBE7A`.** These are the
+only two greens; do not introduce others.
+
+### Text contrast tiers
+
+| Token | Ratio on `#0B0B0B` | Use |
+|---|---|---|
+| `text_primary` (white) | 19:1 | Names, times, headings, values |
+| `white/70` | 9.7:1 | Secondary labels |
+| `text_secondary` (`white/60`) | 7.3:1 | **Minimum for anything the user needs to read** — dates, goals, counts, empty states |
+| `text_tertiary` (`white/40`) | 3.8:1 | Decoration only: placeholders, disabled, dividers |
+
+`white/20`–`/35` are not text colors.
+
 ### Glassmorphism & Depth
 
 The layered transparency system creates **visual depth**:
@@ -346,6 +409,64 @@ Vietnamese text in inputs needs:
 - **Proper line-height** (1.5) — Space for diacritics
 - **Adequate padding** (1rem vertical) — Prevents clipping
 - **No text-transform** — Never uppercase Vietnamese
+
+## Operations Surfaces (Trainer / PT)
+
+The PT dashboard is a work tool opened dozens of times a day on a phone, a tablet at the front
+desk, or a laptop. It keeps the dark luxury theme but tunes it for **glanceable, one-handed,
+interruption-safe** use. These rules override the generic component rules above on
+operations surfaces only (see `ops_surface` in the tokens).
+
+### Layout around time
+A PT's question is "what's now, and what's next?". Screens lead with time:
+- Hôm nay opens with a **Đang tập / Tiếp theo** card, then a chronological list.
+- Every session row is tappable and opens the member (notes, health, InBody).
+- Times are always shown with their date when a list spans more than one day.
+
+### Flat surfaces, glass for overlays
+Backdrop blur needs something behind it to read as glass. Work screens are a flat black
+background with dense, frequently refreshed lists, so blur costs performance and adds nothing.
+Use the `ambient` glass tier (no blur) for rows, panels and calendar cells. Keep `card` /
+`elevated` tiers for modals, sheets and toasts.
+
+### Density without shrinking text
+Density comes from tighter spacing and fewer decorations, not from smaller type:
+- 14px normal text, 12px absolute minimum (no `text-[10px]` / `text-[11px]`).
+- Member name and session time are the bold, high-contrast pair on every row.
+- `tabular-nums` on all times and measurements.
+- No `uppercase` labels (Vietnamese diacritics).
+
+### Touch targets
+Phones **and tablets** are touch devices. On any `pointer: coarse` device, every control is at
+least 44×44px (expand the hit area with padding when the icon is smaller). This includes modal
+close buttons, calendar booking pills, sort/filter chips and checkboxes.
+
+### Status visual language
+Booking statuses follow the `booking_status` token table: colour **plus** icon **plus** label.
+Finished or removed states (`completed`, `rejected`) recede; states that need attention
+(`pending`, `no_show`) stand out. Screen readers get the status in the accessible name, not in a
+`title` tooltip.
+
+### Actions and feedback
+- Common actions (approve, reject, Đã tập, Vắng) are **one tap** and update the screen
+  immediately.
+- Frequent, reversible actions show a 5-second **undo toast** instead of a confirmation dialog.
+- Rare or hard-to-reverse actions (archive a member) use a **confirmation dialog**.
+- No silent failures: every failed action shows an error toast and restores the previous state.
+- Closing a form with unsaved changes asks before discarding.
+- The same booking actions, labels and icons appear everywhere a booking appears (Hôm nay,
+  Lịch đặt, Lịch để bàn, member detail).
+
+### Motion on operations surfaces
+- View and tab switches: 150ms fade at most.
+- No infinite loops except loading spinners and the kiosk now-line.
+- No hover scale on rows, cells or pills — change background or border instead.
+- Motion confirms results: row-leave on resolve, a brief highlight on a changed booking.
+- Background polling is silent: no spinner, no flash, no re-staggered entrance.
+
+### Data freshness
+Live screens show "Cập nhật HH:MM" next to the refresh control and an offline state when a
+refresh fails, so a PT knows whether what they see is current.
 
 ## AI Coach Experience Design
 
@@ -510,14 +631,18 @@ All text must meet **WCAG AAA** standards:
 - Large text (18px+): 4.5:1 contrast ratio
 - Body text (16px): 7:1 contrast ratio
 
-White text on dark background provides excellent contrast naturally.
+White text on dark background provides excellent contrast naturally, but translucent white does
+not: see "Text contrast tiers" above. `white/60` is the minimum for informational text.
+
+Never convey information by colour alone: statuses, errors and selected states also carry an
+icon or text.
 
 ### Focus Indicators
 
-Keyboard navigation shows **green focus rings**:
+Keyboard navigation shows **green focus rings** in `primary_text`:
 
 ```css
-outline: 2px solid #0F6B3E;
+outline: 2px solid #3DBE7A;
 outline-offset: 2px;
 ```
 
@@ -582,15 +707,18 @@ Regular audits should verify:
 - [ ] All Vietnamese text uses Be Vietnam Pro
 - [ ] All spacing follows 8px grid
 - [ ] All interactions have 300ms transitions
-- [ ] All green accents use #0F6B3E
+- [ ] Green fills use #0F6B3E; green text/icons/focus use #3DBE7A
 - [ ] All focus states show green outline
+- [ ] No informational text below white/60, no text below 12px
+- [ ] Booking statuses use the colour + icon + label table
 
 ### Common Anti-Patterns to Avoid
 
 ❌ **Don't**:
 - Use bright backgrounds — Breaks dark luxury theme
 - Use sans-serif fonts without Vietnamese support
-- Create new shades of green — Use the defined palette
+- Create new shades of green — Use the two defined greens (#0F6B3E fill, #3DBE7A text)
+- Use #0F6B3E for text or thin icons — it fails contrast on the dark background
 - Use harsh animations — Keep motion subtle
 - Uppercase Vietnamese text — Diacritics break
 - Remove focus indicators — Accessibility requirement
@@ -627,8 +755,23 @@ When building new features, ensure:
 - [ ] Safety warnings included for health-related features
 - [ ] Responsive design works on mobile (640px+)
 
+Additionally, for operations surfaces (PT dashboard):
+
+- [ ] Flat `ambient` tier on work screens; blur only on overlays
+- [ ] 44px targets on `pointer: coarse`, 12px minimum text, `tabular-nums` on times
+- [ ] One-tap common actions with undo; confirm dialog only for archive-type actions
+- [ ] No silent failures; "Cập nhật HH:MM" on live screens
+- [ ] View switches ≤150ms, no hover scale on rows/cells, no looping animation
+
 ---
 
-**Last Updated**: 2026-05-28  
-**Version**: 1.0.0  
+## Changelog
+
+| Version | Date | Changes |
+|---|---|---|
+| 1.1.0 | 2026-10-30 | Added `primary_text` (#3DBE7A) and `error_text`; focus ring moved to `primary_text`; text contrast tiers (`white/60` minimum for information); booking status visual language incl. `completed` / `no_show`; 12px minimum text; new "Operations Surfaces (Trainer / PT)" rules (flat tier, 44px coarse targets, undo vs confirm, ops motion, data freshness). Source: PT UI/UX review (`.kiro/aidlc-docs/inception/requirements/pt-ux-review-v5.md`). |
+| 1.0.0 | 2026-05-28 | Initial design system. |
+
+**Last Updated**: 2026-10-30  
+**Version**: 1.1.0  
 **Maintained by**: Renfit Design Team

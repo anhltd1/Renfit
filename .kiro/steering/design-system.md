@@ -13,10 +13,12 @@ file distills it into actionable rules for day-to-day component work. If they ev
 | Token | Value / Tailwind |
 |---|---|
 | Background | `#0B0B0B` → `bg-[#0B0B0B]` (or `bg-black` for sidebars) |
-| Primary (emerald) | `#0F6B3E` → `bg-[#0F6B3E]`, `text-[#0F6B3E]`, `border-[#0F6B3E]/30` |
+| Primary (emerald) — **fills only** | `#0F6B3E` → `bg-[#0F6B3E]`, `bg-[#0F6B3E]/20`, `border-[#0F6B3E]/30` (2.99:1 — never text/thin icons) |
+| Primary text — green foreground | `#3DBE7A` → `text-[#3DBE7A]`, icons, focus ring (8.29:1) |
+| Error text | `#f87171` → `text-[#f87171]` (`#ef4444` for fills/icons only) |
 | Glass surface | `bg-white/5 backdrop-blur-sm` (or `backdrop-blur-xl` for elevated panels) |
 | Border | `border-white/10` |
-| Text primary / secondary / tertiary | `text-white` / `text-white/60`–`/70` / `text-white/40` |
+| Text primary / secondary / tertiary | `text-white` / `text-white/60`–`/70` / `text-white/40` — `/60` is the minimum for informational text; `/40` is decoration only (placeholder, disabled); `/20`–`/35` are not text colors |
 | Hover glow | `hover:shadow-[0_0_30px_rgba(15,107,62,0.5)]` |
 | Font | Be Vietnam Pro (via `theme.css`; fallback Inter) |
 | Radius | pill (`rounded-full`) for buttons; `rounded-3xl` (~24px) for cards; `rounded-2xl` for inputs |
@@ -65,11 +67,38 @@ mobile navigation pattern — bottom sheets replace centered modals on mobile).
 - Be Vietnam Pro (falls back to Inter) — never swap fonts without Vietnamese diacritic support.
 - `leading-relaxed` (line-height ≥ 1.5) on all Vietnamese text — prevents accent clipping.
 - **Never `uppercase`** on Vietnamese text — breaks diacritics.
-- Body text minimum `text-sm` (14px).
+- Body text minimum `text-sm` (14px). Absolute minimum anywhere `text-xs` (12px) — no
+  `text-[10px]` / `text-[11px]`.
+- `tabular-nums` on times, counts and measurements.
+
+## Booking status visual language
+Colour + icon + label, always (DESIGN.md `booking_status`). Never a colour-only pill or a
+`title`-only status.
+
+| Status | Label | Colour | Icon (lucide) | Notes |
+|---|---|---|---|---|
+| `pending` | Chờ duyệt | warning `#f59e0b` | `Clock` | stands out |
+| `approved` | Đã duyệt | `#3DBE7A` | `CalendarCheck` | solid border; must not rely on the today-column green |
+| `completed` | Đã tập | `white/60` | `CheckCheck` | recedes |
+| `no_show` | Vắng | `#f87171` | `UserX` | stands out |
+| `rejected` | Từ chối | `white/60` | `X` | dashed border + line-through, recedes |
+
+Keep one shared status-meta map; don't redefine per component.
+
+## Operations surfaces (PT dashboard)
+DESIGN.md "Operations Surfaces" overrides the generic component rules on trainer screens:
+- Flat `ambient` tier (no blur) for rows, panels and calendar cells; blur only for overlays.
+- 44px min targets on `pointer: coarse` (phones **and** tablets); 32px on fine pointers.
+- No hover `scale` on rows, cells or pills; view switches ≤ `--motion-fast`; no looping animation
+  except spinners and the kiosk now-line; background polling never spins or re-staggers.
+- One-tap common actions with a 5 s undo toast; confirm dialog only for archive-type actions; no
+  silent failures; ask before discarding a dirty form.
+- Live screens show "Cập nhật HH:MM" and an offline state.
 
 ## Accessibility
-- Visible focus ring: `focus:outline-none focus:border-[#0F6B3E]` or
-  `focus-visible:ring-2 focus-visible:ring-[#0F6B3E]` — never remove focus indicators.
+- Visible focus ring: `focus:outline-none focus:border-[#3DBE7A]` or
+  `focus-visible:ring-2 focus-visible:ring-[#3DBE7A]` — never remove focus indicators.
+- Never convey information by colour alone. Toasts use `role="status"` / `aria-live="polite"`.
 - WCAG AAA-oriented contrast target (7:1 body text, 4.5:1 large text). Full WCAG certification
   requires manual assistive-tech testing — don't claim compliance, just target the ratios.
 - Respect `prefers-reduced-motion` when adding new animation.
@@ -103,12 +132,44 @@ Rules:
 - Nothing on a blocking path may exceed `--motion-slow`.
 - `prefers-reduced-motion: reduce` is handled globally in `theme.css` (durations collapse; loading
   spinners stay animated). JS-driven motion must check it itself — see `useCountUp`.
-- Keep all animation "subtle premium" — noticeable, not flashy. No scroll-triggered reveals,
-  parallax, or celebration animations.
+- Keep all animation "subtle premium" — noticeable, not flashy.
+- **Scroll-triggered reveals**: permitted on *public marketing surfaces* only (see below).
+  Forbidden on authenticated surfaces.
+
+## Marketing-surface motion & glassmorphism tiers
+
+**Public marketing surface** — any route reachable without an established customer or trainer
+identity whose purpose is promotional rather than task-completion. Currently the only instance
+is `Landing_Page` at `/`.
+
+### Scroll-triggered reveals
+- Permitted on public marketing surfaces ONLY.
+- "One-time" = fires at most once per element per page load; never re-fires when the element
+  re-enters the viewport.
+- Forbidden on authenticated surfaces (any surface behind `AuthGuard` / `AdminGuard`).
+- `useInView` hook + existing `animate-fade-up` utility is the ONLY permitted mechanism. Any
+  other reveal implementation is rejected in review.
+
+### Still forbidden everywhere (including marketing)
+Parallax, scroll-linked transforms, marquees, cursor-following effects, celebration animations,
+and animation library dependencies (framer-motion et al.).
+
+## Glass_Tier levels
+
+| Tier | Backdrop blur | Background | Border | Inner highlight |
+|---|---|---|---|---|
+| `ambient` | none | `from-white/[0.04] to-white/[0.01]` | `border-white/10` | — |
+| `card` | 12px | `from-white/[0.07] to-white/[0.02]` | `border-white/10` | `inset 0 1px 0 rgba(255,255,255,0.08)` |
+| `elevated` | 20–24px | `from-white/[0.07] to-white/[0.02]` | `border-white/10` | `inset 0 1px 0 rgba(255,255,255,0.08)` |
+
+Use via the `Card` primitive's `tier` prop (`frontend/src/app/shared/primitives/Card.tsx`).
 
 ## Common anti-patterns (reject these in review)
 - Light backgrounds / `bg-white text-black` anywhere in the app.
-- Generic Tailwind green (`bg-green-500`) instead of `#0F6B3E`.
+- Generic Tailwind green (`bg-green-500`, `text-emerald-*`, `#6ee7b7`) instead of `#0F6B3E` (fill)
+  / `#3DBE7A` (text).
+- `text-[#0F6B3E]` on text or thin icons (fails contrast — use `#3DBE7A`).
+- Informational text below `white/60`, or text below 12px.
 - Solid card backgrounds instead of glassmorphism.
 - Uppercased Vietnamese text.
 - Removing focus outlines.

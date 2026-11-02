@@ -13,8 +13,8 @@ files below; read those on-demand for the area you're working in rather than loa
 at once.
 
 ## Stack at a glance
-- **Backend**: Python 3.10+, FastAPI, PyMongo (MongoDB, db name `renfit`), Anthropic Claude
-  (`claude-3-5-haiku-20241022`) for the AI Coach, `passlib[bcrypt]` for auth, `pywebpush` for
+- **Backend**: Python 3.10+, FastAPI, PyMongo (MongoDB, db name `renfit`), OpenAI
+  (`gpt-5.6-luna`) for the AI Coach, `passlib[bcrypt]` for auth, `pywebpush` for
   Web Push notifications (VAPID). Tests: `pytest`.
 - **Frontend**: React 18 + TypeScript + Vite 6, Tailwind CSS 4, `react-router` 7, Radix UI +
   some MUI, `recharts` (charts), `react-markdown` (chat), `lucide-react` (icons). Tests: Vitest +
@@ -55,7 +55,7 @@ at once.
 - `aidlc-workflow.md` — how the AI-DLC methodology is used on this project, and where its docs live
 
 ## Recent work (as of this writing)
-Two AI-DLC initiatives completed:
+Four AI-DLC initiatives completed:
 1. **V1 (U1–U9)**: Frontend UI/UX rebuild — DESIGN.md conformance, native-like mobile UI via
    device detection, PWA, code-splitting, accessibility pass, Docker/Caddy deployment.
 2. **V2 (U10–U17)**: Admin UX & feature improvements — denser admin layout, "Hôm nay" PT landing
@@ -63,7 +63,17 @@ Two AI-DLC initiatives completed:
    list sorting + two-column detail, member home dashboard (next session hero, progress strip,
    body composition ring), Web Push notifications replacing polling.
 
-Both are complete. See `.kiro/aidlc-docs/aidlc-state.md` for full status.
+3. **V3/V4 (U18–U19)**: Motion polish — duration tokens, reduced-motion, tab crossfade, undo-friendly
+   row-leave, count-up, typing indicator, card tilt, SVG empty states (`motion` package installed).
+4. **V5 (U20–U25)**: PT experience — attendance tracking (`completed` "Đã tập" / `no_show` "Vắng"
+   booking statuses with server-side transition rules), Hôm nay hub (Đang tập/Tiếp theo card, tappable
+   sessions → member, pending grouped by day, freshness indicator), undo toasts + confirm dialogs,
+   accent-insensitive search, safer member/InBody forms, mobile edit/archive + single-day agenda +
+   client filters, new `primary_text` green (`#3DBE7A`) and booking-status visual language, ops
+   motion/size rules, session-expiry message, tablet/phone tree switch. Design rules:
+   `frontend/rules/DESIGN.md` v1.1.0 "Operations Surfaces".
+
+All are complete. See `.kiro/aidlc-docs/aidlc-state.md` for full status.
 
 ## Ground rules that apply everywhere
 - All user-facing text is **Vietnamese**, dark theme only, no light-mode variants.

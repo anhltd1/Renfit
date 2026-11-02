@@ -82,6 +82,8 @@ self.addEventListener('push', (event) => {
   const { title = 'Renfit', body = '', url = '/' } = payload;
 
   event.waitUntil(
+    Promise.all([
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((cs) => cs.forEach((c) => c.postMessage({ type: 'push-received' }))),
     self.registration.showNotification(title, {
       body,
       icon: '/icon-192.png',
@@ -89,6 +91,7 @@ self.addEventListener('push', (event) => {
       data: { url },
       vibrate: [100, 50, 100],
     }),
+    ]),
   );
 });
 

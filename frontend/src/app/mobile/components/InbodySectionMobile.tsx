@@ -54,7 +54,7 @@ export function InbodySectionMobile({ customerId }: InbodySectionMobileProps) {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h3 className="text-white font-semibold text-sm">InBody — Lịch sử chỉ số</h3>
-          <p className="text-white/30 text-xs mt-0.5">
+          <p className="text-white/60 text-xs mt-0.5">
             {records.length} lần đo
             {lastRecord && ` · Gần nhất: ${fmtDate(lastRecord.date_recorded)}`}
           </p>
@@ -62,7 +62,7 @@ export function InbodySectionMobile({ customerId }: InbodySectionMobileProps) {
         <button
           type="button"
           onClick={() => setShowSheet(true)}
-          className="flex items-center gap-1.5 bg-[#0F6B3E]/15 hover:bg-[#0F6B3E]/25 border border-[#0F6B3E]/30 hover:border-[#0F6B3E]/50 text-[#0F6B3E] text-sm px-3 py-2 rounded-xl transition-all shrink-0"
+          className="flex items-center gap-1.5 bg-[#0F6B3E]/15 hover:bg-[#0F6B3E]/25 border border-[#0F6B3E]/30 hover:border-[#0F6B3E]/50 text-primary-text text-sm px-3 py-2 rounded-xl transition-all shrink-0"
         >
           <Plus className="w-3.5 h-3.5" />
           Thêm
@@ -70,7 +70,7 @@ export function InbodySectionMobile({ customerId }: InbodySectionMobileProps) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-10 text-white/20">
+        <div className="flex items-center justify-center py-10 text-white/60">
           <RefreshCw className="w-5 h-5 animate-spin" />
         </div>
       ) : (

@@ -16,11 +16,28 @@ const customer: CustomerSummary = {
 };
 
 describe('SidebarRow', () => {
-  it('renders customer id, phone, and goal', () => {
+  it('renders name and goal on two calm lines (phone lives in the detail header)', () => {
     render(<SidebarRow customer={customer} selected={false} onClick={vi.fn()} />);
     expect(screen.getByText('Nguyen Van A')).toBeInTheDocument();
-    expect(screen.getByText('0900000000')).toBeInTheDocument();
     expect(screen.getByText('Giảm mỡ')).toBeInTheDocument();
+    expect(screen.queryByText('0900000000')).toBeNull();
+  });
+
+  it('shows the last session as one quiet date and falls back when no goal is set', () => {
+    render(
+      <SidebarRow
+        customer={{ ...customer, goal: '', last_session: '2026-09-09' }}
+        selected={false}
+        onClick={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Chưa đặt mục tiêu')).toBeInTheDocument();
+    expect(screen.getByText('09/09')).toBeInTheDocument();
+  });
+
+  it('marks archived members with plain text, not a pill per row', () => {
+    render(<SidebarRow customer={{ ...customer, active: false }} selected={false} onClick={vi.fn()} />);
+    expect(screen.getByText('Đã nghỉ')).toBeInTheDocument();
   });
 
   it('calls onClick when clicked', () => {

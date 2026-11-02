@@ -18,8 +18,15 @@ export interface StackState<T> {
   canPop: boolean;
 }
 
-export function useStack<T>(initial: T): StackState<T> {
-  const [stack, setStack] = useState<T[]>([initial]);
+/**
+ * @param initial root screen
+ * @param restored optional screen to start on top of the root (e.g. restored
+ *   from the URL after a refresh); ignored when it equals the root.
+ */
+export function useStack<T>(initial: T, restored?: T): StackState<T> {
+  const [stack, setStack] = useState<T[]>(() =>
+    restored !== undefined && restored !== initial ? [initial, restored] : [initial],
+  );
 
   const push = useCallback((screen: T) => {
     setStack((prev) => [...prev, screen]);

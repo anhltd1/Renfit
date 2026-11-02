@@ -51,7 +51,7 @@ export function Button({
         // Press feedback: a 3% dip reads as "registered" on touch, where there
         // is no hover state to confirm the tap.
         'active:scale-[0.97] active:duration-[var(--motion-fast)] disabled:active:scale-100',
-        'outline-none focus-visible:ring-2 focus-visible:ring-[#0F6B3E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0B0B]',
+        'outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0B0B]',
         'disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none',
         VARIANT[variant],
         SIZE[size],

@@ -52,7 +52,7 @@ export function PullToRefresh({ onRefresh, children, className = '' }: PullToRef
   return (
     <div
       ref={scrollRef}
-      className={`flex-1 overflow-y-auto relative ${className}`}
+      className={`flex-1 overflow-y-auto overscroll-y-contain relative ${className}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

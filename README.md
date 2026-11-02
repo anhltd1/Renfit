@@ -9,7 +9,7 @@ A full-stack web app for a private gym. Customers book sessions, track body comp
 | Frontend | React 18 + Vite + TypeScript + Tailwind CSS |
 | Backend | Python 3.11 + FastAPI |
 | Database | MongoDB 7 (self-hosted via Docker, persisted volume) |
-| AI Coach | Anthropic Claude (Haiku) via tool-use agents |
+| AI Coach | OpenAI GPT-5.6-luna via tool-use agents |
 | Notifications | Web Push (VAPID) — real-time native OS notifications |
 | Auth | bcrypt password hashing (passlib) |
 | Infra | Docker + Docker Compose + Caddy (TLS, reverse proxy) |
@@ -27,7 +27,7 @@ cp backend/env/.env.example backend/env/.env
 Edit `backend/env/.env` and fill in:
 
 ```
-ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
 ```
 
 For Web Push notifications (optional — app works without it):
@@ -132,7 +132,7 @@ A trainer account is seeded on first startup (idempotent):
 ### Member-facing
 - **Data-driven home dashboard** — next session with countdown, weight/BFM progress since first measurement, contextual AI Coach entry. Replaces static navigation links.
 - **Customer auth** — signup with personal info (name, phone, age, goal, health notes, height/weight); bcrypt password; avatar upload.
-- **AI Coach** — Claude Haiku agent with tool use (look up customer profile, create/cancel bookings, check availability). Respects blocked slots. Chat state persists within a browser session.
+- **AI Coach** — GPT-5.6-luna agent with tool use (look up customer profile, create/cancel bookings, check availability). Respects blocked slots. Chat state persists within a browser session.
 - **Bookings** — 5-day sliding calendar (Mon–Sat, 08:00–20:00, 1-hour slots, max 4 customers/slot). Two-week bookable window. Blocked slots shown as unavailable.
 - **InBody tracking** — read-only stacked line charts, body composition ring (muscle/fat/rest), first-vs-latest comparison with delta arrows.
 - **Web Push notifications** — real-time native OS notifications for booking approvals, session reminders, new InBody data. No polling.
@@ -162,7 +162,7 @@ Renfit/
 │   │   ├── init_db/          # DB init, reset, and seed scripts
 │   │   ├── schema/           # Pydantic models (Customer, Booking, BlockedSlot, PushSubscription, etc.)
 │   │   └── services/
-│   │       ├── ai/           # Claude agent, tools, prompts
+│   │       ├── ai/           # OpenAI agent, tools, prompts
 │   │       ├── booking_service.py
 │   │       ├── blocked_slot_service.py
 │   │       ├── push_service.py
@@ -214,7 +214,7 @@ git clone https://github.com/YOUR_USERNAME/renfit.git && cd renfit
 cp backend/env/.env.example backend/env/.env
 nano backend/env/.env
 # Fill in:
-#   ANTHROPIC_API_KEY=sk-ant-...
+#   OPENAI_API_KEY=sk-...
 #   VAPID_PUBLIC_KEY=...   (generate: npx web-push generate-vapid-keys)
 #   VAPID_PRIVATE_KEY=...
 
@@ -300,6 +300,7 @@ You can safely push the entire repo — no secrets will leak.
 ## Further Reading
 
 - [`DOCKER.md`](DOCKER.md) — Docker commands, environment variables, and production deployment details
+- [`NGROK.md`](NGROK.md) — Mobile testing with ngrok (expose localhost to your phone)
 - [`backend/docs/data-model.md`](backend/docs/data-model.md) — MongoDB collections and schema
 - [`backend/docs/notifications.md`](backend/docs/notifications.md) — Notification system design
 - [`frontend/README.md`](frontend/README.md) — Frontend architecture and components

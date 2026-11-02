@@ -15,6 +15,18 @@ export interface InbodyRecordOut {
   SMM: number;
   BFM: number;
   date_recorded: string;
+  /** Progress-photo URLs uploaded by the PT (first = cover). */
+  photos?: string[];
+}
+
+/**
+ * Resolve an API-relative asset path (e.g. an InBody photo URL returned by
+ * the backend) against `VITE_API_URL`. Data-URLs and absolute URLs pass
+ * through unchanged.
+ */
+export function resolveApiAsset(path: string): string {
+  if (!path.startsWith('/')) return path;
+  return url(path);
 }
 
 /**

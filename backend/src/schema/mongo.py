@@ -23,6 +23,13 @@ def _spec(
     return {"name": name, "validator": validator, "indexes": indexes}
 
 
+# Also ensured on every startup (main.py) so databases created before the
+# InbodyPhoto collection existed get the indexes without a reset.
+INBODY_PHOTO_INDEXES: list[dict[str, Any]] = [
+    {"keys": [("id", 1)], "unique": True, "name": "inbody_photo_id_unique"},
+    {"keys": [("inbody_id", 1)], "name": "inbody_photo_inbody"},
+]
+
 COLLECTION_SPECS: list[CollectionSpec] = [
     _spec(
         col.CUSTOMER,
@@ -103,7 +110,9 @@ COLLECTION_SPECS: list[CollectionSpec] = [
                     "customer_id": {"bsonType": "string"},
                     "trainer_id": {"bsonType": "string"},
                     "time": {"bsonType": DATE_OR_STRING},
-                    "status": {"enum": ["pending", "approved", "rejected"]},
+                    "status": {
+                        "enum": ["pending", "approved", "rejected", "completed", "no_show"]
+                    },
                     "note": {"bsonType": "string"},
                 },
             }
@@ -139,10 +148,29 @@ COLLECTION_SPECS: list[CollectionSpec] = [
                     "date_recorded": {"bsonType": DATE_OR_STRING},
                     "SMM": {"bsonType": NUMBER_BSON},
                     "BFM": {"bsonType": NUMBER_BSON},
+                    "photo_ids": {"bsonType": "array", "items": {"bsonType": "string"}},
                 },
             }
         },
         [{"keys": [("id", 1)], "unique": True, "name": "inbody_id_unique"}],
+    ),
+    _spec(
+        col.INBODY_PHOTO,
+        {
+            "$jsonSchema": {
+                "bsonType": "object",
+                "required": ["id", "inbody_id", "customer_id", "content_type", "data", "created_at"],
+                "properties": {
+                    "id": {"bsonType": "string"},
+                    "inbody_id": {"bsonType": "string"},
+                    "customer_id": {"bsonType": "string"},
+                    "content_type": {"enum": ["image/jpeg", "image/png", "image/webp"]},
+                    "data": {"bsonType": "binData"},
+                    "created_at": {"bsonType": DATE_OR_STRING},
+                },
+            }
+        },
+        INBODY_PHOTO_INDEXES,
     ),
     _spec(
         col.CHAT_SESSION,

@@ -1,5 +1,8 @@
 /**
  * useAdminToday — fetches today's sessions + pending bookings for the PT landing view.
+ * U22: `data.sessions[]` carry the booking `id` and `status`
+ * (approved | completed | no_show) and `data.unmarked_count` counts started,
+ * still-approved sessions not yet marked (for the U23 "Hôm nay" hub).
  * Polls every 10s; pauses while the caller is performing an action.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -12,10 +15,14 @@ export function useAdminToday() {
   const pausedRef = useRef(false);
 
   const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    setError('');
+    if (!silent) {
+      setLoading(true);
+      setError('');
+    }
     try {
-      setData(await fetchToday());
+      const next = await fetchToday();
+      setData(next);
+      setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Không tải được dữ liệu.');
     } finally {

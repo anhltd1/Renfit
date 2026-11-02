@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import { Bot, Calendar, TrendingDown, TrendingUp, Weight } from 'lucide-react';
 import { NotificationBell } from '../../components/NotificationBell';
 import { StackHeader } from '../shell/StackHeader';
-import { PullToRefresh } from '../../shared/primitives/PullToRefresh';
 import type { MobileTabKey } from '../shell/BottomTabBar';
 import type { AuthUser } from '../../../lib/auth';
 import { fetchMyInbody } from '../../../lib/api/profile';
@@ -79,7 +78,7 @@ export function OverviewScreen({ user, onNavigateTab }: OverviewScreenProps) {
           </div>
         }
       />
-      <PullToRefresh onRefresh={async () => { await load(); }} className="p-3 space-y-3">
+      <div className="flex-1 overflow-y-auto overscroll-y-contain p-3 space-y-3">
         {loading ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -156,7 +155,7 @@ export function OverviewScreen({ user, onNavigateTab }: OverviewScreenProps) {
             </div>
           </>
         )}
-      </PullToRefresh>
+      </div>
     </div>
   );
 }

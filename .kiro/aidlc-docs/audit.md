@@ -930,3 +930,37 @@ Complete audit trail of all user inputs and AI responses. Timestamps in ISO 8601
 **Context**: U19 complete.
 
 ---
+
+---
+## New Initiative: PT Experience Improvements (V5) — Review
+**Timestamp**: 2026-10-30T00:00:00+07:00
+**User Input**: "Use the ui-ux-pro-max skill to review the current UI/UX of Renfit project. Then recommend fixes so that it suit best for the trainers and PT"
+**AI Response**: Reviewed trainer-side screens (code reading, no changes) against ui-ux-pro-max guidelines. Findings P0–P2 delivered as a review artifact.
+**Context**: Pre-inception review.
+---
+## V5 — Review feedback
+**Timestamp**: 2026-10-30T00:00:00+07:00
+**User Input**: "The 'Today' is wrong between 00:00 and 07:00 is the working hour from the gym not the calendar itself so I don't recommend doing that. Other fixes I agree with you. Now for the UI suggested fixes, what do you think about the theme, design, animations and user's experience."
+**AI Response**: Dropped the UTC-today item. Gave theme/design/motion/UX recommendations (split green into fill #0F6B3E + text #3DBE7A, status language, flat ambient tier on PT screens, 14/12px type, ≤150ms view switches, undo-over-confirm, tablet as touch).
+**Context**: Recommendations accepted next turn.
+---
+## V5 — Docs, Requirements, Design, Units
+**Timestamp**: 2026-10-30T00:00:00+07:00
+**User Input**: "Very good! I like those recommendations. Now update the docs for me first. Then update requirements, design and plan upcoming task for me"
+**AI Response**: Updated `frontend/rules/DESIGN.md` to v1.1.0 and synced `.kiro/steering/design-system.md`. Saved review as `inception/requirements/pt-ux-review-v5.md`. Generated `requirements-v5.md` (13 FRs, 7 NFRs, assumptions A1–A6), `application-design-v5.md` (D1–D9), `unit-of-work-v5.md` (U20–U25) and the U20 code generation plan. Backfilled V3/V4 entries in `aidlc-state.md`.
+**Context**: Awaiting approval of requirements/design/units and confirmation of assumptions A1–A6 before U20 Code Generation.
+---
+
+## V5 — Approval
+**Timestamp**: 2026-10-30T15:10:00+07:00
+**User Input**: "Approve for all changes now. You can create sub-agent to work on parallel for me."
+**AI Response**: Requirements, design, units and assumptions A1–A6 approved as written. Construction starts with parallel sub-agents on file-disjoint work: Phase 1 = U20 (frontend foundation) ∥ U22 backend; Phase 2 = U21 ∥ U22 frontend; Phase 3 = U23 ∥ U24; Phase 4 = U25. Baseline before changes: frontend 278/279 (known InbodySectionMobile timeout flake), backend 111/113 (known 2 date-window failures).
+**Context**: CONSTRUCTION V5 begins.
+---
+
+## V5 — Construction complete
+**Timestamp**: 2026-10-30T23:00:00+07:00
+**User Input**: "continue for me"
+**AI Response**: U20–U25 delivered via parallel sub-agents (file-disjoint splits: U20 ∥ U22-backend; U21 ∥ U22-frontend; U23 ∥ U24; U25 A ∥ B). Two agent batches were cancelled / hit usage limits and were relaunched; no partial output was kept. Lead fixes: stripped UTF-8 BOMs from 4 files, restored 4 original tests in `useTrainerNotifications.test.ts` (accidentally overwritten by a sub-agent), wired `ops` prop into PT dialogs. Final gate: frontend `npm run test` 437/437, `npm run build` clean (dist removed); backend pytest 158 pass + 2 known date-window failures, `import src.main` ok.
+**Context**: V5 complete pending final user sign-off.
+---

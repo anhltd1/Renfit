@@ -1,79 +1,128 @@
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import logoImage from '../../imports/image.png';
-import { Dumbbell, Users, Star } from 'lucide-react';
+import { SectionAtmosphere } from './landing/SectionAtmosphere';
+import { Card } from '../shared/primitives/Card';
+import { cn } from '../shared/primitives/cn';
+import { useInView } from '../shared/hooks/useInView';
+import { resolveIcon } from '../../lib/icons/iconAllowlist';
+import { buildSrcSet } from '../../lib/utils/buildSrcSet';
+import type { HeroContent, BrandContent } from '../../lib/api/siteContent';
 
-export function Hero() {
+interface HeroProps {
+  /** Callback ref for tracking hero visibility (used by StickyCTABar). */
+  heroRef?: (node: HTMLElement | null) => void;
+  content?: { hero: HeroContent; brand: BrandContent };
+}
+
+const DEFAULT_HERO: HeroContent = {
+  headline_line1: 'Nâng Tầm Thể Chất.',
+  headline_line2: 'Kiến Tạo Phiên Bản',
+  headline_line3: 'Tốt Nhất Của Bạn.',
+  description:
+    'Phòng gym riêng tư cao cấp với huấn luyện viên cá nhân chuyên nghiệp, hỗ trợ AI thông minh và chương trình tập luyện được cá nhân hóa hoàn toàn.',
+  background_image:
+    'https://images.unsplash.com/photo-1637666062717-1c6bcfa4a4df?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920',
+  stats: [
+    { icon: 'Users', value: '100+', label: 'Hội viên' },
+    { icon: 'Dumbbell', value: '10+', label: 'Huấn luyện viên' },
+    { icon: 'Star', value: '95%', label: 'Hài lòng' },
+  ],
+};
+
+export function Hero({ heroRef, content }: HeroProps) {
+  const { ref: revealRef, isRevealed } = useInView<HTMLDivElement>({ threshold: 0.1 });
+  const hero = content?.hero ?? DEFAULT_HERO;
+  const brand = content?.brand;
+  const bgImage = hero.background_image || DEFAULT_HERO.background_image;
+
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section
+      ref={heroRef}
+      className="relative min-h-[85svh] lg:min-h-screen flex items-center justify-center overflow-hidden"
+    >
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
-        <ImageWithFallback
-          src="https://images.unsplash.com/photo-1637666062717-1c6bcfa4a4df?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920"
-          alt="Luxury gym equipment"
+        <img
+          src={bgImage}
+          alt="Phòng tập gym cao cấp"
           className="w-full h-full object-cover"
+          width={1920}
+          height={1080}
+          fetchpriority="high"
+          srcSet={buildSrcSet(bgImage, [640, 1080, 1920])}
+          sizes={buildSrcSet(bgImage, [640, 1080, 1920]) ? '100vw' : undefined}
+          style={{ aspectRatio: '16/9' }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-[#0B0B0B]" />
         <div className="absolute inset-0 bg-gradient-to-r from-[#0F6B3E]/20 to-transparent" />
       </div>
 
+      {/* Atmosphere substrate */}
+      <SectionAtmosphere
+        glows={2}
+        positions={[{ x: 25, y: 40 }, { x: 75, y: 70 }]}
+      />
+
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 text-center">
+      <div
+        ref={revealRef}
+        className={cn(
+          'relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20 text-center',
+          'opacity-0 translate-y-2',
+          isRevealed && 'animate-fade-up',
+        )}
+      >
         {/* Logo */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-6 sm:mb-8">
           <ImageWithFallback
             src={logoImage}
             alt="Renfit Logo"
-            className="h-24 w-auto"
+            className="h-14 sm:h-20 lg:h-24 w-auto"
           />
         </div>
 
+        {/* Tagline */}
+        {brand?.tagline && (
+          <p className="text-white/60 text-sm sm:text-base leading-relaxed mb-4">
+            {brand.tagline}
+          </p>
+        )}
+
         {/* Main Headline */}
-        <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight">
-          <span className="text-white">Nâng Tầm Thể Chất.</span>
+        <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6 leading-tight">
+          <span className="text-white">{hero.headline_line1}</span>
           <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-[#0F6B3E]">
-            Kiến Tạo Phiên Bản
-          </span>
+          <span className="text-white">{hero.headline_line2}</span>
           <br />
-          <span className="text-[#0F6B3E]">Tốt Nhất Của Bạn.</span>
+          <span className="text-[#0F6B3E]">{hero.headline_line3}</span>
         </h1>
 
         {/* Supporting Text */}
-        <p className="text-xl md:text-2xl text-white/80 max-w-3xl mx-auto mb-10 leading-relaxed">
-          Phòng gym riêng tư cao cấp với huấn luyện viên cá nhân chuyên nghiệp,
-          hỗ trợ AI thông minh và chương trình tập luyện được cá nhân hóa hoàn toàn.
+        <p className="text-base sm:text-lg lg:text-xl text-white/80 max-w-3xl mx-auto mb-8 sm:mb-10 leading-relaxed">
+          {hero.description}
         </p>
 
-        {/* Floating Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10 hover:border-[#0F6B3E]/50 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(15,107,62,0.3)]">
-            <div className="flex items-center justify-center mb-3">
-              <Users className="w-8 h-8 text-[#0F6B3E]" />
-            </div>
-            <div className="text-4xl font-bold text-white mb-2">100+</div>
-            <div className="text-white/60">Hội viên</div>
-          </div>
-
-          <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10 hover:border-[#0F6B3E]/50 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(15,107,62,0.3)]">
-            <div className="flex items-center justify-center mb-3">
-              <Dumbbell className="w-8 h-8 text-[#0F6B3E]" />
-            </div>
-            <div className="text-4xl font-bold text-white mb-2">10+</div>
-            <div className="text-white/60">Huấn luyện viên</div>
-          </div>
-
-          <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10 hover:border-[#0F6B3E]/50 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(15,107,62,0.3)]">
-            <div className="flex items-center justify-center mb-3">
-              <Star className="w-8 h-8 text-[#0F6B3E]" />
-            </div>
-            <div className="text-4xl font-bold text-white mb-2">95%</div>
-            <div className="text-white/60">Khách hàng hài lòng</div>
-          </div>
+        {/* Stats Strip — always 3-col horizontal */}
+        <div className="grid grid-cols-3 gap-3 sm:gap-6 max-w-4xl mx-auto">
+          {hero.stats.map((stat, index) => {
+            const Icon = resolveIcon(stat.icon);
+            return (
+              <Card key={index} tier="card" compact className="text-center">
+                {Icon && (
+                  <div className="flex items-center justify-center mb-1 sm:mb-3">
+                    <Icon className="w-5 h-5 sm:w-8 sm:h-8 text-[#0F6B3E]" />
+                  </div>
+                )}
+                <div className="text-xl sm:text-4xl font-bold text-white mb-0.5 sm:mb-2">{stat.value}</div>
+                <div className="text-white/60 text-xs sm:text-base leading-relaxed">{stat.label}</div>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
       {/* Bottom Gradient Fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#0B0B0B] to-transparent z-10" />
+      <div className="absolute bottom-0 left-0 right-0 h-24 sm:h-32 bg-gradient-to-t from-[#0B0B0B] to-transparent z-10" />
     </section>
   );
 }

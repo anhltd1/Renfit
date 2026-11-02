@@ -3,12 +3,20 @@
  * Shows timestamped notes with ability to add new ones and delete existing.
  * Used in both desktop CustomerDetail and mobile CustomerDetailScreen.
  */
-import { useCallback, useEffect, useState } from 'react';
-import { ClipboardList, Loader2, Plus, Send, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ClipboardList, Loader2, Send, Trash2 } from 'lucide-react';
 import { addNote, deleteNote, fetchNotes, type TrainerNote } from '../../lib/api/admin';
+import { useToast } from '../shared/hooks/useToast';
+import { useUndoableAction } from '../shared/hooks/useUndoableAction';
 
 interface TrainerNotesProps {
   customerId: string;
+  /**
+   * Rendered inside a tab/panel that already provides the title, padding and
+   * borders (desktop member detail). Hides the section header and the own
+   * padding/border, and lets the list grow with the panel's scroll.
+   */
+  embedded?: boolean;
 }
 
 function fmtDate(iso: string): string {
@@ -25,7 +33,7 @@ function fmtDate(iso: string): string {
   }
 }
 
-export function TrainerNotes({ customerId }: TrainerNotesProps) {
+export function TrainerNotes({ customerId, embedded = false }: TrainerNotesProps) {
   const [notes, setNotes] = useState<TrainerNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState('');
@@ -33,6 +41,10 @@ export function TrainerNotes({ customerId }: TrainerNotesProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
   // Note that has been deleted server-side and is animating out.
   const [leaving, setLeaving] = useState<string | null>(null);
+  const { show, node: toastNode } = useToast();
+  const { run } = useUndoableAction(show);
+  const currentCustomer = useRef(customerId);
+  currentCustomer.current = customerId;
 
   const load = useCallback(async () => {
     try {
@@ -66,17 +78,33 @@ export function TrainerNotes({ customerId }: TrainerNotesProps) {
     }
   };
 
-  const handleDelete = async (noteId: string) => {
-    setDeleting(noteId);
+  // U21 (FR-3): delete is one tap + 5 s undo toast. Undo re-creates the note
+  // with the same text (new id/timestamp — the API has no "restore").
+  const handleDelete = async (note: TrainerNote) => {
+    const ownerId = customerId;
+    setDeleting(note.id);
     try {
-      await deleteNote(customerId, noteId);
-      // Animate out only after the server confirms — a failed delete must
-      // leave the note visibly intact.
-      setLeaving(noteId);
-      await new Promise((resolve) => setTimeout(resolve, 150));
-      setNotes((prev) => prev.filter((n) => n.id !== noteId));
-    } catch {
-      // silent
+      await run({
+        action: async () => {
+          await deleteNote(ownerId, note.id);
+          // Animate out only after the server confirms — a failed delete must
+          // leave the note visibly intact.
+          setLeaving(note.id);
+          await new Promise((resolve) => setTimeout(resolve, 150));
+          setNotes((prev) => prev.filter((n) => n.id !== note.id));
+        },
+        undo: async () => {
+          const restored = await addNote(ownerId, note.content);
+          // The user may have switched member while the toast was up.
+          if (currentCustomer.current !== ownerId) return;
+          setNotes((prev) =>
+            [restored, ...prev].sort((a, b) => b.created_at.localeCompare(a.created_at)),
+          );
+        },
+        successText: 'Đã xoá ghi chú.',
+        undoneText: 'Đã khôi phục ghi chú.',
+        errorText: 'Không thể xoá ghi chú. Vui lòng thử lại.',
+      });
     } finally {
       setLeaving(null);
       setDeleting(null);
@@ -84,17 +112,19 @@ export function TrainerNotes({ customerId }: TrainerNotesProps) {
   };
 
   return (
-    <div className="px-4 py-4 border-b border-white/8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <ClipboardList className="w-4 h-4 text-[#0F6B3E]" />
-          <h3 className="text-white font-bold text-sm">Ghi chú HLV</h3>
-          {notes.length > 0 && (
-            <span className="text-white/30 text-xs">{notes.length} ghi chú</span>
-          )}
+    <div className={embedded ? '' : 'px-4 py-4 border-b border-white/8'} data-testid="trainer-notes">
+      {/* Header (the tab provides the title when embedded) */}
+      {!embedded && (
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-primary-text" />
+            <h3 className="text-white font-bold text-sm">Ghi chú HLV</h3>
+            {notes.length > 0 && (
+              <span className="text-white/60 text-xs">{notes.length} ghi chú</span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Add note input */}
       <div className="flex gap-2 mb-4">
@@ -103,7 +133,7 @@ export function TrainerNotes({ customerId }: TrainerNotesProps) {
           onChange={(e) => setContent(e.target.value)}
           placeholder="Ghi chú về hội viên (tiến bộ, cần cải thiện...)"
           rows={2}
-          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 resize-none outline-none focus:border-[#0F6B3E] transition-colors leading-relaxed"
+          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/40 resize-none outline-none focus:border-[#3DBE7A] transition-colors leading-relaxed"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
               e.preventDefault();
@@ -125,17 +155,17 @@ export function TrainerNotes({ customerId }: TrainerNotesProps) {
 
       {/* Notes list */}
       {loading ? (
-        <div className="flex items-center justify-center py-6 text-white/30">
+        <div className="flex items-center justify-center py-6 text-white/60">
           <Loader2 className="w-5 h-5 animate-spin" />
         </div>
       ) : notes.length === 0 ? (
-        <div className="flex flex-col items-center py-6 text-white/20 gap-1.5">
+        <div className="flex flex-col items-center py-6 text-white/60 gap-1.5">
           <ClipboardList className="w-6 h-6" />
           <p className="text-sm">Chưa có ghi chú nào.</p>
-          <p className="text-xs text-white/15">Ghi lại tiến bộ hoặc lưu ý cho hội viên này.</p>
+          <p className="text-xs text-white/60">Ghi lại tiến bộ hoặc lưu ý cho hội viên này.</p>
         </div>
       ) : (
-        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+        <div className={embedded ? 'space-y-2' : 'space-y-2 max-h-[300px] overflow-y-auto pr-1'}>
           {notes.map((note, i) => (
             <div
               key={note.id}
@@ -150,12 +180,12 @@ export function TrainerNotes({ customerId }: TrainerNotesProps) {
                 {note.content}
               </p>
               <div className="flex items-center justify-between mt-2">
-                <span className="text-white/25 text-xs">{fmtDate(note.created_at)}</span>
+                <span className="text-white/60 text-xs">{fmtDate(note.created_at)}</span>
                 <button
                   type="button"
-                  onClick={() => handleDelete(note.id)}
+                  onClick={() => handleDelete(note)}
                   disabled={deleting === note.id}
-                  className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all p-1 rounded"
+                  className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-white/60 hover:text-error-text transition-all tap-target inline-flex items-center justify-center rounded"
                   title="Xóa ghi chú"
                   aria-label="Xóa ghi chú"
                 >
@@ -170,6 +200,7 @@ export function TrainerNotes({ customerId }: TrainerNotesProps) {
           ))}
         </div>
       )}
+      {toastNode}
     </div>
   );
 }

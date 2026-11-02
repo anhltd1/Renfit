@@ -11,8 +11,11 @@ describe('AdminBottomTabBar', () => {
 
   it('highlights the active tab', () => {
     render(<AdminBottomTabBar active="bookings" onChange={vi.fn()} />);
-    expect(screen.getByTestId('admin-mobile-tab-bookings').className).toContain('text-[#0F6B3E]');
-    expect(screen.getByTestId('admin-mobile-tab-clients').className).toContain('text-white/40');
+    // U24: green text uses the contrast-safe primary-text token; inactive ≥ white/60.
+    expect(screen.getByTestId('admin-mobile-tab-bookings').className).toContain('text-primary-text');
+    expect(screen.getByTestId('admin-mobile-tab-clients').className).toContain('text-white/60');
+    expect(screen.getByTestId('admin-mobile-tab-bookings')).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByTestId('admin-mobile-tab-clients')).not.toHaveAttribute('aria-current');
   });
 
   it('calls onChange when a tab is tapped', () => {

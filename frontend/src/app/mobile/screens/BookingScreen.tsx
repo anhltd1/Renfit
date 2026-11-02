@@ -9,6 +9,7 @@ import { useBookingAvailability, useCreateBooking, useCancelBooking } from '../.
 import { Sheet } from '../../shared/primitives/Sheet';
 import { Button } from '../../shared/primitives/Button';
 import { Toast } from '../../shared/primitives/Toast';
+import { StatusBadge } from '../../shared/booking/StatusBadge';
 import { DayScroller } from '../components/DayScroller';
 import { StackHeader } from '../shell/StackHeader';
 import type { Slot } from '../../../lib/api/bookings';
@@ -59,7 +60,7 @@ export function BookingScreen({ customerId }: BookingScreenProps) {
   return (
     <div className="flex flex-col min-h-0 flex-1">
       <StackHeader title="Đặt lịch tập" />
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto overscroll-y-contain p-4 space-y-4">
         {loading && !data ? (
           <p className="text-white/40 text-sm text-center py-8">Đang tải lịch...</p>
         ) : error ? (
@@ -70,6 +71,23 @@ export function BookingScreen({ customerId }: BookingScreenProps) {
             <div className="space-y-2" data-testid="booking-hour-list">
               {selectedDay?.slots.map((slot) => {
                 const isMine = slot.my_status === 'pending' || slot.my_status === 'approved';
+                // U22: attended / missed sessions are read-only (no cancel).
+                const attendance = slot.my_status === 'completed' || slot.my_status === 'no_show' ? slot.my_status : null;
+                if (attendance) {
+                  return (
+                    <div
+                      key={slot.hour}
+                      data-testid={`booking-slot-${slot.hour}`}
+                      className="w-full flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                    >
+                      <span className="flex items-center gap-2 text-white text-sm font-medium tabular-nums">
+                        <Clock className="w-4 h-4 text-white/40" aria-hidden="true" />
+                        {String(slot.hour).padStart(2, '0')}:00
+                      </span>
+                      <StatusBadge status={attendance} />
+                    </div>
+                  );
+                }
                 return (
                   <button
                     key={slot.hour}

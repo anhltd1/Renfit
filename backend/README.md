@@ -5,7 +5,7 @@ FastAPI REST API serving the Renfit gym management platform.
 ## Setup
 
 ```bash
-cp env/.env.example env/.env        # fill in ANTHROPIC_API_KEY and MONGODB_URI
+cp env/.env.example env/.env        # fill in OPENAI_API_KEY and MONGODB_URI
 python -m venv .venv
 .venv\Scripts\activate               # Windows  |  source .venv/bin/activate on macOS/Linux
 pip install -r requirements.txt
@@ -37,7 +37,7 @@ backend/
 │   │   └── seed.py         # Default trainer account seeding
 │   ├── schema/             # Pydantic models (MongoDB docs + API shapes)
 │   └── services/
-│       ├── ai/             # Claude agent, tools, prompts
+│       ├── ai/             # OpenAI agent, tools, prompts
 │       ├── booking_service.py
 │       └── customer_service.py
 ├── test/                   # Pytest unit tests

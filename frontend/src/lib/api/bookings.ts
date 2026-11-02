@@ -17,7 +17,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json();
 }
 
-export type BookingStatus = 'pending' | 'approved' | 'rejected';
+export type BookingStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'no_show';
 
 export interface Slot {
   hour: number;

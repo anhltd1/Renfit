@@ -117,17 +117,17 @@ export function BlockOffManager({ date: initialDate, preSelectedHour, onClose, o
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <Lock className="w-4 h-4 text-[#0F6B3E]" />
+            <Lock className="w-4 h-4 text-primary-text" />
             <h3 className="text-white font-bold text-base">Chặn giờ</h3>
           </div>
-          <button type="button" onClick={onClose} aria-label="Đóng" className="text-white/40 hover:text-white transition-colors">
+          <button type="button" onClick={onClose} aria-label="Đóng" className="text-white/60 hover:text-white transition-colors tap-target inline-flex items-center justify-center">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Date selector */}
         <div>
-          <p className="text-white/50 text-xs mb-2">Chọn ngày:</p>
+          <p className="text-white/60 text-xs mb-2">Chọn ngày:</p>
           <div className="grid grid-cols-4 gap-1.5 max-h-[120px] overflow-y-auto">
             {getBookingWindowDays().map((d) => {
               const [, m, dd] = d.split('-');
@@ -137,14 +137,14 @@ export function BlockOffManager({ date: initialDate, preSelectedHour, onClose, o
                   key={d}
                   type="button"
                   onClick={() => setDate(d)}
-                  className={`py-2 px-1 rounded-lg text-xs font-medium transition-all text-center ${
+                  className={`py-2 px-1 tap-target rounded-lg text-xs font-medium transition-all text-center ${
                     date === d
                       ? 'bg-[#0F6B3E] text-white'
-                      : 'bg-white/5 text-white/50 border border-white/10 hover:border-white/20'
+                      : 'bg-white/5 text-white/60 border border-white/10 hover:border-white/20'
                   }`}
                 >
                   <span className="block">{dow}</span>
-                  <span className="block text-[10px] mt-0.5">{dd}/{m}</span>
+                  <span className="block text-xs mt-0.5">{dd}/{m}</span>
                 </button>
               );
             })}
@@ -152,12 +152,12 @@ export function BlockOffManager({ date: initialDate, preSelectedHour, onClose, o
         </div>
 
         {/* Full day toggle */}
-        <label className="flex items-center gap-3 cursor-pointer">
+        <label className="flex items-center gap-3 cursor-pointer tap-target py-2">
           <input
             type="checkbox"
             checked={fullDay}
             onChange={(e) => setFullDay(e.target.checked)}
-            className="w-4 h-4 rounded border-white/20 bg-white/5 text-[#0F6B3E] focus:ring-[#0F6B3E]"
+            className="w-4 h-4 rounded border-white/20 bg-white/5 accent-[#0F6B3E] focus:ring-[#3DBE7A]"
           />
           <span className="text-white/80 text-sm">Chặn cả ngày</span>
         </label>
@@ -165,17 +165,17 @@ export function BlockOffManager({ date: initialDate, preSelectedHour, onClose, o
         {/* Hour selector */}
         {!fullDay && (
           <div>
-            <p className="text-white/50 text-xs mb-2">Chọn giờ cần chặn:</p>
+            <p className="text-white/60 text-xs mb-2">Chọn giờ cần chặn:</p>
             <div className="grid grid-cols-4 gap-1.5">
               {HOURS.map((h) => (
                 <button
                   key={h}
                   type="button"
                   onClick={() => toggleHour(h)}
-                  className={`py-2 rounded-lg text-xs font-medium transition-all ${
+                  className={`py-2 tap-target rounded-lg text-xs font-medium tabular-nums transition-all ${
                     selectedHours.has(h)
                       ? 'bg-[#0F6B3E] text-white'
-                      : 'bg-white/5 text-white/50 border border-white/10 hover:border-white/20'
+                      : 'bg-white/5 text-white/60 border border-white/10 hover:border-white/20'
                   }`}
                 >
                   {String(h).padStart(2, '0')}:00
@@ -187,13 +187,13 @@ export function BlockOffManager({ date: initialDate, preSelectedHour, onClose, o
 
         {/* Reason */}
         <div>
-          <p className="text-white/50 text-xs mb-1.5">Lý do (tùy chọn):</p>
+          <p className="text-white/60 text-xs mb-1.5">Lý do (tùy chọn):</p>
           <input
             type="text"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="VD: Bảo trì thiết bị, nghỉ lễ..."
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/25 outline-none focus:border-[#0F6B3E] transition-colors"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-[#3DBE7A] transition-colors"
           />
         </div>
 

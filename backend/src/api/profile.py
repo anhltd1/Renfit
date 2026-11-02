@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from src.db.mongo import customers_collection, inbody_collection
 from src.schema.customer import Customer
 from src.api.auth import AuthResponse, _customer_response
+from src.services.inbody_photo_service import photo_urls
 
 router = APIRouter(prefix="/api/v1/profile", tags=["profile"])
 
@@ -92,6 +93,7 @@ class InbodyRecordOut(BaseModel):
     SMM: float
     BFM: float
     date_recorded: str
+    photos: list[str] = []  # photo URLs, first = cover
 
 
 def _fmt_date(raw: str | datetime | None) -> str:
@@ -121,6 +123,7 @@ def get_my_inbody(customer_id: str) -> list[InbodyRecordOut]:
             SMM=float(doc.get("SMM", 0)),
             BFM=float(doc.get("BFM", 0)),
             date_recorded=_fmt_date(doc.get("date_recorded")),
+            photos=photo_urls(doc.get("photo_ids")),
         )
         for doc in docs
     ]

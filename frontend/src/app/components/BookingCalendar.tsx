@@ -16,6 +16,7 @@ import {
 import type { Availability, Slot, DayAvailability } from '../../lib/api/bookings';
 import { useFocusTrap } from '../shared/primitives/useFocusTrap';
 import { haptic } from '../shared/primitives/haptics';
+import { StatusBadge } from '../shared/booking/StatusBadge';
 
 /** U8 Accessibility — see AdminBookings.tsx's identical helper for rationale. */
 function useEscapeToClose(open: boolean, onClose: () => void) {
@@ -385,6 +386,15 @@ const SlotCell = React.memo(function SlotCell({
           Nhấn để hủy
         </span>
       </button>
+    );
+  }
+
+  // My attended / missed session (U22) — read-only, cannot be cancelled.
+  if (slot.my_status === 'completed' || slot.my_status === 'no_show') {
+    return (
+      <div className={base} data-testid={`slot-attendance-${slot.my_status}`}>
+        <StatusBadge status={slot.my_status} />
+      </div>
     );
   }
 

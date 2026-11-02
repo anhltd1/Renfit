@@ -1,1 +1,1 @@
-"""Business logic (Anthropic client, prompts, safety) — to be implemented."""
+"""Business logic (OpenAI client, prompts, safety) — to be implemented."""

@@ -11,6 +11,8 @@ TRAINER_NOTIFICATION = "TrainerNotification"
 TRAINER_NOTE = "TrainerNote"
 BLOCKED_SLOT = "BlockedSlot"
 PUSH_SUBSCRIPTION = "PushSubscription"
+SITE_CONTENT = "SiteContent"
+INBODY_PHOTO = "InbodyPhoto"
 
 ALL_COLLECTIONS = (
     CUSTOMER,
@@ -24,4 +26,6 @@ ALL_COLLECTIONS = (
     TRAINER_NOTE,
     BLOCKED_SLOT,
     PUSH_SUBSCRIPTION,
+    SITE_CONTENT,
+    INBODY_PHOTO,
 )

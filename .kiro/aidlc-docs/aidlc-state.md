@@ -5,7 +5,7 @@
 - **Project Type**: Brownfield
 - **Start Date**: 2026-07-16T19:10:07+07:00
 - **Current Phase**: CONSTRUCTION
-- **Current Stage**: U9 Deployment — COMPLETE, awaiting approval to proceed to final Build and Test
+- **Current Stage**: V5 PT Experience Improvements — INCEPTION artifacts generated, awaiting approval (see V5 section at the bottom). V1 U9 and V2 final Build and Test still open.
 
 ## Workspace State
 - **Existing Code**: Yes
@@ -169,3 +169,56 @@ Infrastructure Design = U9 only; Code Generation + Build and Test as prescribed.
 - [x] U16 Member Home & InBody Viz — COMPLETE (Approved 2026-08-03)
 - [x] U17 Web Push — COMPLETE (Approved 2026-08-03)
 - [ ] Build and Test — EXECUTE (after all units)
+
+
+---
+
+## Bugfixes
+
+### BF-1: Mobile Sidebar Button Overlap
+- **Date**: 2026-08-04
+- **Component**: `frontend/src/app/components/Navigation.tsx`
+- **Issue**: Mobile hamburger menu "Đặt Lịch Ngay" pill button overlapped the "Đăng nhập" link for unauthenticated users — both `<Link>` elements rendered as inline `<a>` tags, making `space-y-4` vertical spacing ineffective.
+- **Fix**: Added `block` class to both links in the mobile unauthenticated menu branch. Changed "Đăng nhập" from `flex items-center gap-2` to `block` (no icon child, flex was unnecessary).
+- **Tests**: `Navigation.test.tsx` — 3 property-based tests (bug condition + 2 preservation). 57 test files / 199 tests pass, build clean.
+- **Spec**: `.kiro/specs/mobile-sidebar-button-overlap-fix/`
+
+---
+
+## V3 Initiative: Animation & Motion Polish (backfilled 2026-10-30 from audit.md)
+- [x] Requirements — `inception/requirements/requirements-v3.md`
+- [x] U18 Animation & Motion — COMPLETE (2026-08-03), plan `construction/plans/U18-animation-motion-code-generation-plan.md`
+
+## V4 Initiative: Advanced Animation & Interaction Polish (backfilled 2026-10-30 from audit.md)
+- [x] Requirements — `inception/requirements/requirements-v4.md`
+- [x] U19 Advanced Animation — COMPLETE (2026-08-03) with deferred steps: spring overlays,
+  `layoutId` shared element, drag-to-dismiss. `motion` package is installed.
+
+---
+
+## V5 Initiative: PT Experience Improvements
+
+**Current Stage**: CONSTRUCTION complete (U20–U25 all generated and verified 2026-10-30) —
+only the final Build and Test sign-off remains.
+
+### INCEPTION Phase (V5)
+- [x] UI/UX review — 2026-10-30, `inception/requirements/pt-ux-review-v5.md` (ui-ux-pro-max;
+  UTC "today" item dropped by user)
+- [x] Design rules updated — `frontend/rules/DESIGN.md` v1.1.0 (Operations Surfaces, primary_text,
+  status language) + `.kiro/steering/design-system.md` synced
+- [x] Requirements Analysis — Approved 2026-10-30 (assumptions A1–A6 accepted as written)
+  - **Artifacts**: `inception/requirements/requirements-v5.md` (13 FRs, 7 NFRs, assumptions A1–A6)
+- [x] Application Design — Approved 2026-10-30
+  - **Artifacts**: `inception/application-design/application-design-v5.md` (decisions D1–D9)
+- [x] Units Generation — Approved 2026-10-30
+  - **Artifacts**: `inception/application-design/unit-of-work-v5.md` (U20–U25, sequential)
+
+### CONSTRUCTION Phase (V5, per-unit loop)
+- [x] U20 Ops Foundation — COMPLETE (tokens, status meta, normalizeVi, Toast action/useToast/useUndoableAction, ConfirmDialog, useDirtyGuard, validation)
+- [x] U21 Safety Net & Data Entry — COMPLETE
+- [x] U22 Attendance Tracking — COMPLETE (backend: statuses, transitions, today payload, attendance endpoint, startup `collMod`; frontend: BookingStatusActions, status language in calendar/kiosk/member side)
+- [x] U23 Hôm nay Hub — COMPLETE
+- [x] U24 Mobile Parity, Day Agenda & Client Filters — COMPLETE
+- [x] U25 Ops Visual & Motion Pass — COMPLETE (Part A: calendar/kiosk/batch/block-off/notes/bell push-aware polling; Part B: header menu + a11y, `?expired=1` login banner, primitives focus ring + `ops` prop)
+- [ ] Build and Test — final integration run done 2026-10-30: frontend 437/437 tests + build clean; backend 158 pass, 2 known pre-existing date failures; awaiting user sign-off
+  - Open follow-ups (non-blocking): move `AdminTodayScreen` to `shared/` (mobile currently imports a desktop path); `BatchBookingMode` full-slot check counts rejected bookings; `stage-bounce` keyframes unused; shared `useInbodyForm` to dedupe the two InBody forms; no TypeScript typecheck exists in the repo (Vite build does not type-check).

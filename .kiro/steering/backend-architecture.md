@@ -38,8 +38,11 @@ Full reference: `backend/docs/data-model.md`. Collections: `Customer`, `Personal
 
 Key rules to respect when touching bookings:
 - Bookable window: Monday of current week → Saturday of next week (12 days), **no Sundays**.
-- Hours 08:00–20:00, 1-hour slots, **capacity 4 per slot** (pending + approved both count).
-- Statuses: `pending` → `approved` | `rejected`.
+- Hours 08:00–20:00, 1-hour slots, **capacity 4 per slot** (pending, approved, completed and
+  no_show all count — a held session never reopens its slot).
+- Statuses: `pending` → `approved` | `rejected`; started `approved` sessions → `completed` |
+  `no_show` (attendance, undo back to `approved`). Transition rules live only in
+  `booking_service.set_booking_status` (see `backend/docs/data-model.md`).
 
 ## Notification system
 Two independent systems sharing one architecture (event-driven insert + idempotency key

@@ -38,9 +38,9 @@ vi.mock('../../../lib/api/chat', () => ({
 // those modules are mocked at the top level, not per-test with vi.spyOn.
 afterEach(() => vi.clearAllMocks());
 
-function renderShell() {
+function renderShell(url = '/dashboard') {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[url]}>
       <MobileShell />
     </MemoryRouter>,
   );
@@ -93,5 +93,30 @@ describe('MobileShell', () => {
     // Should show the root again, not the previously-pushed profile form.
     expect(screen.getByText('Hồ sơ cá nhân')).toBeInTheDocument();
     expect(screen.queryByTestId('mobile-profile-form')).toBeNull();
+  });
+});
+
+describe('MobileShell — restores the open screen after a refresh', () => {
+  it('opens the tab named in ?tab=', () => {
+    vi.spyOn(useProfileModule, 'useProfile').mockReturnValue({ user, update: vi.fn() });
+    vi.spyOn(authLib, 'consumeNewAccountFlag').mockReturnValue(false);
+    renderShell('/dashboard?tab=booking');
+    expect(screen.getByText('Đặt lịch tập')).toBeInTheDocument();
+    expect(screen.getByTestId('mobile-tab-booking')).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('reopens a Profile sub-screen from ?screen=', () => {
+    vi.spyOn(useProfileModule, 'useProfile').mockReturnValue({ user, update: vi.fn() });
+    vi.spyOn(authLib, 'consumeNewAccountFlag').mockReturnValue(false);
+    renderShell('/dashboard?tab=profile&screen=profile');
+    expect(screen.getByTestId('mobile-profile-form')).toBeInTheDocument();
+    expect(screen.getByTestId('stack-header-back')).toBeInTheDocument();
+  });
+
+  it("accepts the desktop tree's tab names", () => {
+    vi.spyOn(useProfileModule, 'useProfile').mockReturnValue({ user, update: vi.fn() });
+    vi.spyOn(authLib, 'consumeNewAccountFlag').mockReturnValue(false);
+    renderShell('/dashboard?tab=bookings');
+    expect(screen.getByTestId('mobile-tab-booking')).toHaveAttribute('aria-current', 'page');
   });
 });

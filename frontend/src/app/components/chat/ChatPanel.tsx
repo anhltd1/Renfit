@@ -160,7 +160,7 @@ export function ChatPanel({
       <div
         ref={scrollRef}
         className={`p-4 md:p-6 space-y-4 ${
-          isFull ? 'flex-1 min-h-0 overflow-y-auto' : 'max-h-[400px] overflow-y-auto'
+          isFull ? 'flex-1 min-h-0 overflow-y-auto overscroll-y-contain' : 'max-h-[400px] overflow-y-auto overscroll-y-contain'
         }`}
       >
         {messages.map((msg) => (

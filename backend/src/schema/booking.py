@@ -10,6 +10,8 @@ class BookingStatus(str, Enum):
     PENDING = "pending"
     APPROVED = "approved"   # trainer accepted the booking
     REJECTED = "rejected"
+    COMPLETED = "completed"  # attendance: member attended ("Đã tập")
+    NO_SHOW = "no_show"      # attendance: member did not show up ("Vắng")
 
 
 class Booking(BaseModel):

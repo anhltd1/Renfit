@@ -21,11 +21,28 @@ import { OverviewTab } from '../components/OverviewTab';
 import { BookingTab } from '../components/BookingTab';
 import { MemberHomeDashboard } from '../components/MemberHomeDashboard';
 import { TabPanel } from '../../shared/primitives/TabPanel';
+import {
+  readParam,
+  useInitialSearchParams,
+  useSyncSearchParams,
+} from '../../shared/hooks/useDashboardUrlState';
+
+const TABS: readonly DashboardTab[] = ['home', 'overview', 'chat', 'bookings'];
+/** Mobile-tree tab keys → desktop equivalents (survives a device switch). */
+const TAB_ALIASES: Partial<Record<string, DashboardTab>> = {
+  booking: 'bookings',
+  coach: 'chat',
+  profile: 'overview',
+};
 
 export function UserDashboardPage() {
   const navigate = useNavigate();
   const { user } = useProfile();
-  const [tab, setTab] = useState<DashboardTab>('home');
+  const initialParams = useInitialSearchParams();
+  const [tab, setTab] = useState<DashboardTab>(() =>
+    readParam(initialParams, 'tab', TABS, 'home', TAB_ALIASES),
+  );
+  useSyncSearchParams({ tab: tab === 'home' ? null : tab });
   const [chatKey, setChatKey] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
 

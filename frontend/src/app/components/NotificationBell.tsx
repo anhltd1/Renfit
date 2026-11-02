@@ -146,7 +146,6 @@ export function NotificationBell({ customerId, onNavigate }: NotificationBellPro
             <div className="flex flex-col items-center py-8 text-white/25 gap-1.5">
               <Bell className="w-6 h-6" />
               <p className="text-sm">Không có thông báo mới.</p>
-              <p className="text-xs text-white/15">Bạn sẽ nhận thông báo khi có cập nhật.</p>
             </div>
           ) : (
             <div className="divide-y divide-white/5">

@@ -11,7 +11,12 @@ export function useBatchBooking() {
   const [stagedSlots, setStagedSlots] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
 
-  const activate = useCallback(() => setActive(true), []);
+  /** Enter batch mode; optionally preselect a member (U23 "Đặt thêm buổi"). */
+  const activate = useCallback((preset?: CustomerSummary) => {
+    setActive(true);
+    // Guard: also safe when used directly as an onClick handler (event arg).
+    if (preset && typeof (preset as CustomerSummary).id === 'string') setMember(preset);
+  }, []);
   const deactivate = useCallback(() => {
     setActive(false);
     setMember(null);

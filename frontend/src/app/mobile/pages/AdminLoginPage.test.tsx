@@ -59,3 +59,19 @@ describe('AdminLoginPage (mobile)', () => {
     );
   });
 });
+
+describe('AdminLoginPage — U25 session expired notice', () => {
+  it('shows the notice for ?expired=1 and hides it once the user types', () => {
+    mockUseAdminAuth(vi.fn());
+    render(<MemoryRouter initialEntries={['/admin?expired=1']}><AdminLoginPage /></MemoryRouter>);
+    expect(screen.getByRole('status')).toHaveTextContent('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+    fireEvent.change(screen.getByTestId('input-username'), { target: { value: 'a' } });
+    expect(screen.queryByTestId('admin-session-expired')).toBeNull();
+  });
+
+  it('shows no notice on a plain /admin visit', () => {
+    mockUseAdminAuth(vi.fn());
+    render(<MemoryRouter initialEntries={['/admin']}><AdminLoginPage /></MemoryRouter>);
+    expect(screen.queryByTestId('admin-session-expired')).toBeNull();
+  });
+});
