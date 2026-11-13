@@ -30,6 +30,15 @@ INBODY_PHOTO_INDEXES: list[dict[str, Any]] = [
     {"keys": [("inbody_id", 1)], "name": "inbody_photo_inbody"},
 ]
 
+# Login sessions (src/services/session_service.py). Also ensured on every
+# startup (main.py) so existing databases get them without a reset. The TTL
+# index lets MongoDB delete sessions once ``expires_at`` has passed.
+AUTH_SESSION_INDEXES: list[dict[str, Any]] = [
+    {"keys": [("token_hash", 1)], "unique": True, "name": "auth_session_token_unique"},
+    {"keys": [("kind", 1), ("subject_id", 1)], "name": "auth_session_subject"},
+    {"keys": [("expires_at", 1)], "expireAfterSeconds": 0, "name": "auth_session_ttl"},
+]
+
 COLLECTION_SPECS: list[CollectionSpec] = [
     _spec(
         col.CUSTOMER,
@@ -366,5 +375,22 @@ COLLECTION_SPECS: list[CollectionSpec] = [
                 "name": "trainer_notification_type_related_unique",
             },
         ],
+    ),
+    _spec(
+        col.AUTH_SESSION,
+        {
+            "$jsonSchema": {
+                "bsonType": "object",
+                "required": ["token_hash", "kind", "subject_id", "created_at", "expires_at"],
+                "properties": {
+                    "token_hash": {"bsonType": "string"},
+                    "kind": {"enum": ["trainer", "customer"]},
+                    "subject_id": {"bsonType": "string"},
+                    "created_at": {"bsonType": "date"},
+                    "expires_at": {"bsonType": "date"},
+                },
+            }
+        },
+        AUTH_SESSION_INDEXES,
     ),
 ]

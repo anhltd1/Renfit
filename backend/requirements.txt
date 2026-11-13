@@ -1,15 +1,18 @@
-# Renfit backend — prep dependencies (AI chatbot)
-fastapi>=0.115.0
-uvicorn[standard]>=0.32.0
-python-dotenv>=1.0.0
-openai>=1.40.0
-pydantic>=2.0.0
-pydantic-settings>=2.0.0
-pymongo>=4.10.0
-passlib[bcrypt]>=1.7.4
-bcrypt>=3.2.0,<4.0.0
+# Renfit backend — direct dependencies, pinned to exact tested versions.
+# Transitive dependencies are locked in constraints.txt; install with both:
+#   pip install -r requirements.txt -c constraints.txt
+# To upgrade: bump a version here, rebuild, run the test suite, then regenerate
+# constraints.txt (see its header).
+fastapi==0.162.3
+uvicorn[standard]==0.54.0
+python-dotenv==1.2.4
+openai==3.49.0
+pydantic==2.14.3
+pydantic-settings==2.16.2
+pymongo==4.19.0
+passlib[bcrypt]==1.7.4
+bcrypt==3.2.2  # passlib 1.7.4 breaks with bcrypt>=4
+pywebpush==2.5.0
 
 # Tests
-pytest>=8.0.0
-
-pywebpush>=2.0.0
+pytest==9.2.0

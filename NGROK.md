@@ -32,7 +32,7 @@ NGROK_AUTHTOKEN=2abc123def456_your_actual_token_here
 
 Free ngrok gives you a random URL each time. For a stable URL:
 1. Go to [ngrok Domains](https://dashboard.ngrok.com/domains)
-2. Create a free static domain (e.g. `crib-decibel-backslid.ngrok-free.dev`)
+2. Create a free static domain (e.g. `your-subdomain.ngrok-free.dev`)
 3. Use it in the command below with `--url`
 
 ---
@@ -98,7 +98,7 @@ docker compose up -d --build backend
 
 ## Testing on your phone
 
-1. Open the ngrok URL on your phone's browser (e.g. `https://crib-decibel-backslid.ngrok-free.dev`)
+1. Open the ngrok URL on your phone's browser (e.g. `https://your-subdomain.ngrok-free.dev`)
 2. ngrok's free tier shows an interstitial page — tap "Visit Site"
 3. The app loads with the mobile UI (device detection kicks in)
 4. To install as PWA: use "Add to Home Screen" from the browser menu

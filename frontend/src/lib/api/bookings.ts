@@ -1,3 +1,5 @@
+import { memberFetch } from './memberFetch';
+
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
 function url(path: string) {
@@ -44,7 +46,7 @@ export interface Availability {
 }
 
 export async function fetchAvailability(customerId: string): Promise<Availability> {
-  const res = await fetch(
+  const res = await memberFetch(
     url(`/api/v1/bookings/availability?customer_id=${encodeURIComponent(customerId)}`),
   );
   return handleResponse<Availability>(res);
@@ -62,7 +64,7 @@ export async function createBooking(
   customerId: string,
   time: string,
 ): Promise<CreateBookingResult> {
-  const res = await fetch(url('/api/v1/bookings'), {
+  const res = await memberFetch(url('/api/v1/bookings'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ customer_id: customerId, time }),
@@ -74,7 +76,7 @@ export async function cancelBooking(
   customerId: string,
   bookingId: string,
 ): Promise<{ message: string }> {
-  const res = await fetch(url('/api/v1/bookings/cancel'), {
+  const res = await memberFetch(url('/api/v1/bookings/cancel'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ customer_id: customerId, booking_id: bookingId }),

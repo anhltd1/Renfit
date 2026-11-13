@@ -1,6 +1,9 @@
 /**
  * Push notification API client (U17).
  */
+import { getAdminToken } from '../adminAuth';
+import { getAuthUser } from '../auth';
+
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
 function url(path: string) {
@@ -20,9 +23,13 @@ export async function subscribePush(
   isTrainer = false,
 ): Promise<void> {
   const sub = subscription.toJSON();
+  const token = isTrainer ? getAdminToken() : getAuthUser()?.token;
   await fetch(url('/api/v1/push/subscribe'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({
       endpoint: sub.endpoint,
       keys: sub.keys,

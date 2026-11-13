@@ -1,9 +1,12 @@
 """Push notification subscription endpoints."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from src.api.deps import UNAUTHORIZED, bearer_token
 from src.config import get_settings
+from src.db.mongo import customers_collection, personal_trainers_collection
+from src.services.session_service import resolve_session
 from src.services.push_service import subscribe, unsubscribe
 
 router = APIRouter(prefix="/api/v1/push", tags=["push"])
@@ -28,12 +31,26 @@ def get_vapid_public_key() -> dict:
 
 
 @router.post("/subscribe")
-def push_subscribe(body: SubscribeRequest) -> dict:
-    """Register a push subscription."""
+def push_subscribe(body: SubscribeRequest, token: str | None = Depends(bearer_token)) -> dict:
+    """Register a push subscription for the session's trainer or customer.
+
+    ``is_trainer`` picks which session kind the token must be; the body's
+    ``customer_id`` is ignored — the subscription is bound to the token's
+    account so nobody can receive another person's notifications.
+    """
+    if body.is_trainer:
+        trainer_id = resolve_session(token, "trainer")
+        if not trainer_id or personal_trainers_collection().find_one({"id": trainer_id}) is None:
+            raise HTTPException(status_code=401, detail=UNAUTHORIZED)
+        customer_id = None
+    else:
+        customer_id = resolve_session(token, "customer")
+        if not customer_id or customers_collection().find_one({"id": customer_id}) is None:
+            raise HTTPException(status_code=401, detail=UNAUTHORIZED)
     return subscribe(
         endpoint=body.endpoint,
         keys=body.keys,
-        customer_id=body.customer_id,
+        customer_id=customer_id,
         is_trainer=body.is_trainer,
     )
 

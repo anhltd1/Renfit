@@ -1,3 +1,5 @@
+import { memberFetch } from './memberFetch';
+
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
 function url(path: string) {
@@ -39,12 +41,12 @@ export async function fetchNotifications(
 ): Promise<AppNotification[]> {
   const params = new URLSearchParams({ customer_id: customerId });
   if (unreadOnly) params.set('unread_only', 'true');
-  const res = await fetch(url(`/api/v1/notifications?${params.toString()}`));
+  const res = await memberFetch(url(`/api/v1/notifications?${params.toString()}`));
   return handleResponse<AppNotification[]>(res);
 }
 
 export async function fetchUnreadCount(customerId: string): Promise<number> {
-  const res = await fetch(
+  const res = await memberFetch(
     url(`/api/v1/notifications/unread-count?customer_id=${encodeURIComponent(customerId)}`),
   );
   const data = await handleResponse<{ count: number }>(res);
@@ -55,7 +57,7 @@ export async function markNotificationRead(
   notificationId: string,
   customerId: string,
 ): Promise<void> {
-  const res = await fetch(
+  const res = await memberFetch(
     url(
       `/api/v1/notifications/${encodeURIComponent(notificationId)}/read?customer_id=${encodeURIComponent(customerId)}`,
     ),
@@ -65,7 +67,7 @@ export async function markNotificationRead(
 }
 
 export async function markAllNotificationsRead(customerId: string): Promise<void> {
-  const res = await fetch(url('/api/v1/notifications/read-all'), {
+  const res = await memberFetch(url('/api/v1/notifications/read-all'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ customer_id: customerId }),

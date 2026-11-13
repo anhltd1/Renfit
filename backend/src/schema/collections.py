@@ -13,6 +13,7 @@ BLOCKED_SLOT = "BlockedSlot"
 PUSH_SUBSCRIPTION = "PushSubscription"
 SITE_CONTENT = "SiteContent"
 INBODY_PHOTO = "InbodyPhoto"
+AUTH_SESSION = "AuthSession"
 
 ALL_COLLECTIONS = (
     CUSTOMER,
@@ -28,4 +29,5 @@ ALL_COLLECTIONS = (
     PUSH_SUBSCRIPTION,
     SITE_CONTENT,
     INBODY_PHOTO,
+    AUTH_SESSION,
 )

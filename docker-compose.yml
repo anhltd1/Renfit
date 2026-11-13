@@ -44,8 +44,13 @@ services:
       # Override MONGODB_URI to use the local mongo container
       MONGODB_URI: "mongodb://mongo:27017/renfit"
       DB_NAME: "renfit"
-      # Allow the public domain (production) + local dev origins
-      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,https://crib-decibel-backslid.ngrok-free.dev}"
+      # Docker runs the production build (Caddy + built SPA). Plain local
+      # `uvicorn --reload` dev keeps API_ENV from backend/env/.env.
+      API_ENV: "${API_ENV:-production}"
+      # Set CORS_ORIGINS in the root .env to your HTTPS domain. Defaults are
+      # local dev origins only. (The SPA and API share one origin through
+      # Caddy, so an ngrok tunnel to Caddy needs no CORS entry.)
+      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000}"
     depends_on:
       mongo:
         condition: service_healthy

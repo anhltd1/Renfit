@@ -1,12 +1,14 @@
 """Customer-facing notification endpoints.
 
-Authentication mirrors the existing profile/booking endpoints (MVP, no JWT):
-the customer id is supplied by the client. See ``backend/docs/notifications.md``
+The customer is identified by their session token (``require_customer``);
+any client-supplied ``customer_id`` is ignored. See ``backend/docs/notifications.md``
 for the full design.
 """
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
+from src.api.deps import require_customer
 
 from src.services.notification_service import (
     list_notifications,
@@ -31,29 +33,23 @@ class NotificationOut(BaseModel):
     read_at: str | None = None
 
 
-class MarkAllReadRequest(BaseModel):
-    customer_id: str = Field(..., description="Customer.id")
-
-
 @router.get("", response_model=list[NotificationOut])
-def get_notifications(customer_id: str = "", unread_only: bool = False) -> list[NotificationOut]:
-    if not customer_id.strip():
-        raise HTTPException(status_code=400, detail="customer_id is required.")
+def get_notifications(
+    unread_only: bool = False, customer_id: str = Depends(require_customer)
+) -> list[NotificationOut]:
     docs = list_notifications(customer_id=customer_id, unread_only=unread_only)
     return [NotificationOut(**doc) for doc in docs]
 
 
 @router.get("/unread-count")
-def get_unread_count(customer_id: str = "") -> dict:
-    if not customer_id.strip():
-        raise HTTPException(status_code=400, detail="customer_id is required.")
+def get_unread_count(customer_id: str = Depends(require_customer)) -> dict:
     return {"count": unread_count(customer_id=customer_id)}
 
 
 @router.post("/{notification_id}/read")
-def mark_notification_read(notification_id: str, customer_id: str) -> dict:
-    if not customer_id.strip():
-        raise HTTPException(status_code=400, detail="customer_id is required.")
+def mark_notification_read(
+    notification_id: str, customer_id: str = Depends(require_customer)
+) -> dict:
     result = mark_read(notification_id=notification_id, customer_id=customer_id)
     if not result.get("success"):
         raise HTTPException(status_code=404, detail=result.get("message", "Không tìm thấy thông báo."))
@@ -61,8 +57,8 @@ def mark_notification_read(notification_id: str, customer_id: str) -> dict:
 
 
 @router.post("/read-all")
-def mark_all_notifications_read(body: MarkAllReadRequest) -> dict:
-    result = mark_all_read(customer_id=body.customer_id)
+def mark_all_notifications_read(customer_id: str = Depends(require_customer)) -> dict:
+    result = mark_all_read(customer_id=customer_id)
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("message", "Không thể cập nhật."))
     return result

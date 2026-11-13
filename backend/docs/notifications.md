@@ -175,8 +175,8 @@ New router: `src/api/notifications.py`, prefix `/api/v1/notifications`.
 | POST | `/{notification_id}/read` | Mark one notification read (`read=true`, `read_at=now`) |
 | POST | `/read-all` | Mark all of a customer's notifications read — body: `{ customer_id }` |
 
-Matches the existing auth pattern in this codebase (MVP, no JWT):
-`customer_id` supplied by the client, same as `bookings.py`/`profile.py`.
+All routes require the member's session token (`require_customer`); the customer is taken
+from the token and any `customer_id` in the query/body is ignored.
 
 ---
 

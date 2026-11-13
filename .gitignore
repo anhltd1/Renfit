@@ -55,3 +55,6 @@ Thumbs.db
 *.swp
 *.swo
 desktop.ini
+
+# ── Database backups (scripts/backup.sh) — contain member data ────
+backups/

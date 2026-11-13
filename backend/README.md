@@ -8,7 +8,7 @@ FastAPI REST API serving the Renfit gym management platform.
 cp env/.env.example env/.env        # fill in OPENAI_API_KEY and MONGODB_URI
 python -m venv .venv
 .venv\Scripts\activate               # Windows  |  source .venv/bin/activate on macOS/Linux
-pip install -r requirements.txt
+pip install -r requirements.txt -c constraints.txt
 python -m src.init_db.reset_database # first-time DB initialisation (drops + recreates)
 uvicorn src.main:app --reload        # http://localhost:8000
 ```

@@ -10,7 +10,7 @@ paths:
 ## Backend — pytest
 - Location: `backend/test/`. Config: `backend/pytest.ini`, fixtures in `conftest.py`.
 - Run: from `backend/`, `.venv/bin/python -m pytest test/` (create the venv with
-  `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt` if it doesn't exist).
+  `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt -c constraints.txt` if it doesn't exist).
 - Existing suites to extend rather than duplicate: `test_tools.py` (AI tools), `test_suggestions.py`
   (suggested replies), `test_notifications.py` / `test_booking_notifications.py` (notification
   triggers + idempotency), `test_agent_artifacts.py` (chat artifacts).

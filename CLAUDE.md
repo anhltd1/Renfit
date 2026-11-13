@@ -65,7 +65,7 @@ automatically when you work on matching files (see the index below).
 
 ## Commands
 - Backend tests: from `backend/`, `.venv/bin/python -m pytest test/` (create the venv with
-  `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`); also check
+  `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt -c constraints.txt`); also check
   `.venv/bin/python -c "import src.main"` after startup/config/import changes.
 - Frontend: from `frontend/`, `npm run test` (single run) and `npm run build` (no separate
   typecheck script); `rm -rf dist` afterward.
@@ -94,7 +94,8 @@ All are complete. See `aidlc-docs/aidlc-state.md` for full status.
 
 ## Ground rules that apply everywhere
 - All user-facing text is **Vietnamese**, dark theme only, no light-mode variants.
-- Backend has **no auth tokens/JWT** — customer/trainer identity is passed as plain ids from the
-  client and trusted server-side (MVP posture, documented in `backend/docs/`). Don't "fix" this
-  unasked; if you touch auth, preserve the existing contract unless explicitly asked to change it.
+- **Auth = opaque session tokens** (no JWT). Login/signup issue a random token; only its SHA-256
+  hash is stored in `AuthSession` (30-day TTL). Every member/trainer endpoint takes identity from
+  `Authorization: Bearer` via `src/api/deps.py` (`require_customer` / `require_trainer`) — **never**
+  from a client-supplied `customer_id`. New endpoints must use these dependencies.
 - Prefer editing/extending existing patterns over introducing new libraries or architectures.

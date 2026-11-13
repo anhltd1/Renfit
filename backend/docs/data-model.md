@@ -126,9 +126,27 @@ listing records stays light.
 Indexes: `id` unique, `inbody_id`. Ensured on every startup (`main.py`), not only on reset.
 
 Served by `GET /api/v1/inbody/photos/{photo_id}` with `Cache-Control: private, max-age=31536000,
-immutable`. **MVP posture:** like the customer InBody endpoint, this has no auth — access relies on
-the uuid4 id only being returned to the record's owner and to trainers. Revisit together with the
-rest of the auth model.
+immutable`. This endpoint is intentionally unauthenticated (`<img>` tags can't send a bearer header) — access
+relies on the random uuid4 id only being returned to the record's owner (via the authenticated
+`GET /api/v1/profile/inbody`) and to trainers.
+
+---
+
+### `AuthSession`
+
+Login sessions for trainers and customers (`src/services/session_service.py`).
+
+| Field | Type | Notes |
+|---|---|---|
+| `token_hash` | string | SHA-256 of the opaque bearer token — the raw token is never stored |
+| `kind` | `"trainer"` \| `"customer"` | Which account type the token authenticates |
+| `subject_id` | string | `Personal_Trainer.id` or `Customer.id` |
+| `created_at` | date | |
+| `expires_at` | date | `created_at` + 30 days; TTL index deletes expired sessions |
+
+Indexes: `token_hash` unique, `(kind, subject_id)`, TTL on `expires_at`. Ensured on every startup.
+Revoked on logout (`POST /api/v1/auth/logout`, `/api/v1/admin/logout`) and, for a member, when the
+PT archives them.
 
 ---
 

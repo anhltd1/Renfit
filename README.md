@@ -77,7 +77,7 @@ cp env/.env.example env/.env        # fill in keys
 python -m venv .venv
 .venv\Scripts\activate               # Windows
 # source .venv/bin/activate          # macOS/Linux
-pip install -r requirements.txt
+pip install -r requirements.txt -c constraints.txt
 python -m src.init_db.reset_database # first-time DB init
 uvicorn src.main:app --reload        # http://localhost:8000
 ```
@@ -220,6 +220,9 @@ nano backend/env/.env
 #   OPENAI_API_KEY=sk-...
 #   VAPID_PUBLIC_KEY=...   (generate: npx web-push generate-vapid-keys)
 #   VAPID_PRIVATE_KEY=...
+#   ADMIN_USERNAME=...     (coach login)
+#   ADMIN_PASSWORD=...     (use a NEW strong password — not the one from local testing)
+#   API_ENV=production
 
 # 4. Create deployment config
 cp .env.example .env
@@ -231,9 +234,17 @@ nano .env
 # 5. Deploy (first time — fresh DB)
 docker compose -f docker-compose.reset.yml up --build -d
 
-# 6. Verify
+# 6. IMPORTANT — switch back to the normal compose file right away.
+#    The reset file wipes the database every time the backend starts, and it
+#    auto-restarts (e.g. after a VPS reboot). Leaving it running = data loss.
+docker compose -f docker-compose.reset.yml down
+docker compose up -d
+
+# 7. Verify
 curl https://your-domain.com/api/v1/health
-# Should return: {"status":"ok", ...}
+# Should return: {"status":"ok"}
+
+# 8. Turn on nightly backups — see "Database backups" below
 ```
 
 Caddy automatically obtains and renews a Let's Encrypt TLS certificate for your domain. No manual certbot or nginx config needed.
@@ -242,23 +253,136 @@ Caddy automatically obtains and renews a Let's Encrypt TLS certificate for your 
 
 ```bash
 cd renfit
+scripts/backup.sh               # safety backup first
 git pull
-docker compose up --build -d
+docker compose up --build -d    # normal file — never the reset one on a live server
 ```
 
 ### Database backups
 
-```bash
-# Create backup
-docker compose exec mongo mongodump --db renfit --out /tmp/backup
-docker cp renfit-mongo:/tmp/backup ./backup-$(date +%Y%m%d)
+Two scripts in `scripts/` handle backups. Run them from the repo folder while the stack is up
+(`docker compose up -d`). Backup files go to `backups/` — they contain member data (password
+hashes, body composition, photos), so they are readable only by your user and are never committed
+to git.
 
-# Restore
-docker cp ./backup-YYYYMMDD renfit-mongo:/tmp/restore
-docker compose exec mongo mongorestore --db renfit --drop /tmp/restore/renfit
+#### Make a backup
+
+```bash
+scripts/backup.sh
+# [2026-11-14 03:15:00] backup: OK /opt/renfit/backups/renfit-20261114-031500.archive.gz (40K)
 ```
 
-For more details see [`DOCKER.md`](DOCKER.md).
+Each run creates one file named `renfit-<date>-<time>.archive.gz`, checks it isn't empty or
+corrupt, and deletes backups older than 14 days. Do one by hand **before every deploy** and
+before any risky change.
+
+#### Turn on nightly backups (on the VPS, once)
+
+```bash
+crontab -e
+```
+
+Add this line at the bottom (change `/opt/renfit` to where you cloned the repo), then save:
+
+```cron
+15 3 * * * /opt/renfit/scripts/backup.sh >> $HOME/renfit-backup.log 2>&1
+```
+
+This runs every night at 03:15. The user must be able to run `docker` without `sudo`
+(`sudo usermod -aG docker $USER`, then log out and back in). Check that it works the next morning:
+
+```bash
+tail -5 ~/renfit-backup.log    # should show a line ending in "OK ..."
+ls -lh backups/                # one new file per night
+```
+
+#### Copy backups off the server (do this regularly)
+
+A backup that only lives on the VPS is lost together with the VPS. From **your own computer**:
+
+```bash
+rsync -a user@your-server-ip:/opt/renfit/backups/ ~/renfit-backups/
+```
+
+#### Check that a backup is good (safe — live data is not touched)
+
+```bash
+# Restore into a separate scratch database and print what's inside
+scripts/restore.sh backups/renfit-20261114-031500.archive.gz --into renfit_check
+
+# Then delete the scratch database
+docker exec renfit-mongo mongosh --quiet --eval 'db.getSiblingDB("renfit_check").dropDatabase()'
+```
+
+The printed collection counts (Customer, Bookings, Inbody, …) should look like your real data.
+
+#### Restore a backup (replaces the live data)
+
+```bash
+ls -lh backups/                                         # pick the file to go back to
+scripts/restore.sh backups/renfit-20261114-031500.archive.gz
+# Type "restore" when asked
+```
+
+What it does, in order:
+1. Saves the current data first as `backups/pre-restore-<date>.archive.gz` — so if you picked
+   the wrong file, you can restore that one to undo.
+2. Stops the backend (so nobody writes while restoring), replaces the database, starts the
+   backend again.
+3. Prints the collection counts so you can confirm.
+
+Anything created after the backup was taken (new bookings, members, InBody records) is gone
+after a restore. Members may need to log in again.
+
+#### Restore on a brand-new server
+
+```bash
+# On the new server, after steps 1–4 of "Step-by-step" above:
+docker compose up -d                                    # normal file — NOT the reset one
+# Copy the backup over from your computer:
+#   scp ~/renfit-backups/renfit-20261114-031500.archive.gz user@new-server:/opt/renfit/backups/
+scripts/restore.sh backups/renfit-20261114-031500.archive.gz
+```
+
+Settings (optional env vars): `BACKUP_DIR` (default `backups/`), `KEEP_DAYS` (default `14`).
+More details in [`DOCKER.md`](DOCKER.md).
+
+### Backend dependencies (pinned versions)
+
+Every backend package is pinned to the exact version that was tested, so a rebuild on the VPS
+installs exactly the same code as your machine:
+
+- `backend/requirements.txt` — the packages the app uses directly, with exact versions
+- `backend/constraints.txt` — a lock of **every** installed package (including dependencies of
+  dependencies)
+
+Docker uses both automatically. For a local (non-Docker) setup:
+
+```bash
+cd backend
+.venv/bin/pip install -r requirements.txt -c constraints.txt
+```
+
+To upgrade a package (example: `fastapi`):
+
+1. In `backend/requirements.txt`, change the version, e.g. `fastapi==0.163.0`.
+2. In `backend/constraints.txt`, **delete** the `fastapi==...` line (otherwise the old lock blocks
+   the new version). If the build in step 3 reports a conflict with another package, delete that
+   package's line too.
+3. Rebuild and run the tests:
+   ```bash
+   docker compose build backend && docker compose up -d backend
+   cd backend
+   .venv/bin/pip install -r requirements.txt -c constraints.txt
+   .venv/bin/python -m pytest test/
+   cd ..
+   ```
+4. If everything passes, regenerate the full lock from the new image (keeps the comment header):
+   ```bash
+   { grep '^#' backend/constraints.txt; docker exec renfit-backend pip freeze | sort -f; } > /tmp/constraints.txt
+   mv /tmp/constraints.txt backend/constraints.txt
+   ```
+5. Commit `requirements.txt` and `constraints.txt` together.
 
 ---
 
@@ -295,6 +419,7 @@ The `.gitignore` already excludes:
 - `node_modules/`, `dist/`, `__pycache__/`
 - `.venv/`, coverage reports
 - Docker volumes (data lives in named volumes, not on disk)
+- `backups/` (database backups — contain member data)
 
 You can safely push the entire repo — no secrets will leak.
 

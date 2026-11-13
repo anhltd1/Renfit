@@ -40,3 +40,6 @@ DOCKER.md
 **/*.log
 **/.DS_Store
 **/Thumbs.db
+
+# ── Database backups (scripts/backup.sh) — contain member data ────
+backups/

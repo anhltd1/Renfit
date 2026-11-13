@@ -1,10 +1,11 @@
 """Customer profile — view and update personal information."""
 
 from datetime import datetime
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from passlib.context import CryptContext
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
+from src.api.deps import require_customer
 from src.db.mongo import customers_collection, inbody_collection
 from src.schema.customer import Customer
 from src.api.auth import AuthResponse, _customer_response
@@ -18,7 +19,6 @@ _pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 class UpdateProfileRequest(BaseModel):
     """All fields are optional — only provided fields are updated."""
 
-    customer_id: str = Field(..., description="Customer.id (name) — used to locate the record")
     goal: str | None = None
     health_note: str | None = None
     address: str | None = None
@@ -32,13 +32,12 @@ class UpdateProfileRequest(BaseModel):
 
 
 @router.put("", response_model=AuthResponse)
-def update_profile(body: UpdateProfileRequest) -> AuthResponse:
+def update_profile(
+    body: UpdateProfileRequest, customer_id: str = Depends(require_customer)
+) -> AuthResponse:
     """Update the logged-in customer's profile fields."""
-    import re
-
     coll = customers_collection()
-    escaped = re.escape(body.customer_id.strip())
-    doc = coll.find_one({"id": {"$regex": f"^{escaped}$", "$options": "i"}})
+    doc = coll.find_one({"id": customer_id})
     if doc is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản.")
 
@@ -53,7 +52,7 @@ def update_profile(body: UpdateProfileRequest) -> AuthResponse:
                 detail="Vui lòng nhập mật khẩu hiện tại để đổi mật khẩu.",
             )
         if not _pwd.verify(body.current_password, customer.password):
-            raise HTTPException(status_code=401, detail="Mật khẩu hiện tại không đúng.")
+            raise HTTPException(status_code=400, detail="Mật khẩu hiện tại không đúng.")
         if len(body.new_password) < 6:
             raise HTTPException(
                 status_code=422,
@@ -105,13 +104,11 @@ def _fmt_date(raw: str | datetime | None) -> str:
 
 
 @router.get("/inbody", response_model=list[InbodyRecordOut])
-def get_my_inbody(customer_id: str) -> list[InbodyRecordOut]:
-    """Return InBody records for the given customer (sorted by date)."""
-    if not customer_id.strip():
-        raise HTTPException(status_code=400, detail="customer_id is required.")
+def get_my_inbody(customer_id: str = Depends(require_customer)) -> list[InbodyRecordOut]:
+    """Return the logged-in customer's InBody records (sorted by date)."""
     docs = list(
         inbody_collection()
-        .find({"customer_id": customer_id.strip()}, {"_id": 0})
+        .find({"customer_id": customer_id}, {"_id": 0})
         .sort("date_recorded", 1)
     )
     return [

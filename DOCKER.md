@@ -111,20 +111,34 @@ curl -s https://your-domain.com/api/v1/health   # health check via the public do
 
 ### Backups
 
-MongoDB data lives in the Docker named volume `mongo_data`. To back up:
+MongoDB data lives in the Docker named volume `mongo_data`. Two scripts handle backups; both
+run from anywhere and need the stack up.
 
 ```bash
-# Export a full dump from the running container
-docker compose exec mongo mongodump --db renfit --out /tmp/backup
-docker cp renfit-mongo:/tmp/backup ./backup-$(date +%Y%m%d)
+# Back up → backups/renfit-YYYYmmdd-HHMMSS.archive.gz (verified, owner-only, keeps 14 days)
+scripts/backup.sh
+
+# Check a backup without touching live data (restores into a scratch database)
+scripts/restore.sh backups/renfit-20261114-031500.archive.gz --into renfit_check
+docker exec renfit-mongo mongosh --quiet --eval 'db.getSiblingDB("renfit_check").dropDatabase()'
+
+# Restore over the live database (asks you to type "restore"; takes a pre-restore
+# safety backup first and stops the backend while restoring)
+scripts/restore.sh backups/renfit-20261114-031500.archive.gz
 ```
 
-To restore from a backup:
+**Nightly on the VPS** (`crontab -e` as the deploy user, who must be in the `docker` group):
 
-```bash
-docker cp ./backup-YYYYMMDD renfit-mongo:/tmp/restore
-docker compose exec mongo mongorestore --db renfit --drop /tmp/restore/renfit
+```cron
+15 3 * * * /opt/renfit/scripts/backup.sh >> /var/log/renfit-backup.log 2>&1
 ```
+
+Options via env vars: `BACKUP_DIR` (default `<repo>/backups`), `KEEP_DAYS` (default 14).
+`backups/` is gitignored and dockerignored — archives contain member data.
+
+**Copy backups off the VPS.** An archive on the same disk does not survive losing the disk or
+the server. Pull them to another machine regularly, e.g.
+`rsync -a deploy@your-vps:/opt/renfit/backups/ ~/renfit-backups/`.
 
 ## Common Commands
 

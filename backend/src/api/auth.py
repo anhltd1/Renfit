@@ -4,14 +4,16 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from passlib.context import CryptContext
 from pydantic import BaseModel, Field
 
+from src.api.deps import bearer_token
 from src.db.mongo import customers_collection, inbody_collection
 from src.schema.customer import Customer
 from src.schema.inbody import Inbody
 from src.services.notification_service import notify_trainee_registered
+from src.services.session_service import create_session, revoke_session
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -51,6 +53,12 @@ class AuthResponse(BaseModel):
     age: int | float = 0
 
 
+class SessionAuthResponse(AuthResponse):
+    """Login/signup response: the profile plus the session bearer token."""
+
+    token: str
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
@@ -68,6 +76,11 @@ def _customer_response(customer: Customer) -> AuthResponse:
     )
 
 
+def _with_session(customer: Customer) -> SessionAuthResponse:
+    base = _customer_response(customer)
+    return SessionAuthResponse(**base.model_dump(), token=create_session("customer", customer.id))
+
+
 def _find_by_phone(phone: str) -> dict[str, Any] | None:
     return customers_collection().find_one({"phone_number": phone.strip()})
 
@@ -75,8 +88,8 @@ def _find_by_phone(phone: str) -> dict[str, Any] | None:
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 
-@router.post("/signup", response_model=AuthResponse, status_code=201)
-def signup(body: SignupRequest) -> AuthResponse:
+@router.post("/signup", response_model=SessionAuthResponse, status_code=201)
+def signup(body: SignupRequest) -> SessionAuthResponse:
     """Create a new customer account."""
     name = body.name.strip()
     phone = body.phone_number.strip()
@@ -129,11 +142,11 @@ def signup(body: SignupRequest) -> AuthResponse:
         except (ValueError, Exception):
             pass  # Inbody creation is best-effort; don't fail signup
 
-    return _customer_response(customer)
+    return _with_session(customer)
 
 
-@router.post("/login", response_model=AuthResponse)
-def login(body: LoginRequest) -> AuthResponse:
+@router.post("/login", response_model=SessionAuthResponse)
+def login(body: LoginRequest) -> SessionAuthResponse:
     """Authenticate a customer by phone number and password."""
     doc = _find_by_phone(body.phone_number)
     if doc is None:
@@ -148,5 +161,17 @@ def login(body: LoginRequest) -> AuthResponse:
             detail="Số điện thoại hoặc mật khẩu không đúng.",
         )
 
+    if doc.get("active") is False:  # archived by the PT
+        raise HTTPException(
+            status_code=403,
+            detail="Tài khoản đã ngừng hoạt động. Vui lòng liên hệ huấn luyện viên.",
+        )
+
     customer = Customer.model_validate(doc)
-    return _customer_response(customer)
+    return _with_session(customer)
+
+
+@router.post("/logout", status_code=204)
+def logout(token: str | None = Depends(bearer_token)) -> None:
+    """Revoke the current customer session (idempotent)."""
+    revoke_session(token)

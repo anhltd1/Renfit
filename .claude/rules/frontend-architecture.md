@@ -17,9 +17,10 @@ paths:
 - **Dead code**: `DashboardPage.tsx`, `ProfilePage.tsx`, `BookingPage.tsx`, `AIChatPage.tsx` exist
   but are not routed — don't build on them; they're removal candidates.
 - **Guards**: `AuthGuard` (customer), `AdminGuard` (trainer) wrap protected routes.
-- **Session**: `lib/auth.ts` (customer, localStorage) / `lib/adminAuth.ts` (trainer token,
-  localStorage) — no JWT, matches the backend's MVP auth posture. Don't add a token-refresh layer
-  unasked.
+- **Session**: `lib/auth.ts` (customer + its `token`, localStorage) / `lib/adminAuth.ts` (trainer
+  token, localStorage) — opaque session tokens, no JWT, no refresh layer. Member API calls go
+  through `lib/api/memberFetch.ts` (adds `Authorization: Bearer`, sends a 401 back to `/login`);
+  clearing either session also revokes it server-side.
 - **API clients**: `lib/api/*.ts` — typed `fetch` wrappers per domain (auth, profile, bookings,
   admin, chat, notifications). One client per concern; normalize errors to Vietnamese messages.
 - **Icons**: `lucide-react` only.

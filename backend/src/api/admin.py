@@ -1,8 +1,8 @@
 """Admin (coach) dashboard endpoints.
 
-Trainers authenticate against the ``Personal_Trainer`` collection. The session
-token is simply the trainer id, validated against the database on every call
-(MVP — no JWT). The default ``admin`` account is seeded by
+Trainers authenticate against the ``Personal_Trainer`` collection. Login issues
+a random opaque session token (src/services/session_service.py) that is checked
+on every call. The default coach account is seeded by
 ``src.init_db.seed.seed_admin_trainer``.
 """
 
@@ -10,10 +10,10 @@ import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from passlib.context import CryptContext
 from pydantic import BaseModel, Field
 
+from src.api.deps import bearer_token, require_trainer
 from src.db.mongo import (
     bookings_collection,
     customers_collection,
@@ -48,21 +48,19 @@ from src.services.notification_service import (
     notify_inbody_added,
     trainer_unread_count,
 )
+from src.services.session_service import create_session, revoke_all_for_subject, revoke_session
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 _pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
-_bearer = HTTPBearer(auto_error=False)
 
 
-def _require_admin(creds: HTTPAuthorizationCredentials | None = Depends(_bearer)) -> str:
-    """Validate the bearer token (= trainer id) and return the trainer id."""
-    if creds is None:
-        raise HTTPException(status_code=401, detail="Không có quyền truy cập.")
-    trainer = personal_trainers_collection().find_one({"id": creds.credentials})
-    if trainer is None:
-        raise HTTPException(status_code=401, detail="Không có quyền truy cập.")
-    return str(trainer.get("id", ""))
+def _require_admin(trainer_id: str = Depends(require_trainer)) -> str:
+    """Validate the trainer session token and return the trainer id.
+
+    Kept as a module-level name so tests can ``dependency_overrides`` it.
+    """
+    return trainer_id
 
 
 # ── Models ─────────────────────────────────────────────────────────────────
@@ -129,7 +127,14 @@ def admin_login(body: AdminLoginRequest) -> AdminLoginResponse:
         valid = False
     if not trainer or not valid:
         raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc mật khẩu không đúng.")
-    return AdminLoginResponse(token=str(trainer.get("id", "")), name=str(trainer.get("name", "")))
+    token = create_session("trainer", str(trainer.get("id", "")))
+    return AdminLoginResponse(token=token, name=str(trainer.get("name", "")))
+
+
+@router.post("/logout", status_code=204)
+def admin_logout(token: str | None = Depends(bearer_token)) -> None:
+    """Revoke the current trainer session (idempotent)."""
+    revoke_session(token)
 
 
 # ── Today screen (PT landing view) ────────────────────────────────────────
@@ -662,6 +667,7 @@ def archive_customer(customer_id: str, _: str = Depends(_require_admin)) -> dict
     result = coll.update_one({"id": customer_id}, {"$set": {"active": False}})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Hội viên không tồn tại.")
+    revoke_all_for_subject("customer", customer_id)  # sign the member out everywhere
     return {"success": True, "message": "Đã lưu trữ hội viên."}
 
 

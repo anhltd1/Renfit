@@ -120,6 +120,23 @@ def _ensure_inbody_photo_indexes() -> None:
 
 
 @app.on_event("startup")
+def _ensure_auth_session_indexes() -> None:
+    """Create AuthSession indexes (unique token hash + TTL expiry) on existing databases."""
+    import logging
+
+    try:
+        from src.db.mongo import auth_sessions_collection
+        from src.schema.mongo import AUTH_SESSION_INDEXES
+
+        coll = auth_sessions_collection()
+        for index in AUTH_SESSION_INDEXES:
+            opts = {k: v for k, v in index.items() if k != "keys"}
+            coll.create_index(index["keys"], **opts)
+    except Exception as exc:  # noqa: BLE001 — never block startup on index creation
+        logging.getLogger(__name__).warning("AuthSession index creation skipped: %s", exc)
+
+
+@app.on_event("startup")
 def _seed_defaults() -> None:
     """Create/sync the coach account from ADMIN_USERNAME / ADMIN_PASSWORD (best-effort)."""
     try:
@@ -143,10 +160,6 @@ async def _start_notification_scheduler() -> None:
 
 @app.get("/api/v1/health")
 def health():
-    return {
-        "status": "ok",
-        "env": settings.api_env,
-        "model": settings.openai_model,
-        "mongodb_configured": settings.mongodb_configured,
-        "db_name": settings.db_name,
-    }
+    # Public endpoint: liveness only. Don't expose configuration (model,
+    # environment, database name) to anonymous callers.
+    return {"status": "ok"}

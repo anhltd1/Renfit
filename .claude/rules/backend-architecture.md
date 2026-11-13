@@ -14,7 +14,8 @@ Layered architecture: **API routers → services → MongoDB**. The AI Coach is 
   `asyncio.create_task`).
 - `src/api/*` — routers: `auth.py`, `profile.py`, `bookings.py`, `admin.py`, `chat.py`,
   `notifications.py`, `push.py`. Admin endpoints use a `_require_admin` bearer-token dependency;
-  customer endpoints trust a client-supplied `customer_id` (no JWT — see CLAUDE.md).
+  customer endpoints use `require_customer` (`src/api/deps.py`) — identity comes from the session
+  token, never from a client-supplied `customer_id` (see `services/session_service.py`).
 - `src/services/*` — `booking_service.py`, `customer_service.py`, `notification_service.py`,
   `notification_scheduler.py`, `blocked_slot_service.py`, `push_service.py`.
 - `src/services/ai/*` — `agent.py` (conversation loop), `tools.py` (profile/InBody/booking tools),
@@ -60,7 +61,7 @@ Two independent systems sharing one architecture (event-driven insert + idempote
 
 ## AI Coach conventions
 (Originally from the old `api-guidelines.md` rules file, folded in here.)
-- **Login-only** — no anonymous chat. `customer_id` is always the logged-in customer, trusted
+- **Login-only** — no anonymous chat. `customer_id` is always the logged-in customer (from the session token), used
   server-side to scope every tool call.
 - Tone: professional, supportive Vietnamese ("bạn"), ≤3 short paragraphs per turn, never hype.
 - **Artifacts, not inline forms.** A structured, read-only `ChatArtifact` (`profile`,
@@ -87,7 +88,7 @@ Two independent systems sharing one architecture (event-driven insert + idempote
 - `backend/test/` via `pytest` (see `pytest.ini`, `conftest.py`). Existing suites:
   `test_tools.py`, `test_suggestions.py`, `test_notifications.py`, `test_agent_artifacts.py`,
   `test_booking_notifications.py`.
-- Run from `backend/`: `.venv/bin/python -m pytest test/` (venv setup: `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`).
+- Run from `backend/`: `.venv/bin/python -m pytest test/` (venv setup: `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt -c constraints.txt`).
 - Confirm `import src.main` succeeds after any change touching startup/config.
 
 ## When adding a backend feature

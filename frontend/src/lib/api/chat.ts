@@ -1,3 +1,5 @@
+import { memberFetch } from './memberFetch';
+
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
 export type ArtifactKind =
@@ -36,7 +38,7 @@ export interface ChatRequest {
 
 export async function sendChatMessage(payload: ChatRequest): Promise<ChatResponse> {
   const url = API_BASE ? `${API_BASE}/chat` : '/chat';
-  const res = await fetch(url, {
+  const res = await memberFetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

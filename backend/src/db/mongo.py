@@ -48,3 +48,7 @@ def site_content_collection() -> Collection:
 
 def inbody_photos_collection() -> Collection:
     return get_renfit_database()[col.INBODY_PHOTO]
+
+
+def auth_sessions_collection() -> Collection:
+    return get_renfit_database()[col.AUTH_SESSION]

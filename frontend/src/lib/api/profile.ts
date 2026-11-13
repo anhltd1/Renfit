@@ -1,4 +1,5 @@
-import type { AuthUser } from '../auth';
+import { getAuthUser, type AuthUser } from '../auth';
+import { memberFetch } from './memberFetch';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
@@ -36,7 +37,7 @@ export function resolveApiAsset(path: string): string {
  * typed client to wrap, consistent with the rest of this module.
  */
 export async function fetchMyInbody(customerId: string): Promise<InbodyRecordOut[]> {
-  const res = await fetch(url(`/api/v1/profile/inbody?customer_id=${encodeURIComponent(customerId)}`));
+  const res = await memberFetch(url(`/api/v1/profile/inbody?customer_id=${encodeURIComponent(customerId)}`));
   if (!res.ok) return [];
   return res.json();
 }
@@ -55,7 +56,7 @@ export interface UpdateProfilePayload {
 }
 
 export async function updateProfile(payload: UpdateProfilePayload): Promise<AuthUser> {
-  const res = await fetch(url('/api/v1/profile'), {
+  const res = await memberFetch(url('/api/v1/profile'), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -73,7 +74,9 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<Auth
     throw new Error('Không thể cập nhật thông tin. Vui lòng thử lại.');
   }
 
-  return res.json();
+  // The profile response has no token — keep the current session's.
+  const updated = (await res.json()) as Omit<AuthUser, 'token'>;
+  return { ...updated, token: getAuthUser()?.token ?? '' };
 }
 
 /**
