@@ -30,7 +30,7 @@ describe('ProgressScreen', () => {
     vi.spyOn(useInbodyModule, 'useInbodyHistory').mockReturnValue({ data: records, loading: false, error: null, refetch: vi.fn() });
     render(<ProgressScreen customerId="c1" onBack={vi.fn()} />);
     fireEvent.click(screen.getByTestId('inbody-stat-BFM'));
-    expect(screen.getByTestId('inbody-stat-BFM')).toHaveClass('border-[#0F6B3E]/60');
+    expect(screen.getByTestId('inbody-stat-BFM')).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('calls onBack from the header', () => {

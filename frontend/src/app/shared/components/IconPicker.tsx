@@ -32,7 +32,7 @@ export function IconPicker({ value, onChange, label, disabled }: IconPickerProps
   return (
     <div className="w-full space-y-1" ref={containerRef}>
       {label && (
-        <label className="block text-white/60 text-sm leading-relaxed">{label}</label>
+        <label className="block text-white/64 text-sm leading-relaxed">{label}</label>
       )}
 
       {/* Trigger button */}
@@ -41,15 +41,15 @@ export function IconPicker({ value, onChange, label, disabled }: IconPickerProps
         disabled={disabled}
         onClick={() => setOpen(!open)}
         className={cn(
-          'flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10',
+          'flex items-center gap-2 rounded-panel bg-white/5 border border-line',
           'px-4 py-3 text-white transition-colors duration-300',
-          'hover:border-[#0F6B3E] focus:outline-none focus:border-[#0F6B3E]',
+          'hover:border-[#0F6B3E] focus:outline-none focus:border-primary-text',
           'disabled:opacity-60 disabled:cursor-not-allowed',
         )}
       >
         {SelectedIcon ? (
           <>
-            <SelectedIcon className="w-5 h-5 text-[#0F6B3E]" />
+            <SelectedIcon className="w-5 h-5 text-primary-text" />
             <span className="text-sm leading-relaxed">{selectedEntry?.label}</span>
           </>
         ) : (
@@ -62,7 +62,7 @@ export function IconPicker({ value, onChange, label, disabled }: IconPickerProps
         <div
           className={cn(
             'absolute z-50 mt-1 w-72 max-h-64 overflow-y-auto',
-            'bg-[#1a1a1a] border border-white/10 rounded-2xl p-2',
+            'bg-[#1a1a1a] border border-line rounded-panel p-2',
             'shadow-xl',
           )}
         >
@@ -71,13 +71,13 @@ export function IconPicker({ value, onChange, label, disabled }: IconPickerProps
             type="button"
             onClick={() => { onChange(''); setOpen(false); }}
             className={cn(
-              'flex items-center gap-2 w-full px-3 py-2 rounded-xl text-left',
+              'flex items-center gap-2 w-full px-3 py-2 rounded-control text-left',
               'hover:bg-white/5 transition-colors',
               !value && 'bg-white/10',
             )}
           >
             <X className="w-5 h-5 text-white/40" />
-            <span className="text-sm text-white/60 leading-relaxed">Không có icon</span>
+            <span className="text-sm text-white/64 leading-relaxed">Không có icon</span>
           </button>
 
           {/* Icon grid */}
@@ -92,13 +92,13 @@ export function IconPicker({ value, onChange, label, disabled }: IconPickerProps
                   onClick={() => { onChange(entry.name); setOpen(false); }}
                   title={entry.label}
                   className={cn(
-                    'flex flex-col items-center gap-1 p-2 rounded-xl transition-colors',
+                    'flex flex-col items-center gap-1 p-2 rounded-control transition-colors',
                     'hover:bg-white/10',
                     isSelected && 'bg-[#0F6B3E]/20 border border-[#0F6B3E]/30',
                   )}
                 >
                   <Icon className="w-5 h-5 text-white/80" />
-                  <span className="text-[10px] text-white/50 leading-relaxed truncate w-full text-center">
+                  <span className="text-xs text-white/64 leading-relaxed truncate w-full text-center">
                     {entry.label}
                   </span>
                 </button>

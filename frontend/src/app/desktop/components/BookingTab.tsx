@@ -5,7 +5,6 @@
  * rewired to useBookingAvailability() here, to avoid a double-poll.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { CalendarDays } from 'lucide-react';
 import { BookingCalendar } from '../../components/BookingCalendar';
 import { cancelBooking, createBooking, fetchAvailability, type Availability } from '../../../lib/api/bookings';
 import type { AuthUser } from '../../../lib/auth';
@@ -40,11 +39,9 @@ export function BookingTab({ user }: BookingTabProps) {
 
   return (
     <div data-tour="booking-calendar" className="p-6 lg:p-8 flex flex-col gap-4 h-full">
-      <div>
-        <h2 className="text-white font-bold text-lg flex items-center gap-2">
-          <CalendarDays className="w-5 h-5 text-[#0F6B3E]" /> Đặt Lịch Tập
-        </h2>
-      </div>
+      <p className="text-white/64 text-sm leading-relaxed">
+        Chọn một giờ còn chỗ để giữ chỗ — huấn luyện viên sẽ duyệt trước buổi tập. Nhấn vào lịch của bạn để hủy.
+      </p>
       <BookingCalendar
         customerId={user.id}
         data={data}

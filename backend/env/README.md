@@ -10,15 +10,17 @@ cp .env.example .env
 
 | Variable | Description |
 |---|---|
-| `OPENAI_API_KEY` | OpenAI API key — used by the AI Coach (GPT-5.6-luna) |
+| `OPENAI_API_KEY` | OpenAI API key — used by the AI Coach (gpt-6-luna) |
 | `MONGODB_URI` | MongoDB connection string (e.g. `mongodb+srv://user:pass@cluster.mongodb.net/`) |
+| `ADMIN_USERNAME` | Coach (admin) login name — the account is created/synced on every startup |
+| `ADMIN_PASSWORD` | Coach (admin) password (stored bcrypt-hashed; change it + restart to rotate) |
 
 ## Optional Variables
 
 | Variable | Default | Description |
 |---|---|---|
 | `DB_NAME` | `renfit` | MongoDB database name |
-| `OPENAI_MODEL` | `gpt-5.6-luna` | OpenAI model ID |
+| `OPENAI_MODEL` | `gpt-6-luna` | OpenAI model ID |
 | `OPENAI_MAX_TOKENS` | `1024` | Max tokens per AI response |
 | `AI_MAX_HISTORY_TURNS` | `20` | Conversation turns kept in memory |
 | `AI_REQUEST_TIMEOUT` | `60` | Seconds before AI request times out |

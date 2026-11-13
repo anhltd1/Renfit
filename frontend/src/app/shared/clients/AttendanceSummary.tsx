@@ -20,7 +20,7 @@ export function AttendanceSummary({ customerId, className }: { customerId: strin
       className={cn('inline-flex items-center gap-2 text-sm text-white/70 leading-relaxed tabular-nums', className)}
     >
       <span className="inline-flex items-center gap-1">
-        <CheckCheck className="w-4 h-4 text-white/60" aria-hidden="true" />
+        <CheckCheck className="w-4 h-4 text-white/64" aria-hidden="true" />
         Đã tập {fmt(done)}
       </span>
       <span className="text-white/40" aria-hidden="true">·</span>

@@ -1,7 +1,4 @@
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { Award } from 'lucide-react';
-import { SectionAtmosphere } from './landing/SectionAtmosphere';
-import { Card } from '../shared/primitives/Card';
 import { cn } from '../shared/primitives/cn';
 import { useInView } from '../shared/hooks/useInView';
 import { buildSrcSet } from '../../lib/utils/buildSrcSet';
@@ -41,7 +38,7 @@ const DEFAULT_TRAINERS: TrainersContent = {
       name: 'Phạm Thu Trang',
       specialty: 'Functional Training',
       experience: '5 năm kinh nghiệm',
-      image: 'https://images.unsplash.com/photo-1548542031-0b26d8ba1e0a?w=400',
+      image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400',
       certifications: 'NASM-CPT, TRX',
     },
   ],
@@ -51,99 +48,50 @@ export function Trainers({ content }: TrainersProps) {
   const { ref, isRevealed } = useInView<HTMLElement>();
   const data = content ?? DEFAULT_TRAINERS;
 
-  // Split title for emerald highlight — "Đội Ngũ" white, "Huấn Luyện Viên" emerald
-  const titleParts = data.title.split(' ');
-  const titleFirst = titleParts.slice(0, 2).join(' ');
-  const titleRest = titleParts.slice(2).join(' ');
-
+  // DESIGN.md v2 marketing: the trainers as people — portrait, name, what
+  // they coach, years and certificates as plain text. No badges, no glow.
   return (
-    <section id="trainers" className="scroll-mt-24 relative py-12 sm:py-16 lg:py-24 px-4 sm:px-6 bg-[#0B0B0B]" ref={ref}>
-      <SectionAtmosphere glows={2} positions={[{ x: 20, y: 40 }, { x: 80, y: 25 }]} mask />
-
-      <div className="relative z-10 max-w-7xl mx-auto">
-        {/* Section Header */}
-        <div className={cn(
-          'text-center mb-8 sm:mb-16 opacity-0 translate-y-2',
-          isRevealed && 'animate-fade-up',
-        )}>
-          <h2 className="text-xl sm:text-3xl lg:text-5xl font-bold text-white mb-4 sm:mb-6 leading-relaxed">
-            {titleFirst}{titleRest ? ' ' : ''}<span className="text-[#0F6B3E]">{titleRest}</span>
-          </h2>
-          <p className="text-sm sm:text-base lg:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed">
-            {data.subtitle}
-          </p>
+    <section id="trainers" className="scroll-mt-24 py-16 sm:py-24 px-4 sm:px-6 lg:px-10" ref={ref}>
+      <div className="max-w-7xl mx-auto">
+        <div className={cn('max-w-2xl opacity-0 translate-y-2', isRevealed && 'animate-fade-up')}>
+          <h2 className="text-white font-bold leading-[1.15] text-[clamp(1.75rem,3.5vw,2.75rem)]">{data.title}</h2>
+          <p className="mt-4 text-white/80 text-base sm:text-lg leading-relaxed">{data.subtitle}</p>
         </div>
 
-        {/* Trainers: 2-col on mobile, 2-col tablet, 4-col desktop */}
-        <div className={cn(
-          'grid grid-cols-2 gap-3',
-          'sm:gap-4',
-          'lg:grid-cols-4 lg:gap-6',
-        )}>
-          {data.items.map((trainer, index) => (
-            <div
-              key={index}
-              className={cn(
-                'opacity-0 translate-y-2',
-                isRevealed && 'animate-fade-up',
-              )}
-              style={{ '--stagger': Math.min(index + 1, 7) } as React.CSSProperties}
-            >
-              <Card
-                tier="card"
-                compact
-                hoverable
-                className="h-full overflow-hidden p-0 transition-all duration-[var(--motion-base)] hover:scale-105 hover:shadow-[0_0_30px_rgba(15,107,62,0.5)] active:scale-[0.97]"
+        {/* Flex-wrap + fixed widths (2 / row on phones, 4 / row on desktop) so an
+            incomplete last row is centred instead of hugging the left edge. */}
+        <ul className="mt-12 flex flex-wrap justify-center gap-x-4 gap-y-10 sm:gap-x-6">
+          {data.items.map((trainer, index) => {
+            const srcSet = buildSrcSet(trainer.image, [320, 400, 640]);
+            return (
+              <li
+                key={index}
+                className={cn(
+                  'w-[calc(50%-0.5rem)] sm:w-[calc(50%-0.75rem)] lg:w-[calc(25%-1.125rem)] opacity-0 translate-y-2',
+                  isRevealed && 'animate-fade-up',
+                )}
+                style={{ '--stagger': Math.min(index + 1, 7) } as React.CSSProperties}
               >
-                {/* Image — compact aspect ratio */}
-                <div className="relative overflow-hidden" style={{ aspectRatio: '3/4' }}>
-                  <ImageWithFallback
-                    src={trainer.image}
-                    alt={trainer.name}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                    width={400}
-                    height={500}
-                    srcSet={buildSrcSet(trainer.image, [320, 400, 640])}
-                    sizes={buildSrcSet(trainer.image, [320, 400, 640]) ? '(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw' : undefined}
-                    style={{ aspectRatio: '3/4' }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80" />
-
-                  {/* Certification Badge */}
-                  {trainer.certifications && (
-                    <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-[#0F6B3E]/90 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center gap-1">
-                      <Award className="w-3 h-3 text-white" />
-                      <span className="text-white text-[9px] sm:text-[10px] leading-relaxed">Chứng Chỉ</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Info — compact */}
-                <div className="p-2.5 sm:p-4">
-                  <h3 className="text-xs sm:text-base lg:text-lg font-bold text-white mb-0.5 sm:mb-1 leading-relaxed truncate">
-                    {trainer.name}
-                  </h3>
-                  <p className="text-[#0F6B3E] text-[10px] sm:text-xs lg:text-sm mb-0.5 sm:mb-1 leading-relaxed truncate">{trainer.specialty}</p>
-                  <p className="text-white/60 text-[10px] sm:text-xs mb-1.5 sm:mb-2 leading-relaxed">{trainer.experience}</p>
-                  {trainer.certifications && (
-                    <div className="flex flex-wrap gap-1">
-                      {trainer.certifications.split(', ').map((cert, idx) => (
-                        <span
-                          key={idx}
-                          className="bg-white/10 text-white/80 text-[9px] sm:text-[10px] lg:text-xs px-1.5 sm:px-2 py-0.5 rounded-full leading-relaxed"
-                        >
-                          {cert}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-          ))}
-        </div>
+                <ImageWithFallback
+                  src={trainer.image}
+                  alt={trainer.name}
+                  className="w-full aspect-[3/4] object-cover rounded-panel bg-surface"
+                  loading="lazy"
+                  decoding="async"
+                  width={400}
+                  height={533}
+                  srcSet={srcSet}
+                  sizes={srcSet ? '(max-width: 1024px) 50vw, 25vw' : undefined}
+                />
+                <h3 className="mt-4 text-white text-base sm:text-lg font-semibold leading-snug">{trainer.name}</h3>
+                <p className="mt-1 text-white/80 text-sm leading-relaxed">{trainer.specialty}</p>
+                <p className="mt-2 text-white/64 text-sm leading-relaxed">
+                  {[trainer.experience, trainer.certifications].filter(Boolean).join(' · ')}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </section>
   );

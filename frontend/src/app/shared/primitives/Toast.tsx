@@ -40,16 +40,14 @@ export function Toast({ kind, text, className, action }: ToastProps) {
       <div
         data-testid={`toast-${kind}`}
         className={cn(
-          'w-full px-6 py-3.5 rounded-xl border shadow-2xl flex items-center gap-2.5 text-base font-medium',
-          kind === 'ok'
-            ? 'bg-[#0F6B3E] border-[#0F6B3E]/60 text-white'
-            : 'bg-[#0F0F0F]/95 backdrop-blur-xl border-error-text/60 text-white',
+          'w-full px-4 py-3 rounded-control border border-line bg-overlay text-white shadow-[0_16px_48px_rgba(0,0,0,0.5)] flex items-center gap-2.5 text-sm font-medium',
+          kind === 'ok' ? '' : 'border-error-text/40',
           action && 'pr-3',
           className,
         )}
       >
         {kind === 'ok' ? (
-          <Check className="w-5 h-5 shrink-0" aria-hidden="true" />
+          <Check className="w-5 h-5 shrink-0 text-primary-text" aria-hidden="true" />
         ) : (
           <X className="w-5 h-5 shrink-0 text-error-text" aria-hidden="true" />
         )}
@@ -61,9 +59,9 @@ export function Toast({ kind, text, className, action }: ToastProps) {
             onClick={action.onClick}
             className={cn(
               'pointer-events-auto tap-target shrink-0 inline-flex items-center justify-center',
-              'px-3 rounded-full font-semibold leading-relaxed text-white',
-              'bg-white/15 hover:bg-white/25 active:scale-[0.97] transition-colors duration-150',
-              'outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]',
+              'px-3 rounded-[7px] font-semibold leading-relaxed text-primary-text',
+              'hover:bg-surface-3 active:scale-[0.97] transition-colors duration-150',
+              'outline-none focus-visible:ring-2 focus-visible:ring-primary-text',
             )}
           >
             {action.label}

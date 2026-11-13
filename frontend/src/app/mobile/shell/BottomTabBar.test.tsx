@@ -20,8 +20,8 @@ describe('BottomTabBar', () => {
 
   it('highlights the active tab', () => {
     render(<BottomTabBar active="coach" onChange={vi.fn()} />);
-    expect(screen.getByTestId('mobile-tab-coach')).toHaveClass('text-[#0F6B3E]');
-    expect(screen.getByTestId('mobile-tab-overview')).toHaveClass('text-white/50');
+    expect(screen.getByTestId('mobile-tab-coach')).toHaveClass('text-white');
+    expect(screen.getByTestId('mobile-tab-overview')).toHaveClass('text-white/64');
     expect(screen.getByTestId('mobile-tab-coach')).toHaveAttribute('aria-current', 'page');
   });
 });

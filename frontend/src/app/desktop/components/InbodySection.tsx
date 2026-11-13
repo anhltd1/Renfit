@@ -15,7 +15,7 @@ const StackedInbodyChart = lazy(() =>
 );
 
 function ChartSkeleton() {
-  return <div className="h-[440px] rounded-2xl border border-white/8 bg-white/[0.02] animate-pulse" />;
+  return <div className="h-[440px] rounded-panel border border-line bg-white/[0.02] animate-pulse" />;
 }
 
 export interface InbodySectionProps {
@@ -56,7 +56,7 @@ export function InbodySection({ customerId }: InbodySectionProps) {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-white font-semibold text-sm">Lịch sử chỉ số</h3>
-          <p className="text-white/60 text-xs mt-0.5">
+          <p className="text-white/64 text-xs mt-0.5">
             {records.length} lần đo
             {lastRecord && ` · Gần nhất: ${fmtDate(lastRecord.date_recorded)}`}
           </p>
@@ -64,7 +64,7 @@ export function InbodySection({ customerId }: InbodySectionProps) {
         <button
           type="button"
           onClick={() => setShowModal(true)}
-          className="tap-target flex items-center gap-1.5 bg-[#0F6B3E]/15 hover:bg-[#0F6B3E]/25 border border-[#0F6B3E]/30 hover:border-[#0F6B3E]/50 text-primary-text text-sm px-3 py-2 rounded-xl transition-colors"
+          className="tap-target flex items-center gap-1.5 bg-[#0F6B3E]/15 hover:bg-[#0F6B3E]/25 border border-[#0F6B3E]/30 hover:border-white/20 text-primary-text text-sm px-3 py-2 rounded-control transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
           Thêm kết quả
@@ -72,7 +72,7 @@ export function InbodySection({ customerId }: InbodySectionProps) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-10 text-white/60">
+        <div className="flex items-center justify-center py-10 text-white/64">
           <RefreshCw className="w-5 h-5 animate-spin" />
         </div>
       ) : (

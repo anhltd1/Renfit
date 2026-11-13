@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # OpenAI
     openai_api_key: str = ""
-    openai_model: str = "gpt-5.6-luna"
+    openai_model: str = "gpt-6-luna"
     openai_max_tokens: int = 1024
 
     # MongoDB
@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     # AI Coach
     ai_max_history_turns: int = 20
     ai_request_timeout: int = 60
+
+    # Coach (admin) account — seeded/synced on every startup (src/init_db/seed.py)
+    admin_username: str = ""
+    admin_password: str = ""
 
     # Web Push (VAPID)
     vapid_public_key: str = ""

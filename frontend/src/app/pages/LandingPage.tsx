@@ -26,7 +26,7 @@ export function LandingPage() {
       {isPreview && <PreviewBanner />}
       <Navigation />
       <Hero
-        content={{ hero: content.hero, brand: content.brand }}
+        content={{ hero: content.hero, brand: content.brand, contact: content.contact }}
         heroRef={(node) => {
           heroVisibilityRef(node);
           // Track live visibility via IntersectionObserver for sticky bar
@@ -45,7 +45,7 @@ export function LandingPage() {
       <AIChat content={content.ai_coach} />
       <Trainers content={content.trainers} />
       <Testimonials content={content.testimonials} />
-      <ClosingCTA content={content.closing_cta} />
+      <ClosingCTA content={content.closing_cta} image={content.about.main_image || content.hero.background_image} />
       <Footer content={{ footer: content.footer, contact: content.contact, social: content.social, brand: content.brand }} />
       <StickyCTABar heroVisible={heroVisible} />
     </div>

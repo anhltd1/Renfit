@@ -6,9 +6,10 @@
  */
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAdminAuth } from '../../shared/hooks/useAdminAuth';
 import { SessionExpiredNotice } from '../../shared/components/SessionExpiredNotice';
+import { BrandMark } from '../../shared/components/BrandMark';
 
 export function AdminLoginPage() {
   const navigate = useNavigate();
@@ -43,18 +44,14 @@ export function AdminLoginPage() {
       style={{ paddingTop: 'max(2rem, env(safe-area-inset-top))', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="flex justify-center mb-8 mt-6">
-        <div className="flex items-center gap-2.5 bg-[#0F6B3E]/10 border border-[#0F6B3E]/30 rounded-full px-5 py-2">
-          <ShieldCheck className="w-4 h-4 text-primary-text" />
-          <span className="text-primary-text text-sm font-semibold tracking-wide">RENFIT ADMIN</span>
-        </div>
+        <BrandMark scope="Huấn luyện viên" />
       </div>
 
-      <h1 className="text-2xl font-bold text-white mb-1">Coach Dashboard</h1>
-      <p className="text-white/60 text-sm mb-8">Đăng nhập để quản lý hội viên và lịch tập.</p>
+      <h1 className="text-2xl font-semibold text-white text-center mb-8">Đăng nhập</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4 flex-1" data-testid="admin-login-form">
         <div>
-          <label className="text-white/60 text-sm mb-2 block">Tên đăng nhập</label>
+          <label className="text-white/64 text-sm mb-2 block">Tên đăng nhập</label>
           <input
             type="text"
             value={username}
@@ -62,12 +59,12 @@ export function AdminLoginPage() {
             placeholder="admin"
             autoComplete="username"
             data-testid="input-username"
-            className="w-full bg-white/5 border border-white/10 focus:border-primary-text rounded-2xl px-4 py-3 text-white placeholder:text-white/40 outline-none transition-colors text-sm"
+            className="w-full bg-surface-2 border border-line-strong focus:border-primary-text focus:ring-2 focus:ring-primary-text/30 rounded-control px-4 py-3 text-white placeholder:text-white/40 outline-none transition-colors text-sm"
           />
         </div>
 
         <div>
-          <label className="text-white/60 text-sm mb-2 block">Mật khẩu</label>
+          <label className="text-white/64 text-sm mb-2 block">Mật khẩu</label>
           <div className="relative">
             <input
               type={showPw ? 'text' : 'password'}
@@ -76,12 +73,12 @@ export function AdminLoginPage() {
               placeholder="••••••"
               autoComplete="current-password"
               data-testid="input-password"
-              className="w-full bg-white/5 border border-white/10 focus:border-primary-text rounded-2xl px-4 py-3 text-white placeholder:text-white/40 outline-none transition-colors text-sm pr-12"
+              className="w-full bg-surface-2 border border-line-strong focus:border-primary-text focus:ring-2 focus:ring-primary-text/30 rounded-control px-4 py-3 text-white placeholder:text-white/40 outline-none transition-colors text-sm pr-12"
             />
             <button
               type="button"
               onClick={() => setShowPw(!showPw)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 tap-target inline-flex items-center justify-center text-white/60 hover:text-white transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 tap-target inline-flex items-center justify-center text-white/64 hover:text-white transition-colors"
               aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
             >
               {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -92,7 +89,7 @@ export function AdminLoginPage() {
         {showExpired && <SessionExpiredNotice />}
 
         {error && (
-          <p className="text-error-text text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-2.5" data-testid="admin-login-error">
+          <p className="text-error-text text-sm bg-[#f87171]/[0.06] border border-error-text/30 rounded-control px-4 py-2.5" data-testid="admin-login-error">
             {error}
           </p>
         )}
@@ -101,7 +98,7 @@ export function AdminLoginPage() {
           type="submit"
           disabled={loading}
           data-testid="admin-login-submit-button"
-          className="w-full bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 disabled:opacity-60 text-white font-semibold py-3.5 rounded-2xl transition-all duration-300"
+          className="w-full bg-primary hover:bg-primary-hover disabled:opacity-60 text-white font-semibold py-3.5 rounded-full transition-colors"
         >
           {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
         </button>

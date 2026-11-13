@@ -31,13 +31,13 @@ export function Input({
   return (
     <div className="w-full">
       {label && (
-        <label htmlFor={inputId} className="block text-white/70 text-sm mb-2 leading-relaxed">
+        <label htmlFor={inputId} className="block text-white/64 text-[13px] font-medium mb-1.5 leading-relaxed">
           {label}
         </label>
       )}
       <div className="relative">
         {icon && (
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30">{icon}</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">{icon}</span>
         )}
         <input
           id={inputId}
@@ -45,17 +45,17 @@ export function Input({
           data-testid={`input-${tid}`}
           aria-invalid={!!error}
           className={cn(
-            'w-full rounded-2xl bg-white/5 border text-white placeholder:text-white/30',
-            'py-3.5 px-4 leading-relaxed outline-none transition-colors duration-300',
-            'focus:border-[#0F6B3E] focus-visible:ring-2 focus-visible:ring-[#0F6B3E]/40',
+            'w-full rounded-control bg-surface-2 border text-white placeholder:text-white/40',
+            'py-3 px-4 leading-relaxed outline-none transition-colors duration-[var(--motion-fast)]',
+            'focus:border-primary-text focus:ring-2 focus:ring-primary-text/30',
             icon && 'pl-11',
-            error ? 'border-red-400/60' : 'border-white/10',
+            error ? 'border-error-text/60' : 'border-line-strong',
             className,
           )}
           {...rest}
         />
       </div>
-      {error && <p className="text-red-400 text-sm mt-1.5 leading-relaxed">{error}</p>}
+      {error && <p className="text-error-text text-sm mt-1.5 leading-relaxed">{error}</p>}
     </div>
   );
 }

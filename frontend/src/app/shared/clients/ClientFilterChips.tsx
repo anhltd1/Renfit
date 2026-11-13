@@ -22,7 +22,7 @@ export function ClientFilterChips({ value, onChange, className }: ClientFilterCh
             onClick={() => onChange(key)}
             className={cn(
               'tap-target inline-flex items-center justify-center px-3 rounded-full border text-sm leading-relaxed transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-text',
               pressed
                 ? 'bg-[#0F6B3E]/25 border-primary-text/50 text-primary-text font-semibold'
                 : 'border-white/15 text-white/70 hover:text-white hover:border-white/30',

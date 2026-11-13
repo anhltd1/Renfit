@@ -29,11 +29,11 @@ describe('Button', () => {
 });
 
 describe('Card', () => {
-  it('renders content with glassmorphism classes', () => {
+  it('renders content on a flat surface panel', () => {
     render(<Card>Nội dung</Card>);
     const el = screen.getByText('Nội dung');
-    expect(el).toHaveClass('bg-white/5');
-    expect(el.className).toContain('backdrop-blur');
+    expect(el).toHaveClass('bg-surface', 'border-line', 'rounded-panel');
+    expect(el.className).not.toContain('backdrop-blur');
   });
 
   it('is not interactive by default (no button role/tabIndex)', () => {

@@ -1,128 +1,118 @@
-import { ImageWithFallback } from './figma/ImageWithFallback';
-import logoImage from '../../imports/image.png';
-import { SectionAtmosphere } from './landing/SectionAtmosphere';
-import { Card } from '../shared/primitives/Card';
 import { cn } from '../shared/primitives/cn';
 import { useInView } from '../shared/hooks/useInView';
-import { resolveIcon } from '../../lib/icons/iconAllowlist';
 import { buildSrcSet } from '../../lib/utils/buildSrcSet';
-import type { HeroContent, BrandContent } from '../../lib/api/siteContent';
+import { getAuthUser } from '../../lib/auth';
+import { Link } from './Link';
+import { TodayBoard } from './landing/TodayBoard';
+import type { HeroContent, BrandContent, ContactContent } from '../../lib/api/siteContent';
 
+/**
+ * Landing hero — "split stage" (DESIGN.md v2, Marketing surface).
+ * Left: the claim, the facts, the one action and the live board of today's
+ * open places (Renfit's 4-per-hour rule made visible). Right: one photograph
+ * of the gym, with opening hours and the address on its bottom edge.
+ */
 interface HeroProps {
   /** Callback ref for tracking hero visibility (used by StickyCTABar). */
   heroRef?: (node: HTMLElement | null) => void;
-  content?: { hero: HeroContent; brand: BrandContent };
+  content?: { hero: HeroContent; brand: BrandContent; contact?: ContactContent };
 }
 
 const DEFAULT_HERO: HeroContent = {
-  headline_line1: 'Nâng Tầm Thể Chất.',
-  headline_line2: 'Kiến Tạo Phiên Bản',
-  headline_line3: 'Tốt Nhất Của Bạn.',
+  headline_line1: 'Phòng tập riêng.',
+  headline_line2: '4 người',
+  headline_line3: 'mỗi giờ.',
   description:
-    'Phòng gym riêng tư cao cấp với huấn luyện viên cá nhân chuyên nghiệp, hỗ trợ AI thông minh và chương trình tập luyện được cá nhân hóa hoàn toàn.',
+    'Tập cùng huấn luyện viên cá nhân trong một phòng tập không bao giờ đông, đo InBody để thấy tiến độ thật, và đặt lịch trên ứng dụng chỉ trong vài giây.',
   background_image:
     'https://images.unsplash.com/photo-1637666062717-1c6bcfa4a4df?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920',
   stats: [
-    { icon: 'Users', value: '100+', label: 'Hội viên' },
-    { icon: 'Dumbbell', value: '10+', label: 'Huấn luyện viên' },
-    { icon: 'Star', value: '95%', label: 'Hài lòng' },
+    { icon: 'Users', value: '4', label: 'người tối đa mỗi khung giờ' },
+    { icon: 'Dumbbell', value: '08–21', label: 'mở cửa Thứ 2 – Thứ 7' },
+    { icon: 'Star', value: '12', label: 'ngày đặt lịch trước' },
   ],
 };
 
 export function Hero({ heroRef, content }: HeroProps) {
   const { ref: revealRef, isRevealed } = useInView<HTMLDivElement>({ threshold: 0.1 });
   const hero = content?.hero ?? DEFAULT_HERO;
-  const brand = content?.brand;
+  const contact = content?.contact;
   const bgImage = hero.background_image || DEFAULT_HERO.background_image;
+  const user = getAuthUser();
+  const bookTo = user ? '/dashboard' : '/signup';
+  const secondLine = [hero.headline_line2, hero.headline_line3].filter(Boolean).join(' ');
+  const firstHours = contact?.hours?.split('\n')[0]?.trim();
+  const srcSet = buildSrcSet(bgImage, [640, 1080, 1920]);
 
   return (
     <section
       ref={heroRef}
-      className="relative min-h-[85svh] lg:min-h-screen flex items-center justify-center overflow-hidden"
+      className="relative pt-[68px] sm:pt-[76px] px-3 pb-3 lg:min-h-[100svh] grid gap-3 lg:grid-cols-2"
     >
-      {/* Background Image with Overlay */}
-      <div className="absolute inset-0 z-0">
+      {/* Photograph — first on phones, right half on desktop */}
+      <div className="relative order-2 h-[48svh] sm:h-[56svh] lg:h-[calc(100svh-88px)] lg:sticky lg:top-[76px] rounded-panel overflow-hidden bg-surface">
         <img
           src={bgImage}
-          alt="Phòng tập gym cao cấp"
-          className="w-full h-full object-cover"
+          alt="Khu tập tại Renfit"
+          className="absolute inset-0 w-full h-full object-cover brightness-[0.85]"
           width={1920}
           height={1080}
           fetchpriority="high"
-          srcSet={buildSrcSet(bgImage, [640, 1080, 1920])}
-          sizes={buildSrcSet(bgImage, [640, 1080, 1920]) ? '100vw' : undefined}
-          style={{ aspectRatio: '16/9' }}
+          srcSet={srcSet}
+          sizes={srcSet ? '(min-width: 1024px) 50vw, 100vw' : undefined}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-[#0B0B0B]" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0F6B3E]/20 to-transparent" />
+        {(firstHours || contact?.address) && (
+          <div className="absolute inset-x-0 bottom-0 bg-[#0B0B0B] px-4 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-1 text-sm">
+            {firstHours && <span className="text-white tabular-nums">{firstHours}</span>}
+            {contact?.address && <span className="text-white/64 truncate">{contact.address}</span>}
+          </div>
+        )}
       </div>
 
-      {/* Atmosphere substrate */}
-      <SectionAtmosphere
-        glows={2}
-        positions={[{ x: 25, y: 40 }, { x: 75, y: 70 }]}
-      />
-
-      {/* Content */}
+      {/* Reading column */}
       <div
         ref={revealRef}
         className={cn(
-          'relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20 text-center',
+          'order-1 flex flex-col justify-center px-3 sm:px-6 lg:px-12 xl:px-16 pt-6 pb-4 lg:py-10',
           'opacity-0 translate-y-2',
           isRevealed && 'animate-fade-up',
         )}
       >
-        {/* Logo */}
-        <div className="flex justify-center mb-6 sm:mb-8">
-          <ImageWithFallback
-            src={logoImage}
-            alt="Renfit Logo"
-            className="h-14 sm:h-20 lg:h-24 w-auto"
-          />
-        </div>
-
-        {/* Tagline */}
-        {brand?.tagline && (
-          <p className="text-white/60 text-sm sm:text-base leading-relaxed mb-4">
-            {brand.tagline}
-          </p>
-        )}
-
-        {/* Main Headline */}
-        <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6 leading-tight">
-          <span className="text-white">{hero.headline_line1}</span>
-          <br />
-          <span className="text-white">{hero.headline_line2}</span>
-          <br />
-          <span className="text-[#0F6B3E]">{hero.headline_line3}</span>
+        <h1 className="text-white font-bold leading-[1.08] text-[clamp(2.25rem,4.1vw,3.875rem)]">
+          <span className="block">{hero.headline_line1}</span>
+          {secondLine && <span className="block text-primary-text">{secondLine}</span>}
         </h1>
 
-        {/* Supporting Text */}
-        <p className="text-base sm:text-lg lg:text-xl text-white/80 max-w-3xl mx-auto mb-8 sm:mb-10 leading-relaxed">
-          {hero.description}
-        </p>
+        <p className="mt-5 text-white/80 text-base sm:text-lg leading-relaxed max-w-[46ch]">{hero.description}</p>
 
-        {/* Stats Strip — always 3-col horizontal */}
-        <div className="grid grid-cols-3 gap-3 sm:gap-6 max-w-4xl mx-auto">
-          {hero.stats.map((stat, index) => {
-            const Icon = resolveIcon(stat.icon);
-            return (
-              <Card key={index} tier="card" compact className="text-center">
-                {Icon && (
-                  <div className="flex items-center justify-center mb-1 sm:mb-3">
-                    <Icon className="w-5 h-5 sm:w-8 sm:h-8 text-[#0F6B3E]" />
-                  </div>
-                )}
-                <div className="text-xl sm:text-4xl font-bold text-white mb-0.5 sm:mb-2">{stat.value}</div>
-                <div className="text-white/60 text-xs sm:text-base leading-relaxed">{stat.label}</div>
-              </Card>
-            );
-          })}
+        {hero.stats.length > 0 && (
+          <dl className="mt-7 grid grid-cols-3 gap-4 max-w-lg">
+            {hero.stats.slice(0, 3).map((s, i) => (
+              <div key={i} className="min-w-0">
+                <dt className="sr-only">{s.label}</dt>
+                <dd className="text-white text-2xl sm:text-[28px] font-semibold tabular-nums leading-none">{s.value}</dd>
+                <dd className="mt-1.5 text-white/64 text-sm leading-snug">{s.label}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+
+        <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <Link
+            to={bookTo}
+            className="inline-flex items-center justify-center rounded-full bg-primary hover:bg-primary-hover text-white font-semibold px-7 py-3.5 transition-colors active:scale-[0.97]"
+          >
+            Đặt lịch tập
+          </Link>
+          {!user && (
+            <Link to="/login" className="text-white/80 hover:text-white text-sm underline underline-offset-4 decoration-white/30 hover:decoration-white">
+              Đã là hội viên? Đăng nhập
+            </Link>
+          )}
         </div>
-      </div>
 
-      {/* Bottom Gradient Fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 sm:h-32 bg-gradient-to-t from-[#0B0B0B] to-transparent z-10" />
+        <TodayBoard ctaTo={bookTo} className="mt-10 max-w-lg" />
+      </div>
     </section>
   );
 }

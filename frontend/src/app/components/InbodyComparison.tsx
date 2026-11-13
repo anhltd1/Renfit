@@ -32,11 +32,11 @@ function MetricRow({ label, unit, firstVal, latestVal, lowerIsBetter }: MetricRo
 
   return (
     <div className="flex items-center gap-2 py-2 border-b border-white/6 last:border-0">
-      <span className="text-white/50 text-xs w-16 shrink-0">{label}</span>
+      <span className="text-white/64 text-xs w-16 shrink-0">{label}</span>
       <span className="text-white/40 text-xs flex-1 text-center tabular-nums">{firstVal.toFixed(1)} {unit}</span>
       <span className="text-white text-xs flex-1 text-center font-medium tabular-nums">{latestVal.toFixed(1)} {unit}</span>
       <span className={`text-xs w-16 text-right shrink-0 font-medium tabular-nums ${
-        unchanged ? 'text-white/30' : improved ? 'text-emerald-400' : 'text-red-400'
+        unchanged ? 'text-white/64' : improved ? 'text-primary-text' : 'text-error-text'
       }`}>
         {unchanged ? '—' : `${delta > 0 ? '+' : ''}${delta.toFixed(1)}`}
         {!unchanged && (improved ? ' ▼' : ' ▲')}
@@ -47,18 +47,18 @@ function MetricRow({ label, unit, firstVal, latestVal, lowerIsBetter }: MetricRo
 
 export function InbodyComparison({ first, latest }: InbodyComparisonProps) {
   return (
-    <div className="bg-white/[0.03] border border-white/8 rounded-xl p-4">
+    <div className="bg-white/[0.03] border border-line rounded-control p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h4 className="text-white/70 text-xs font-semibold uppercase tracking-wider">So sánh tiến độ</h4>
+        <h4 className="text-white/70 text-xs font-semibold ">So sánh tiến độ</h4>
       </div>
 
       {/* Column headers */}
-      <div className="flex items-center gap-2 pb-2 border-b border-white/10 mb-1">
-        <span className="text-white/30 text-[10px] w-16 shrink-0"></span>
-        <span className="text-white/30 text-[10px] flex-1 text-center">Lần đầu ({fmtDate(first.date_recorded)})</span>
-        <span className="text-white/30 text-[10px] flex-1 text-center">Mới nhất ({fmtDate(latest.date_recorded)})</span>
-        <span className="text-white/30 text-[10px] w-16 text-right shrink-0">Thay đổi</span>
+      <div className="flex items-center gap-2 pb-2 border-b border-line mb-1">
+        <span className="text-white/64 text-xs w-16 shrink-0"></span>
+        <span className="text-white/64 text-xs flex-1 text-center">Lần đầu ({fmtDate(first.date_recorded)})</span>
+        <span className="text-white/64 text-xs flex-1 text-center">Mới nhất ({fmtDate(latest.date_recorded)})</span>
+        <span className="text-white/64 text-xs w-16 text-right shrink-0">Thay đổi</span>
       </div>
 
       {/* Metrics */}

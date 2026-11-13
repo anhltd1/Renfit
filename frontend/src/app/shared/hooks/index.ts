@@ -1,7 +1,7 @@
 // Renfit shared data hooks (U2 Shared Data Layer).
 // Wrap frontend/src/lib/api/* so both the desktop and mobile trees (U3-U6)
 // consume identical data-fetching logic. See:
-// .kiro/aidlc-docs/construction/U2-shared-data-layer/functional-design/
+// aidlc-docs/construction/U2-shared-data-layer/functional-design/
 export { useBookingAvailability, useCreateBooking, useCancelBooking } from './useBookingAvailability';
 export { useAdminBookings, useUpdateBookingStatus, useAssignBooking, useCustomers } from './useAdminBookings';
 export { useInbodyHistory, useAddInbody } from './useInbody';

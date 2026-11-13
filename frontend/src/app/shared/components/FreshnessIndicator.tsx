@@ -34,7 +34,7 @@ export function FreshnessIndicator({ lastUpdatedAt, offline, className }: Freshn
     <span
       data-testid="freshness-updated"
       aria-live="off"
-      className={cn('text-xs leading-relaxed text-white/60 tabular-nums', className)}
+      className={cn('text-xs leading-relaxed text-white/64 tabular-nums', className)}
     >
       Cập nhật {formatIctHm(lastUpdatedAt)}
     </span>

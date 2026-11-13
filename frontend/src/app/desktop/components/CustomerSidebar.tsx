@@ -56,16 +56,16 @@ function SelectBox({
         data-testid={testId}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="tap-target w-full appearance-none bg-white/5 border border-white/10 hover:border-white/20 focus:border-[#3DBE7A] rounded-xl pl-3 pr-8 py-1.5 text-sm text-white truncate outline-none cursor-pointer transition-colors"
+        className="tap-target w-full appearance-none bg-white/5 border border-line hover:border-white/20 focus:border-[#3DBE7A] rounded-control pl-3 pr-8 py-1.5 text-sm text-white truncate outline-none cursor-pointer transition-colors"
       >
         {options.map((o) => (
-          <option key={o.value} value={o.value} className="bg-[#111] text-white">
+          <option key={o.value} value={o.value} className="bg-overlay text-white">
             {o.label}
           </option>
         ))}
       </select>
       <ChevronDown
-        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none"
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/64 pointer-events-none"
         aria-hidden="true"
       />
     </label>
@@ -111,12 +111,12 @@ export function CustomerSidebar({
   }, [handleKeyDown]);
 
   return (
-    <aside className="w-72 lg:w-80 shrink-0 flex flex-col border-r border-white/8 bg-[#0B0B0B]">
+    <aside className="w-72 lg:w-80 shrink-0 flex flex-col border-r border-line bg-[#0B0B0B]">
       <div className="p-3 space-y-2 border-b border-white/6">
         <div className="flex items-center gap-2">
           <div className="relative flex-1 min-w-0">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/64 pointer-events-none"
               aria-hidden="true"
             />
             <input
@@ -127,7 +127,7 @@ export function CustomerSidebar({
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Tìm hội viên  ( / )"
-              className="w-full bg-white/5 border border-white/10 focus:border-[#3DBE7A] rounded-xl pl-9 pr-3 py-2 text-white placeholder:text-white/40 outline-none transition-colors text-sm"
+              className="w-full bg-white/5 border border-line focus:border-[#3DBE7A] rounded-control pl-9 pr-3 py-2 text-white placeholder:text-white/40 outline-none transition-colors text-sm"
             />
           </div>
           {onCreateMember && (
@@ -137,7 +137,7 @@ export function CustomerSidebar({
               onClick={onCreateMember}
               title="Tạo hội viên"
               aria-label="Tạo hội viên"
-              className="tap-target shrink-0 inline-flex items-center justify-center rounded-xl bg-[#0F6B3E] hover:bg-[#0F6B3E]/80 active:scale-[0.96] text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]"
+              className="tap-target shrink-0 inline-flex items-center justify-center rounded-control bg-primary hover:bg-primary-hover active:scale-[0.96] text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-text"
               style={{ width: 40, height: 40 }}
             >
               <Plus className="w-4 h-4" aria-hidden="true" />
@@ -177,10 +177,10 @@ export function CustomerSidebar({
           </div>
         )}
         {!loading && error && (
-          <p className="text-error-text text-sm p-4 bg-[#f87171]/10 rounded-xl m-2">{error}</p>
+          <p className="text-error-text text-sm p-4 bg-[#f87171]/10 rounded-control m-2">{error}</p>
         )}
         {!loading && !error && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-white/60 gap-2">
+          <div className="flex flex-col items-center justify-center py-12 text-white/64 gap-2">
             <Users className="w-7 h-7" aria-hidden="true" />
             <p className="text-sm font-medium">{hasConstraint ? 'Không tìm thấy hội viên.' : 'Chưa có hội viên nào.'}</p>
           </div>
@@ -196,7 +196,7 @@ export function CustomerSidebar({
 
       {!loading && filtered.length > 0 && (
         <div className="px-4 py-2.5 border-t border-white/6">
-          <p className="text-white/60 text-xs tabular-nums">
+          <p className="text-white/64 text-xs tabular-nums">
             {hasConstraint ? `${filtered.length} / ${customers.length} hội viên` : `${customers.length} hội viên`}
           </p>
         </div>

@@ -146,14 +146,9 @@ export function ChatPanel({
       } ${className}`}
     >
       {showHeader && (
-        <div className="bg-gradient-to-r from-[#0F6B3E] to-[#0F6B3E]/80 px-6 py-4 flex items-center gap-3 shrink-0">
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-            <Bot className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h3 className="text-white font-bold text-sm">Renfit AI Coach</h3>
-            {loading && <span className="text-white/60 text-xs">Đang trả lời...</span>}
-          </div>
+        <div className="px-5 py-3.5 border-b border-line flex items-baseline justify-between gap-3 shrink-0">
+          <h3 className="text-white font-semibold text-base">AI Coach</h3>
+          <span className="text-white/64 text-xs" aria-live="polite">{loading ? 'Đang trả lời…' : 'Đọc được hồ sơ và InBody của bạn'}</span>
         </div>
       )}
 
@@ -167,19 +162,18 @@ export function ChatPanel({
           <div
             key={msg.id}
             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+ >
             <div
-              className={`max-w-[85%] rounded-2xl px-5 py-4 ${
+              className={
                 msg.role === 'user'
-                  ? 'bg-[#0F6B3E] text-white rounded-br-sm'
-                  : 'bg-white/10 text-white border border-white/10 rounded-bl-sm'
-              }`}
+                  ? 'max-w-[80%] rounded-panel rounded-br-md bg-primary text-white px-4 py-3'
+                  : 'w-full max-w-[68ch] text-white'
+              }
             >
               {msg.role === 'assistant' && (
-                <div className="flex items-center gap-2 mb-2">
-                  <Bot className="w-4 h-4 text-[#0F6B3E]" />
-                  <span className="text-xs text-[#0F6B3E]">AI Coach</span>
-                </div>
+                <p className="flex items-center gap-1.5 mb-1.5 text-xs text-white/64">
+                  <Bot className="w-3.5 h-3.5" aria-hidden="true" /> AI Coach
+                </p>
               )}
               {msg.role === 'assistant' ? (
                 <Suspense fallback={<p className="whitespace-pre-line leading-relaxed text-sm">{msg.content}</p>}>
@@ -204,10 +198,10 @@ export function ChatPanel({
       </div>
 
       {error && (
-        <p className="px-6 text-red-400 text-sm shrink-0">{error}</p>
+        <p role="alert" className="px-6 text-error-text text-sm shrink-0">{error}</p>
       )}
 
-      <div className="p-4 border-t border-white/10 shrink-0 space-y-3">
+      <div className="p-4 border-t border-line shrink-0 space-y-3">
         {suggestions.length > 0 && !loading && (
           <SuggestedReplies suggestions={suggestions} onSelect={handleSuggestionClick} />
         )}
@@ -219,13 +213,15 @@ export function ChatPanel({
             placeholder="Nhập câu hỏi của bạn..."
             disabled={loading}
             rows={1}
-            className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder:text-white/40 resize-none outline-none focus:border-[#0F6B3E] transition-colors text-sm leading-relaxed max-h-24 disabled:opacity-50"
+            aria-label="Câu hỏi cho AI Coach"
+            className="flex-1 bg-surface-2 border border-line-strong rounded-control px-4 py-3 text-white placeholder:text-white/40 resize-none outline-none focus:border-primary-text focus:ring-2 focus:ring-primary-text/30 transition-colors text-sm leading-relaxed max-h-24 disabled:opacity-50"
           />
           <button
             type="button"
             onClick={() => handleSend()}
             disabled={loading || !input.trim()}
-            className="w-11 h-11 shrink-0 rounded-full bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 disabled:opacity-50 flex items-center justify-center transition-all duration-300 hover:scale-105"
+            aria-label="Gửi"
+            className="w-11 h-11 shrink-0 rounded-full bg-primary hover:bg-primary-hover disabled:opacity-40 flex items-center justify-center transition-colors"
           >
             <Send className="w-5 h-5 text-white" />
           </button>

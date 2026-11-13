@@ -13,7 +13,7 @@ export function LazyLoadFallback() {
       aria-label="Đang tải..."
       className="min-h-screen w-full flex items-center justify-center bg-[#0B0B0B]"
     >
-      <Loader2 className="w-8 h-8 text-[#0F6B3E] animate-spin" />
+      <Loader2 className="w-8 h-8 text-primary-text animate-spin" />
     </div>
   );
 }

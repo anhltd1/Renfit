@@ -30,7 +30,7 @@ export function ImageInput({ value, onChange, label, maxSize = 800, disabled }: 
   return (
     <div className="w-full space-y-2">
       {label && (
-        <label className="block text-white/60 text-sm leading-relaxed">{label}</label>
+        <label className="block text-white/64 text-sm leading-relaxed">{label}</label>
       )}
 
       {/* URL text input */}
@@ -41,9 +41,9 @@ export function ImageInput({ value, onChange, label, maxSize = 800, disabled }: 
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         className={cn(
-          'w-full rounded-2xl bg-white/5 border border-white/10 text-white',
-          'placeholder:text-white/30 py-3 px-4 leading-relaxed outline-none',
-          'transition-colors duration-300 focus:border-[#0F6B3E]',
+          'w-full rounded-panel bg-white/5 border border-line text-white',
+          'placeholder:text-white/40 py-3 px-4 leading-relaxed outline-none',
+          'transition-colors duration-300 focus:border-primary-text',
           'disabled:opacity-60 disabled:cursor-not-allowed',
         )}
       />
@@ -88,7 +88,7 @@ export function ImageInput({ value, onChange, label, maxSize = 800, disabled }: 
           <img
             src={value}
             alt="Preview"
-            className="w-24 h-24 object-cover rounded-xl border border-white/10"
+            className="w-24 h-24 object-cover rounded-control border border-line"
           />
         </div>
       )}

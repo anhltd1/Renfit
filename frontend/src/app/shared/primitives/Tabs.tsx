@@ -3,7 +3,8 @@ import { cn } from './cn';
 
 /**
  * Tabs primitive (U1 Foundation) — accessible segmented tabs.
- * Keyboard operable, green active state + focus ring per DESIGN.md.
+ * Keyboard operable. DESIGN.md v2: a neutral segmented control — the active
+ * segment is a lighter surface, not a green fill (green is for data).
  */
 export interface TabItem {
   key: string;
@@ -20,7 +21,7 @@ export interface TabsProps {
 
 export function Tabs({ items, value, onChange, className }: TabsProps) {
   return (
-    <div role="tablist" className={cn('flex gap-1 rounded-2xl bg-white/5 p-1', className)}>
+    <div role="tablist" className={cn('flex gap-1 rounded-control bg-surface border border-line p-1', className)}>
       {items.map((item) => {
         const active = item.key === value;
         return (
@@ -32,9 +33,9 @@ export function Tabs({ items, value, onChange, className }: TabsProps) {
             data-testid={`tab-${item.key}`}
             onClick={() => onChange(item.key)}
             className={cn(
-              'flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium',
-              'transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]',
-              active ? 'bg-[#0F6B3E] text-white' : 'text-white/60 hover:text-white hover:bg-white/5',
+              'flex-1 inline-flex items-center justify-center gap-2 rounded-[7px] px-4 py-2 text-sm font-medium',
+              'transition-colors duration-[var(--motion-fast)] outline-none focus-visible:ring-2 focus-visible:ring-primary-text',
+              active ? 'bg-surface-3 text-white' : 'text-white/64 hover:text-white hover:bg-surface-2',
             )}
           >
             {item.icon}

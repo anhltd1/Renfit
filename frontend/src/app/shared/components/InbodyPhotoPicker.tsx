@@ -52,8 +52,8 @@ export function InbodyPhotoPicker({ value, onChange, disabled }: InbodyPhotoPick
   return (
     <div>
       <div className="flex items-baseline justify-between mb-1.5">
-        <label className="text-white/50 text-xs block leading-relaxed">
-          Ảnh buổi đo <span className="text-white/25">(không bắt buộc)</span>
+        <label className="text-white/64 text-xs block leading-relaxed">
+          Ảnh buổi đo <span className="text-white/40">(không bắt buộc)</span>
         </label>
         <span className="text-white/40 text-xs leading-relaxed">
           {value.length}/{MAX_INBODY_PHOTOS}
@@ -62,10 +62,10 @@ export function InbodyPhotoPicker({ value, onChange, disabled }: InbodyPhotoPick
 
       <div className="grid grid-cols-4 gap-2" data-testid="photo-picker-grid">
         {value.map((src, idx) => (
-          <div key={`${idx}-${src.length}`} className="relative aspect-square rounded-xl overflow-hidden border border-white/10 bg-white/5">
+          <div key={`${idx}-${src.length}`} className="relative aspect-square rounded-control overflow-hidden border border-line bg-white/5">
             <img src={src} alt={`Ảnh ${idx + 1}`} className="w-full h-full object-cover" />
             {idx === 0 ? (
-              <span className="absolute bottom-1 left-1 rounded-full bg-[#0F6B3E] px-1.5 text-white text-[11px] font-semibold leading-relaxed">
+              <span className="absolute bottom-1 left-1 rounded-full bg-primary px-1.5 text-white text-xs font-semibold leading-relaxed">
                 Ảnh bìa
               </span>
             ) : (
@@ -100,18 +100,18 @@ export function InbodyPhotoPicker({ value, onChange, disabled }: InbodyPhotoPick
             disabled={disabled || busy}
             data-testid="photo-picker-add"
             className={cn(
-              'aspect-square rounded-xl border border-dashed border-white/20 flex flex-col items-center justify-center gap-1',
-              'text-white/50 hover:text-[#0F6B3E] hover:border-[#0F6B3E]/50 transition-colors active:scale-[0.97]',
+              'aspect-square rounded-control border border-dashed border-white/20 flex flex-col items-center justify-center gap-1',
+              'text-white/64 hover:text-primary-text hover:border-white/20 transition-colors active:scale-[0.97]',
               'disabled:opacity-60',
             )}
           >
             {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImagePlus className="w-5 h-5" />}
-            <span className="text-[11px] leading-relaxed">{busy ? 'Đang xử lý' : 'Thêm ảnh'}</span>
+            <span className="text-xs leading-relaxed">{busy ? 'Đang xử lý' : 'Thêm ảnh'}</span>
           </button>
         )}
       </div>
 
-      {error && <p className="text-red-400 text-xs mt-1.5 leading-relaxed">{error}</p>}
+      {error && <p className="text-error-text text-xs mt-1.5 leading-relaxed">{error}</p>}
 
       <input
         ref={fileRef}

@@ -33,9 +33,10 @@ const user = {
 };
 
 describe('OverviewScreen', () => {
-  it('greets the user by their last name', async () => {
+  it('titles the screen with a noun, not a greeting', async () => {
     render(<OverviewScreen user={user} onNavigateTab={vi.fn()} />);
-    expect(screen.getByText(/Xin chào, A/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Tổng quan');
+    expect(screen.queryByText(/Xin chào/)).not.toBeInTheDocument();
   });
 
   it('shows the AI Coach contextual entry after loading', async () => {

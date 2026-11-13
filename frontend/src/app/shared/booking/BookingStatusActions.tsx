@@ -112,12 +112,14 @@ const GRID_COLS: Record<number, string> = {
   3: 'grid-cols-3',
 };
 
+// DESIGN.md v2: neutral controls; the status hue lives in the icon + label.
+// Approve is the job the pending list exists for, so it alone keeps a tint.
 const ACTION_TONE: Record<BookingStatusKey, string> = {
-  approved: 'border-primary-text/50 bg-[#0F6B3E]/15 hover:bg-[#0F6B3E]/30',
-  pending: 'border-[#f59e0b]/50 bg-[#f59e0b]/10 hover:bg-[#f59e0b]/20',
-  completed: 'border-white/25 bg-white/5 hover:bg-white/10',
-  no_show: 'border-error-text/50 bg-[#f87171]/10 hover:bg-[#f87171]/20',
-  rejected: 'border-dashed border-white/30 bg-transparent hover:bg-white/5',
+  approved: 'border-primary-text/40 bg-primary-tint hover:bg-[#0F6B3E]/30',
+  pending: 'border-line-strong bg-surface-2 hover:bg-surface-3',
+  completed: 'border-line-strong bg-surface-2 hover:bg-surface-3',
+  no_show: 'border-line-strong bg-surface-2 hover:bg-surface-3',
+  rejected: 'border-dashed border-line-strong bg-transparent hover:bg-surface-2',
 };
 
 export function BookingStatusActions({
@@ -166,8 +168,8 @@ export function BookingStatusActions({
             onClick={() => void handle(next)}
             aria-label={`${label}: ${booking.customer_id}`}
             className={cn(
-              'tap-target rounded-xl border font-semibold leading-relaxed transition-colors active:scale-[0.97]',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]',
+              'tap-target rounded-control border font-semibold leading-relaxed transition-colors active:scale-[0.97]',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-text',
               'disabled:opacity-50 disabled:cursor-not-allowed',
               layout === 'grid'
                 ? cn('flex flex-col items-center justify-center gap-1', lg ? 'py-4 px-3' : 'py-3 px-2')

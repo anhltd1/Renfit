@@ -1,7 +1,5 @@
 import { Link } from './Link';
-import { ImageWithFallback } from './figma/ImageWithFallback';
-import logoImage from '../../imports/image.png';
-import { MapPin, Phone, Mail, Facebook, Instagram, Youtube } from 'lucide-react';
+import { BrandMark } from '../shared/components/BrandMark';
 import type { FooterContent, ContactContent, SocialContent, BrandContent } from '../../lib/api/siteContent';
 
 interface FooterProps {
@@ -9,19 +7,19 @@ interface FooterProps {
 }
 
 const DEFAULT_FOOTER: FooterContent = {
-  brand_description: 'Phòng gym riêng tư cao cấp, nơi bạn kiến tạo phiên bản tốt nhất của chính mình.',
+  brand_description: 'Phòng tập riêng với huấn luyện viên cá nhân. Mỗi khung giờ tối đa 4 người.',
   copyright: '© 2026 Renfit. Tất cả quyền được bảo lưu.',
-  nav_about_label: 'Về Chúng Tôi',
-  nav_services_label: 'Dịch Vụ',
-  nav_trainers_label: 'Huấn Luyện Viên',
-  nav_contact_label: 'Liên Hệ',
+  nav_about_label: 'Về Renfit',
+  nav_services_label: 'Dịch vụ',
+  nav_trainers_label: 'Huấn luyện viên',
+  nav_contact_label: 'Liên hệ',
 };
 
 const DEFAULT_CONTACT: ContactContent = {
   address: '123 Đường ABC, Quận 1, TP. Hồ Chí Minh',
   phone: '+84 123 456 789',
   email: 'contact@renfit.vn',
-  hours: 'Thứ 2 - Thứ 6: 6:00 - 22:00\nThứ 7 - Chủ Nhật: 7:00 - 21:00',
+  hours: 'Thứ 2 – Thứ 7: 08:00 – 21:00\nChủ nhật: nghỉ',
 };
 
 const DEFAULT_SOCIAL: SocialContent = {
@@ -30,167 +28,74 @@ const DEFAULT_SOCIAL: SocialContent = {
   youtube_url: 'https://youtube.com',
 };
 
-const DEFAULT_BRAND: BrandContent = {
-  logo_url: '',
-  name: 'Renfit',
-  tagline: 'Nâng Tầm Thể Chất. Kiến Tạo Phiên Bản Tốt Nhất Của Bạn.',
-};
-
+/**
+ * Landing footer (DESIGN.md v2): what Renfit is, how to reach it and when
+ * it's open — set as plain type on the ground. No icon circles, no duplicated
+ * service list; social links are words.
+ */
 export function Footer({ content }: FooterProps) {
   const footer = content?.footer ?? DEFAULT_FOOTER;
   const contact = content?.contact ?? DEFAULT_CONTACT;
   const social = content?.social ?? DEFAULT_SOCIAL;
-  const _brand = content?.brand ?? DEFAULT_BRAND;
+
+  const socials = [
+    ['Facebook', social.facebook_url],
+    ['Instagram', social.instagram_url],
+    ['YouTube', social.youtube_url],
+  ].filter(([, href]) => href);
+  const linkCls = 'text-white hover:text-primary-text transition-colors';
 
   return (
-    <footer className="bg-black border-t border-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12 mb-8 sm:mb-12">
-          {/* Brand */}
-          <div>
-            <Link to="/">
-              <ImageWithFallback
-                src={logoImage}
-                alt={`${_brand.name} Logo`}
-                className="h-10 sm:h-12 w-auto mb-4"
-              />
+    <footer className="px-4 sm:px-6 lg:px-10 pt-20 pb-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12">
+          <div className="lg:col-span-4">
+            <Link to="/" className="inline-block rounded-control" aria-label="Renfit — trang chủ">
+              <BrandMark />
             </Link>
-            <p className="text-white/60 leading-relaxed text-sm sm:text-base">
-              {footer.brand_description}
-            </p>
-            <div className="flex gap-4 mt-4 sm:mt-6">
-              {social.facebook_url && (
-                <a
-                  href={social.facebook_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook"
-                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#0F6B3E] flex items-center justify-center transition-colors duration-[var(--motion-fast)] active:scale-[0.97]"
-                >
-                  <Facebook className="w-5 h-5 text-white" />
-                </a>
-              )}
-              {social.instagram_url && (
-                <a
-                  href={social.instagram_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram"
-                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#0F6B3E] flex items-center justify-center transition-colors duration-[var(--motion-fast)] active:scale-[0.97]"
-                >
-                  <Instagram className="w-5 h-5 text-white" />
-                </a>
-              )}
-              {social.youtube_url && (
-                <a
-                  href={social.youtube_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Youtube"
-                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#0F6B3E] flex items-center justify-center transition-colors duration-[var(--motion-fast)] active:scale-[0.97]"
-                >
-                  <Youtube className="w-5 h-5 text-white" />
-                </a>
-              )}
-            </div>
+            <p className="mt-4 text-white/64 text-sm leading-relaxed max-w-[36ch]">{footer.brand_description}</p>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h3 className="text-white font-bold mb-3 sm:mb-4 leading-relaxed">Liên Kết Nhanh</h3>
-            <ul className="space-y-2 sm:space-y-3">
-              <li>
-                <a href="#about" className="text-white/60 hover:text-[#0F6B3E] transition-colors text-sm sm:text-base leading-relaxed">
-                  {footer.nav_about_label}
-                </a>
-              </li>
-              <li>
-                <a href="#services" className="text-white/60 hover:text-[#0F6B3E] transition-colors text-sm sm:text-base leading-relaxed">
-                  {footer.nav_services_label}
-                </a>
-              </li>
-              <li>
-                <a href="#trainers" className="text-white/60 hover:text-[#0F6B3E] transition-colors text-sm sm:text-base leading-relaxed">
-                  {footer.nav_trainers_label}
-                </a>
-              </li>
-              <li>
-                <Link to="/login" className="text-white/60 hover:text-[#0F6B3E] transition-colors text-sm sm:text-base leading-relaxed">
-                  Đăng Nhập
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Services */}
-          <div>
-            <h3 className="text-white font-bold mb-3 sm:mb-4 leading-relaxed">{footer.nav_services_label}</h3>
-            <ul className="space-y-2 sm:space-y-3">
-              <li>
-                <a href="#services" className="text-white/60 hover:text-[#0F6B3E] transition-colors text-sm sm:text-base leading-relaxed">
-                  Personal Training
-                </a>
-              </li>
-              <li>
-                <a href="#services" className="text-white/60 hover:text-[#0F6B3E] transition-colors text-sm sm:text-base leading-relaxed">
-                  AI Fitness Coach
-                </a>
-              </li>
-              <li>
-                <a href="#services" className="text-white/60 hover:text-[#0F6B3E] transition-colors text-sm sm:text-base leading-relaxed">
-                  Tư Vấn Dinh Dưỡng
-                </a>
-              </li>
-              <li>
-                <a href="#services" className="text-white/60 hover:text-[#0F6B3E] transition-colors text-sm sm:text-base leading-relaxed">
-                  Giảm Cân
-                </a>
-              </li>
-              <li>
-                <a href="#services" className="text-white/60 hover:text-[#0F6B3E] transition-colors text-sm sm:text-base leading-relaxed">
-                  Tăng Cơ
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h3 className="text-white font-bold mb-3 sm:mb-4 leading-relaxed">{footer.nav_contact_label}</h3>
-            <ul className="space-y-3 sm:space-y-4">
-              <li className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-[#0F6B3E] flex-shrink-0 mt-0.5" />
-                <span className="text-white/60 text-sm sm:text-base leading-relaxed">
-                  {contact.address}
-                </span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-[#0F6B3E]" />
-                <a href={`tel:${contact.phone.replace(/\s/g, '')}`} className="text-white/60 hover:text-[#0F6B3E] transition-colors text-sm sm:text-base leading-relaxed">
-                  {contact.phone}
-                </a>
-              </li>
-              <li className="flex items-center gap-3">
-                <Mail className="w-5 h-5 text-[#0F6B3E]" />
-                <a href={`mailto:${contact.email}`} className="text-white/60 hover:text-[#0F6B3E] transition-colors text-sm sm:text-base leading-relaxed">
-                  {contact.email}
-                </a>
-              </li>
-            </ul>
-            <div className="mt-4 sm:mt-6">
-              <h4 className="text-white mb-2 text-sm sm:text-base leading-relaxed">Giờ Mở Cửa</h4>
-              <p className="text-white/60 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
-                {contact.hours}
+          <div className="lg:col-span-3 lg:col-start-6">
+            <h3 className="text-white/64 text-sm font-medium mb-3">{footer.nav_contact_label}</h3>
+            <address className="not-italic space-y-1.5 text-sm leading-relaxed">
+              <p className="text-white">{contact.address}</p>
+              <p>
+                <a href={`tel:${contact.phone.replace(/\s/g, '')}`} className={linkCls}>{contact.phone}</a>
               </p>
-            </div>
+              <p>
+                <a href={`mailto:${contact.email}`} className={linkCls}>{contact.email}</a>
+              </p>
+            </address>
           </div>
+
+          <div className="lg:col-span-2">
+            <h3 className="text-white/64 text-sm font-medium mb-3">Giờ mở cửa</h3>
+            <p className="text-white text-sm leading-relaxed whitespace-pre-line tabular-nums">{contact.hours}</p>
+          </div>
+
+          <nav className="lg:col-span-2" aria-label="Liên kết cuối trang">
+            <h3 className="text-white/64 text-sm font-medium mb-3">Renfit</h3>
+            <ul className="space-y-1.5 text-sm leading-relaxed">
+              <li><a href="#about" className={linkCls}>{footer.nav_about_label}</a></li>
+              <li><a href="#services" className={linkCls}>{footer.nav_services_label}</a></li>
+              <li><a href="#trainers" className={linkCls}>{footer.nav_trainers_label}</a></li>
+              <li><Link to="/login" className={linkCls}>Đăng nhập</Link></li>
+            </ul>
+          </nav>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="border-t border-white/10 pt-6 sm:pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-white/60 text-xs sm:text-sm leading-relaxed">
-            {footer.copyright}
-          </p>
+        <div className="mt-16 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm">
+          <p className="text-white/64">{footer.copyright}</p>
+          {socials.length > 0 && (
+            <ul className="flex gap-6">
+              {socials.map(([label, href]) => (
+                <li key={label}>
+                  <a href={href} target="_blank" rel="noopener noreferrer" className={linkCls}>{label}</a>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </footer>

@@ -19,7 +19,8 @@
  * no changes.
  */
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowRight, Check, PartyPopper, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, X } from 'lucide-react';
+import logoImage from '../../imports/image.png';
 
 export type OnboardingTab = 'overview' | 'chat' | 'bookings';
 
@@ -35,7 +36,7 @@ export interface OnboardingStep<Tab extends string = OnboardingTab> {
 
 const DESKTOP_STEPS: OnboardingStep[] = [
   {
-    title: 'Chào mừng đến với Renfit! 👋',
+    title: 'Chào mừng đến với Renfit',
     description:
       'Cảm ơn bạn đã đăng ký. Hãy dành 1 phút để mình hướng dẫn nhanh các khu vực chính trong ứng dụng nhé.',
   },
@@ -91,7 +92,7 @@ const DESKTOP_STEPS: OnboardingStep[] = [
     placement: 'top',
   },
   {
-    title: 'Vậy là xong! 🎉',
+    title: 'Vậy là xong',
     description:
       'Bạn đã sẵn sàng bắt đầu hành trình với Renfit. Bạn có thể hỏi AI Coach bất cứ lúc nào nếu cần trợ giúp thêm.',
   },
@@ -229,15 +230,12 @@ export function OnboardingTour<Tab extends string = OnboardingTab>({
 
   // ── Centered card (no target — welcome / finish) ──────────────────────
   if (!step.target || !rect) {
-    const Icon = isFirst ? Sparkles : PartyPopper;
     return (
-      <div className="fixed inset-0 z-[200] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-        <div className="bg-[#111] border border-[#0F6B3E]/30 rounded-3xl w-full max-w-md shadow-2xl p-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-[#0F6B3E]/15 border border-[#0F6B3E]/30 flex items-center justify-center mx-auto mb-5">
-            <Icon className="w-7 h-7 text-[#0F6B3E]" />
-          </div>
-          <h2 className="text-white font-bold text-xl mb-2">{step.title}</h2>
-          <p className="text-white/60 text-sm leading-relaxed mb-6">{step.description}</p>
+      <div className="fixed inset-0 z-[200] bg-black/75 backdrop-blur-[2px] flex items-center justify-center p-4">
+        <div className="bg-overlay border border-line rounded-panel w-full max-w-md shadow-[0_16px_48px_rgba(0,0,0,0.5)] p-6 sm:p-8">
+          <img src={logoImage} alt="" aria-hidden="true" className="h-10 w-auto mb-5" />
+          <h2 className="text-white font-semibold text-xl mb-2">{step.title}</h2>
+          <p className="text-white/64 text-sm leading-relaxed mb-6">{step.description}</p>
           <StepFooter
             stepIndex={stepIndex}
             total={STEPS.length}
@@ -297,7 +295,7 @@ export function OnboardingTour<Tab extends string = OnboardingTab>({
     <div className="fixed inset-0 z-[200]" aria-live="polite">
       {/* Spotlight box — box-shadow spread dims everything outside it */}
       <div
-        className="fixed rounded-2xl border-2 border-[#0F6B3E] transition-all duration-300 pointer-events-none"
+        className="fixed rounded-panel border-2 border-[#0F6B3E] transition-all duration-300 pointer-events-none"
         style={{
           top: box.top,
           left: box.left,
@@ -310,7 +308,7 @@ export function OnboardingTour<Tab extends string = OnboardingTab>({
       {/* Tooltip */}
       <div
         ref={tooltipRef}
-        className="fixed bg-[#141414] border border-white/10 rounded-2xl shadow-2xl p-5 transition-all duration-300 max-h-[calc(100vh-16px)] overflow-y-auto"
+        className="fixed bg-[#141414] border border-line rounded-panel shadow-2xl p-5 transition-all duration-300 max-h-[calc(100vh-16px)] overflow-y-auto"
         style={{
           top: tooltipTop,
           left: tooltipLeft,
@@ -322,13 +320,13 @@ export function OnboardingTour<Tab extends string = OnboardingTab>({
           <button
             type="button"
             onClick={onFinish}
-            className="text-white/30 hover:text-white transition-colors shrink-0"
+            className="text-white/64 hover:text-white transition-colors shrink-0"
             aria-label="Bỏ qua hướng dẫn"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
-        <p className="text-white/60 text-sm leading-relaxed mb-4">{step.description}</p>
+        <p className="text-white/64 text-sm leading-relaxed mb-4">{step.description}</p>
         <StepFooter
           stepIndex={stepIndex}
           total={STEPS.length}
@@ -370,7 +368,7 @@ function StepFooter({
           <span
             key={i}
             className={`h-1.5 rounded-full transition-all ${
-              i === stepIndex ? 'w-5 bg-[#0F6B3E]' : 'w-1.5 bg-white/15'
+              i === stepIndex ? 'w-5 bg-primary' : 'w-1.5 bg-white/15'
             }`}
           />
         ))}
@@ -390,7 +388,7 @@ function StepFooter({
             <button
               type="button"
               onClick={onBack}
-              className="text-white/60 hover:text-white text-sm px-3 py-1.5 rounded-xl hover:bg-white/5 transition-all"
+              className="text-white/64 hover:text-white text-sm px-3 py-1.5 rounded-control hover:bg-white/5 transition-all"
             >
               Quay lại
             </button>
@@ -398,7 +396,7 @@ function StepFooter({
           <button
             type="button"
             onClick={onNext}
-            className="flex items-center gap-1.5 bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 text-white text-sm font-semibold px-4 py-1.5 rounded-xl transition-all hover:scale-105"
+            className="flex items-center gap-1.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold px-4 py-1.5 rounded-full transition-colors"
           >
             {isLast ? (
               <>
@@ -413,7 +411,7 @@ function StepFooter({
         </div>
       </div>
 
-      <span className="text-white/25 text-[11px]">
+      <span className="text-white/40 text-xs">
         Bước {stepIndex + 1} / {total}
       </span>
     </div>

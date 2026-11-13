@@ -130,7 +130,7 @@ export function AdminDashboardPage() {
 
           <main className="flex-1 min-w-0 overflow-hidden">
             {!selected ? (
-              <div className="h-full flex flex-col items-center justify-center text-white/60 gap-3">
+              <div className="h-full flex flex-col items-center justify-center text-white/64 gap-3">
                 <Users className="w-12 h-12" />
                 <p className="text-sm">Chọn một hội viên để xem thông tin</p>
               </div>

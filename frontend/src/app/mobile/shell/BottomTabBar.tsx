@@ -1,7 +1,7 @@
 /**
  * Native-style bottom tab bar (U4 Trainee Mobile, TS-1, NAV-1).
- * Restyled from the bottom nav pattern proven in the U3-era temporary
- * bridge, using shared design tokens instead of ad hoc classes.
+ * DESIGN.md v2: on the page ground; the active tab is white with a 2px
+ * green indicator above it — green marks the state, it doesn't paint the chrome.
  */
 import { Bot, Calendar, Home, User } from 'lucide-react';
 import { cn } from '../../shared/primitives/cn';
@@ -25,7 +25,7 @@ export function BottomTabBar({ active, onChange }: BottomTabBarProps) {
   return (
     <nav
       aria-label="Điều hướng chính"
-      className="app-chrome shrink-0 bg-black/95 border-t border-white/10 flex items-stretch"
+      className="app-chrome shrink-0 bg-[#0B0B0B] border-t border-line flex items-stretch"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {TABS.map((tab) => (
@@ -37,13 +37,16 @@ export function BottomTabBar({ active, onChange }: BottomTabBarProps) {
           aria-current={active === tab.key ? 'page' : undefined}
           onClick={() => { haptic(); onChange(tab.key); }}
           className={cn(
-            'flex-1 min-h-14 flex flex-col items-center justify-center gap-1 py-2',
+            'relative flex-1 min-h-14 flex flex-col items-center justify-center gap-1 py-2',
             'transition-[color,transform] duration-[var(--motion-fast)] active:scale-[0.92]',
-            active === tab.key ? 'text-[#0F6B3E]' : 'text-white/50',
+            active === tab.key ? 'text-white' : 'text-white/64',
           )}
         >
+          {active === tab.key && (
+            <span aria-hidden="true" className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary-text" />
+          )}
           {tab.icon}
-          <span className="text-[11px] font-medium leading-none">{tab.label}</span>
+          <span className="text-xs font-medium leading-none">{tab.label}</span>
         </button>
       ))}
     </nav>

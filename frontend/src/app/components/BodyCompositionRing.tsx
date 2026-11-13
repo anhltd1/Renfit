@@ -34,8 +34,8 @@ export function BodyCompositionRing({ smm, bfm, weight, size = 140 }: BodyCompos
   if (total <= 0) {
     return (
       <div className="flex flex-col items-center gap-2">
-        <div style={{ width: size, height: size }} className="rounded-full border-2 border-white/10 flex items-center justify-center">
-          <span className="text-white/20 text-xs">N/A</span>
+        <div style={{ width: size, height: size }} className="rounded-full border-2 border-line flex items-center justify-center">
+          <span className="text-white/40 text-xs">N/A</span>
         </div>
       </div>
     );
@@ -51,7 +51,7 @@ export function BodyCompositionRing({ smm, bfm, weight, size = 140 }: BodyCompos
   const cx = size / 2;
   const cy = size / 2;
   const r = size / 2 - 12;
-  const strokeWidth = 16;
+  const strokeWidth = 10;
 
   const smmStart = 0;
   const smmEnd = smmAngle;
@@ -70,7 +70,7 @@ export function BodyCompositionRing({ smm, bfm, weight, size = 140 }: BodyCompos
             fill="none"
             stroke="rgba(255,255,255,0.1)"
             strokeWidth={strokeWidth}
-            strokeLinecap="round"
+            strokeLinecap="butt"
           />
         )}
         {/* BFM segment */}
@@ -78,10 +78,9 @@ export function BodyCompositionRing({ smm, bfm, weight, size = 140 }: BodyCompos
           <path
             d={arcPath(cx, cy, r, bfmStart, bfmEnd)}
             fill="none"
-            stroke="#ef4444"
+            stroke="rgba(255,255,255,0.55)"
             strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            opacity={0.7}
+            strokeLinecap="butt"
             className="animate-draw-arc"
             style={{ '--arc-length': `${Math.ceil(2 * Math.PI * r * (bfmPct / 100))}` } as React.CSSProperties}
           />
@@ -91,35 +90,35 @@ export function BodyCompositionRing({ smm, bfm, weight, size = 140 }: BodyCompos
           <path
             d={arcPath(cx, cy, r, smmStart, smmEnd)}
             fill="none"
-            stroke="#0F6B3E"
+            stroke="#3dbe7a"
             strokeWidth={strokeWidth}
-            strokeLinecap="round"
+            strokeLinecap="butt"
             className="animate-draw-arc"
             style={{ '--arc-length': `${Math.ceil(2 * Math.PI * r * (smmPct / 100))}` } as React.CSSProperties}
           />
         )}
         {/* Center text */}
-        <text x={cx} y={cy - 6} textAnchor="middle" className="fill-white text-lg font-bold">
-          {weight.toFixed(1)}
+        <text x={cx} y={cy - 6} textAnchor="middle" className="fill-white text-lg font-semibold tabular-nums">
+          {weight.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
         </text>
-        <text x={cx} y={cy + 12} textAnchor="middle" className="fill-white/40 text-[10px]">
+        <text x={cx} y={cy + 12} textAnchor="middle" className="fill-white/64 text-xs">
           kg
         </text>
       </svg>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs">
+      <div className="flex items-center gap-4 text-xs tabular-nums">
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#0F6B3E]" />
-          <span className="text-white/60">Cơ {smmPct.toFixed(0)}%</span>
+          <div className="w-2.5 h-2.5 rounded-full bg-primary-text" />
+          <span className="text-white/64">Cơ {smmPct.toFixed(0)}%</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
-          <span className="text-white/60">Mỡ {bfmPct.toFixed(0)}%</span>
+          <div className="w-2.5 h-2.5 rounded-full bg-white/55" />
+          <span className="text-white/64">Mỡ {bfmPct.toFixed(0)}%</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
-          <span className="text-white/60">Khác {restPct.toFixed(0)}%</span>
+          <span className="text-white/64">Khác {restPct.toFixed(0)}%</span>
         </div>
       </div>
     </div>

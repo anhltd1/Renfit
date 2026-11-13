@@ -36,7 +36,7 @@ const MOBILE_TAB_ALIASES: Partial<Record<string, MobileTabKey>> = {
 
 const MOBILE_ONBOARDING_STEPS: OnboardingStep<MobileTabKey>[] = [
   {
-    title: 'Chào mừng đến với Renfit! 👋',
+    title: 'Chào mừng đến với Renfit',
     description:
       'Cảm ơn bạn đã đăng ký. Hãy dành 1 phút để mình hướng dẫn nhanh các khu vực chính trong ứng dụng nhé.',
   },
@@ -44,7 +44,7 @@ const MOBILE_ONBOARDING_STEPS: OnboardingStep<MobileTabKey>[] = [
     target: 'mobile-tab-overview',
     tab: 'overview',
     title: 'Tổng quan',
-    description: 'Đây là màn hình chính — truy cập nhanh vào AI Coach, đặt lịch, và hồ sơ của bạn.',
+    description: 'Buổi tập tiếp theo, các giờ còn chỗ và thể trạng của bạn — tất cả ở một chỗ.',
   },
   {
     target: 'mobile-tab-booking',
@@ -65,7 +65,7 @@ const MOBILE_ONBOARDING_STEPS: OnboardingStep<MobileTabKey>[] = [
     description: 'Cập nhật thông tin cá nhân và theo dõi chỉ số InBody theo thời gian tại đây.',
   },
   {
-    title: 'Vậy là xong! 🎉',
+    title: 'Vậy là xong',
     description:
       'Bạn đã sẵn sàng bắt đầu hành trình với Renfit. Bạn có thể hỏi AI Coach bất cứ lúc nào nếu cần trợ giúp thêm.',
   },

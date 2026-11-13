@@ -112,7 +112,7 @@ export function TrainerNotes({ customerId, embedded = false }: TrainerNotesProps
   };
 
   return (
-    <div className={embedded ? '' : 'px-4 py-4 border-b border-white/8'} data-testid="trainer-notes">
+    <div className={embedded ? '' : 'px-4 py-4 border-b border-line'} data-testid="trainer-notes">
       {/* Header (the tab provides the title when embedded) */}
       {!embedded && (
         <div className="flex items-center justify-between mb-4">
@@ -120,7 +120,7 @@ export function TrainerNotes({ customerId, embedded = false }: TrainerNotesProps
             <ClipboardList className="w-4 h-4 text-primary-text" />
             <h3 className="text-white font-bold text-sm">Ghi chú HLV</h3>
             {notes.length > 0 && (
-              <span className="text-white/60 text-xs">{notes.length} ghi chú</span>
+              <span className="text-white/64 text-xs">{notes.length} ghi chú</span>
             )}
           </div>
         </div>
@@ -133,7 +133,7 @@ export function TrainerNotes({ customerId, embedded = false }: TrainerNotesProps
           onChange={(e) => setContent(e.target.value)}
           placeholder="Ghi chú về hội viên (tiến bộ, cần cải thiện...)"
           rows={2}
-          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/40 resize-none outline-none focus:border-[#3DBE7A] transition-colors leading-relaxed"
+          className="flex-1 bg-white/5 border border-line rounded-control px-4 py-3 text-white text-sm placeholder:text-white/40 resize-none outline-none focus:border-[#3DBE7A] transition-colors leading-relaxed"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
               e.preventDefault();
@@ -145,7 +145,7 @@ export function TrainerNotes({ customerId, embedded = false }: TrainerNotesProps
           type="button"
           onClick={handleAdd}
           disabled={!content.trim() || submitting}
-          className="self-end px-4 py-3 bg-[#0F6B3E] hover:bg-[#0F6B3E]/80 active:scale-[0.96] disabled:opacity-40 disabled:active:scale-100 disabled:cursor-not-allowed text-white rounded-xl transition-all duration-[var(--motion-fast)] shrink-0"
+          className="self-end px-4 py-3 bg-primary hover:bg-primary-hover active:scale-[0.96] disabled:opacity-40 disabled:active:scale-100 disabled:cursor-not-allowed text-white rounded-control transition-all duration-[var(--motion-fast)] shrink-0"
           title="Thêm ghi chú (Ctrl+Enter)"
           aria-label="Thêm ghi chú"
         >
@@ -155,23 +155,23 @@ export function TrainerNotes({ customerId, embedded = false }: TrainerNotesProps
 
       {/* Notes list */}
       {loading ? (
-        <div className="flex items-center justify-center py-6 text-white/60">
+        <div className="flex items-center justify-center py-6 text-white/64">
           <Loader2 className="w-5 h-5 animate-spin" />
         </div>
       ) : notes.length === 0 ? (
-        <div className="flex flex-col items-center py-6 text-white/60 gap-1.5">
+        <div className="flex flex-col items-center py-6 text-white/64 gap-1.5">
           <ClipboardList className="w-6 h-6" />
           <p className="text-sm">Chưa có ghi chú nào.</p>
-          <p className="text-xs text-white/60">Ghi lại tiến bộ hoặc lưu ý cho hội viên này.</p>
+          <p className="text-xs text-white/64">Ghi lại tiến bộ hoặc lưu ý cho hội viên này.</p>
         </div>
       ) : (
         <div className={embedded ? 'space-y-2' : 'space-y-2 max-h-[300px] overflow-y-auto pr-1'}>
           {notes.map((note, i) => (
             <div
               key={note.id}
-              className={`bg-white/[0.03] border border-white/8 rounded-xl px-4 py-3 group relative ${
-                leaving === note.id ? 'animate-row-leave' : 'animate-fade-up'
-              }`}
+              className={`bg-white/[0.03] border border-line rounded-control px-4 py-3 group relative ${
+ leaving === note.id ? 'animate-row-leave' : 'animate-fade-up'
+ }`}
               // Stagger capped at 8 items — beyond that the tail of a long list
               // would visibly lag behind the rest.
               style={{ '--stagger': Math.min(i, 7) } as React.CSSProperties}
@@ -180,12 +180,12 @@ export function TrainerNotes({ customerId, embedded = false }: TrainerNotesProps
                 {note.content}
               </p>
               <div className="flex items-center justify-between mt-2">
-                <span className="text-white/60 text-xs">{fmtDate(note.created_at)}</span>
+                <span className="text-white/64 text-xs">{fmtDate(note.created_at)}</span>
                 <button
                   type="button"
                   onClick={() => handleDelete(note)}
                   disabled={deleting === note.id}
-                  className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-white/60 hover:text-error-text transition-all tap-target inline-flex items-center justify-center rounded"
+                  className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-white/64 hover:text-error-text transition-all tap-target inline-flex items-center justify-center rounded"
                   title="Xóa ghi chú"
                   aria-label="Xóa ghi chú"
                 >

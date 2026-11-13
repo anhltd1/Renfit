@@ -73,7 +73,7 @@ export function ConfirmDialog({
               // Error tone without a red fill: #f87171 text on a dark tint keeps
               // 7:1 contrast (white on #ef4444 would be ~3.8:1).
               tone === 'danger' &&
-                'bg-[#f87171]/10 text-error-text border-error-text/60 hover:bg-[#f87171]/20 hover:scale-100',
+                'bg-[#f87171]/10 text-error-text border-error-text/60 hover:bg-[#f87171]/20 ',
             )}
           >
             {confirmLabel}

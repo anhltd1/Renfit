@@ -11,51 +11,42 @@ describe('Card (example-based)', () => {
     expect(screen.getByText('Hello')).toBeInTheDocument();
   });
 
-  it('renders with default styling when tier is omitted (backwards compatible)', () => {
+  it('renders a flat surface panel when tier is omitted (DESIGN.md v2)', () => {
     const { container } = render(<Card>Default</Card>);
     const card = container.firstElementChild as HTMLElement;
-    expect(card.className).toContain('backdrop-blur-xl');
-    expect(card.className).toContain('bg-white/5');
+    expect(card.className).toContain('bg-surface');
+    expect(card.className).toContain('border-line');
+    expect(card.className).toContain('rounded-panel');
   });
 
-  it('renders ambient tier without backdrop-blur', () => {
-    const { container } = render(<Card tier="ambient">Ambient</Card>);
-    const card = container.firstElementChild as HTMLElement;
-    expect(card.className).not.toContain('backdrop-blur');
-    expect(card.className).toContain('from-white/[0.04]');
+  it('never uses glass, glow or hover scale on any tier', () => {
+    for (const tier of GLASS_TIERS) {
+      const { container } = render(<Card tier={tier} hoverable>T</Card>);
+      const cls = (container.firstElementChild as HTMLElement).className;
+      expect(cls).not.toContain('backdrop-blur');
+      expect(cls).not.toContain('hover:scale');
+      expect(cls).not.toContain('shadow-[0_0_');
+      expect(cls).not.toContain('bg-gradient');
+    }
   });
 
-  it('renders card tier with 12px blur and inner highlight', () => {
-    const { container } = render(<Card tier="card">CardTier</Card>);
-    const card = container.firstElementChild as HTMLElement;
-    expect(card.className).toContain('backdrop-blur-[12px]');
-    expect(card.className).toContain('shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]');
-  });
-
-  it('renders elevated tier with 20px blur', () => {
+  it('renders the elevated tier as a floating overlay surface', () => {
     const { container } = render(<Card tier="elevated">Elevated</Card>);
     const card = container.firstElementChild as HTMLElement;
-    expect(card.className).toContain('backdrop-blur-[20px]');
+    expect(card.className).toContain('bg-overlay');
   });
 });
 
-describe('Card Glass_Tier (property-based, invariant)', () => {
+describe('Card tier (property-based, invariant)', () => {
   const tierArb = fc.constantFrom(...GLASS_TIERS);
 
-  it('each tier produces a distinct class-name set from the other two', () => {
+  it('every tier keeps the v2 panel radius and a 1px line border', () => {
     fc.assert(
       fc.property(tierArb, (tier) => {
         const { container } = render(<Card tier={tier}>Test</Card>);
-        const card = container.firstElementChild as HTMLElement;
-        const classes = card.className;
-
-        // Each tier should have at least one class that differs from the other tiers
-        const otherTiers = GLASS_TIERS.filter((t) => t !== tier);
-        for (const otherTier of otherTiers) {
-          const { container: otherContainer } = render(<Card tier={otherTier}>Other</Card>);
-          const otherCard = otherContainer.firstElementChild as HTMLElement;
-          expect(classes).not.toBe(otherCard.className);
-        }
+        const cls = (container.firstElementChild as HTMLElement).className;
+        expect(cls).toContain('rounded-panel');
+        expect(cls).toContain('border-line');
       }),
     );
   });

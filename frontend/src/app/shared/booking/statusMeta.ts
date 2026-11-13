@@ -7,8 +7,9 @@ import { CalendarCheck, CheckCheck, Clock, UserX, X, type LucideIcon } from 'luc
  * (`completed`, `rejected`) recede; attention states (`pending`, `no_show`)
  * stand out. Don't redefine status colours/labels per component.
  *
- * Contrast notes (on #0B0B0B): amber #f59e0b ≈ 9:1, #3DBE7A 8.29:1,
- * #f87171 7.12:1, white/60 7.26:1. #0F6B3E is never used for text.
+ * DESIGN.md v2: pills are a pale tint of the status hue with text in that hue
+ * (never a saturated fill with white text). Contrast on #0B0B0B: amber #fbbf24
+ * ≈ 11:1, #3DBE7A 8.29:1, #f87171 7.12:1, white/64 ≈ 7.8:1.
  */
 export type BookingStatusKey = 'pending' | 'approved' | 'rejected' | 'completed' | 'no_show';
 
@@ -30,8 +31,8 @@ export const bookingStatusMeta: Record<BookingStatusKey, BookingStatusMeta> = {
   pending: {
     label: 'Chờ duyệt',
     Icon: Clock,
-    pillClass: 'bg-[#f59e0b]/15 text-[#f59e0b] border border-solid border-[#f59e0b]/60',
-    textClass: 'text-[#f59e0b]',
+    pillClass: 'bg-[#fbbf24]/12 text-warning-text border border-solid border-[#fbbf24]/30',
+    textClass: 'text-warning-text',
     borderStyle: 'solid',
     recede: false,
     strike: false,
@@ -39,7 +40,7 @@ export const bookingStatusMeta: Record<BookingStatusKey, BookingStatusMeta> = {
   approved: {
     label: 'Đã duyệt',
     Icon: CalendarCheck,
-    pillClass: 'bg-[#3DBE7A]/10 text-primary-text border border-solid border-primary-text',
+    pillClass: 'bg-primary-tint text-primary-text border border-solid border-primary-text/35',
     textClass: 'text-primary-text',
     borderStyle: 'solid',
     recede: false,
@@ -48,8 +49,8 @@ export const bookingStatusMeta: Record<BookingStatusKey, BookingStatusMeta> = {
   completed: {
     label: 'Đã tập',
     Icon: CheckCheck,
-    pillClass: 'bg-white/5 text-white/60 border border-solid border-white/20',
-    textClass: 'text-white/60',
+    pillClass: 'bg-surface-2 text-white/64 border border-solid border-line',
+    textClass: 'text-white/64',
     borderStyle: 'solid',
     recede: true,
     strike: false,
@@ -57,7 +58,7 @@ export const bookingStatusMeta: Record<BookingStatusKey, BookingStatusMeta> = {
   no_show: {
     label: 'Vắng',
     Icon: UserX,
-    pillClass: 'bg-[#f87171]/10 text-error-text border border-solid border-error-text/70',
+    pillClass: 'bg-[#f87171]/12 text-error-text border border-solid border-error-text/35',
     textClass: 'text-error-text',
     borderStyle: 'solid',
     recede: false,
@@ -66,8 +67,8 @@ export const bookingStatusMeta: Record<BookingStatusKey, BookingStatusMeta> = {
   rejected: {
     label: 'Từ chối',
     Icon: X,
-    pillClass: 'bg-transparent text-white/60 border border-dashed border-white/30 line-through',
-    textClass: 'text-white/60',
+    pillClass: 'bg-transparent text-white/64 border border-dashed border-white/25 line-through',
+    textClass: 'text-white/64',
     borderStyle: 'dashed',
     recede: true,
     strike: true,

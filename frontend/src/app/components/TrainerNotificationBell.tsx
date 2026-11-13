@@ -160,14 +160,14 @@ export function TrainerNotificationBell({ onNavigate }: TrainerNotificationBellP
                 handlePopupClick(p);
               }}
               aria-label={`${p.title}: ${p.message}`}
-              className="pointer-events-auto flex items-center gap-3 bg-[#141414] border border-[#0F6B3E]/40 rounded-2xl shadow-2xl px-4 py-3 w-full cursor-pointer hover:border-[#0F6B3E] transition-all animate-popup-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]"
+              className="pointer-events-auto flex items-center gap-3 bg-[#141414] border border-[#0F6B3E]/40 rounded-panel shadow-2xl px-4 py-3 w-full cursor-pointer hover:border-[#0F6B3E] transition-all animate-popup-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-text"
             >
-              <div className="w-9 h-9 rounded-full bg-[#0F6B3E]/20 flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-full bg-surface-2 flex items-center justify-center shrink-0">
                 <Icon className="w-[18px] h-[18px] text-primary-text" />
               </div>
               <div className="min-w-0">
                 <p className="text-white text-sm font-medium truncate">{p.title}</p>
-                <p className="text-white/60 text-xs mt-0.5 truncate">{p.message}</p>
+                <p className="text-white/64 text-xs mt-0.5 truncate">{p.message}</p>
               </div>
               <button
                 type="button"
@@ -175,7 +175,7 @@ export function TrainerNotificationBell({ onNavigate }: TrainerNotificationBellP
                   e.stopPropagation();
                   setPopups((prev) => prev.filter((x) => x.id !== p.id));
                 }}
-                className="text-white/60 hover:text-white transition-colors shrink-0 tap-target inline-flex items-center justify-center"
+                className="text-white/64 hover:text-white transition-colors shrink-0 tap-target inline-flex items-center justify-center"
                 aria-label="Đóng"
               >
                 <X className="w-4 h-4" />
@@ -190,20 +190,20 @@ export function TrainerNotificationBell({ onNavigate }: TrainerNotificationBellP
         <button
           type="button"
           onClick={handleToggle}
-          className="relative w-9 h-9 tap-target rounded-xl text-white/60 hover:text-white hover:bg-white/5 flex items-center justify-center transition-all"
+          className="relative w-9 h-9 tap-target rounded-control text-white/64 hover:text-white hover:bg-white/5 flex items-center justify-center transition-all"
           aria-label="Thông báo"
         >
           <Bell className="w-4 h-4" />
           {unread > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] tabular-nums px-1 rounded-full bg-[#0F6B3E] border-2 border-[#0B0B0B] text-xs font-bold text-white flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] tabular-nums px-1 rounded-full bg-primary border-2 border-[#0B0B0B] text-xs font-bold text-white flex items-center justify-center">
               {unread > 9 ? '9+' : unread}
             </span>
           )}
         </button>
 
         {open && (
-          <div className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-2rem))] max-h-96 overflow-y-auto bg-[#141414] border border-white/10 rounded-2xl shadow-2xl z-50">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+          <div className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-2rem))] max-h-96 overflow-y-auto bg-[#141414] border border-line rounded-panel shadow-2xl z-50">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-line">
               <span className="text-white text-sm font-semibold">Thông báo</span>
               {notifications.some((n) => !n.read) && (
                 <button
@@ -217,15 +217,15 @@ export function TrainerNotificationBell({ onNavigate }: TrainerNotificationBellP
             </div>
 
             {loading ? (
-              <p className="text-white/60 text-sm text-center py-8">Đang tải...</p>
+              <p className="text-white/64 text-sm text-center py-8">Đang tải...</p>
             ) : notifications.length === 0 ? (
-              <div className="flex flex-col items-center py-8 text-white/60 gap-1.5">
+              <div className="flex flex-col items-center py-8 text-white/64 gap-1.5">
                 <Bell className="w-6 h-6" />
                 <p className="text-sm">Không có thông báo mới.</p>
-                <p className="text-xs text-white/60">Thông báo sẽ hiển thị khi hội viên đặt lịch.</p>
+                <p className="text-xs text-white/64">Thông báo sẽ hiển thị khi hội viên đặt lịch.</p>
               </div>
             ) : (
-              <div className="divide-y divide-white/5">
+              <div className="divide-y divide-line">
                 {notifications.map((n) => {
                   const Icon = ICON_BY_TYPE[n.type] ?? Bell;
                   return (
@@ -237,15 +237,15 @@ export function TrainerNotificationBell({ onNavigate }: TrainerNotificationBellP
                         !n.read ? 'border-l-2 border-[#0F6B3E] bg-[#0F6B3E]/5' : ''
                       }`}
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#0F6B3E]/15 flex items-center justify-center shrink-0 mt-0.5">
+                      <div className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center shrink-0 mt-0.5">
                         <Icon className="w-4 h-4 text-primary-text" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className={`text-sm ${!n.read ? 'text-white font-medium' : 'text-white/70'}`}>
                           {n.title}
                         </p>
-                        <p className="text-white/60 text-xs mt-0.5 leading-relaxed">{n.message}</p>
-                        <p className="text-white/60 text-xs mt-1">{relativeTime(n.created_at)}</p>
+                        <p className="text-white/64 text-xs mt-0.5 leading-relaxed">{n.message}</p>
+                        <p className="text-white/64 text-xs mt-1">{relativeTime(n.created_at)}</p>
                       </div>
                     </button>
                   );

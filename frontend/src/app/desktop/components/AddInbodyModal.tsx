@@ -134,12 +134,12 @@ export function AddInbodyModal({ open, customerId, lastRecord, onClose, onAdded 
   };
 
   const inputCls =
-    'w-full bg-white/5 border rounded-xl px-3 py-2.5 text-white placeholder:text-white/40 outline-none focus:border-[#3DBE7A] transition-colors text-base leading-relaxed tabular-nums';
+    'w-full bg-white/5 border rounded-control px-3 py-2.5 text-white placeholder:text-white/40 outline-none focus:border-[#3DBE7A] transition-colors text-base leading-relaxed tabular-nums';
 
   return (
     <>
       <Modal open={open} onClose={requestClose} title="Nhập chỉ số InBody" ops>
-        <p className="text-white/60 text-sm leading-relaxed -mt-3 mb-4">Kết quả đo từ máy InBody tại phòng gym</p>
+        <p className="text-white/64 text-sm leading-relaxed -mt-3 mb-4">Kết quả đo từ máy InBody tại phòng gym</p>
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div>
             <label htmlFor={`${uid}-date`} className="text-white/70 text-sm leading-relaxed mb-1.5 block">
@@ -150,7 +150,7 @@ export function AddInbodyModal({ open, customerId, lastRecord, onClose, onAdded 
               type="date"
               value={form.date_recorded}
               onChange={set('date_recorded')}
-              className={cn(inputCls, 'border-white/10 [color-scheme:dark]')}
+              className={cn(inputCls, 'border-line [color-scheme:dark]')}
             />
           </div>
 
@@ -163,7 +163,7 @@ export function AddInbodyModal({ open, customerId, lastRecord, onClose, onAdded 
               return (
                 <div key={key}>
                   <label htmlFor={id} className="text-white/70 text-sm leading-relaxed mb-1.5 block">
-                    {label} <span className="text-white/60">{unit}</span>
+                    {label} <span className="text-white/64">{unit}</span>
                   </label>
                   <input
                     id={id}
@@ -176,10 +176,10 @@ export function AddInbodyModal({ open, customerId, lastRecord, onClose, onAdded 
                     aria-invalid={err ? true : undefined}
                     aria-required
                     aria-describedby={describedBy}
-                    className={cn(inputCls, err ? 'border-error-text/70' : 'border-white/10')}
+                    className={cn(inputCls, err ? 'border-error-text/70' : 'border-line')}
                   />
                   {lastRecord && (
-                    <p className="text-white/60 text-xs leading-relaxed mt-1 tabular-nums">
+                    <p className="text-white/64 text-xs leading-relaxed mt-1 tabular-nums">
                       Lần trước: {lastRecord[key]} {UNIT[key]}
                     </p>
                   )}
@@ -192,7 +192,7 @@ export function AddInbodyModal({ open, customerId, lastRecord, onClose, onAdded 
                     <p
                       id={`${id}-warn`}
                       data-testid={`inbody-warning-${key}`}
-                      className="text-[#f59e0b] text-sm leading-relaxed mt-1 flex items-start gap-1.5"
+                      className="text-warning-text text-sm leading-relaxed mt-1 flex items-start gap-1.5"
                     >
                       <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                       {INBODY_CHANGE_WARNING}
@@ -206,16 +206,16 @@ export function AddInbodyModal({ open, customerId, lastRecord, onClose, onAdded 
           <InbodyPhotoPicker value={photos} onChange={setPhotos} disabled={loading} />
 
           {error && (
-            <p role="alert" className="text-error-text text-sm leading-relaxed bg-[#f87171]/10 border border-error-text/30 rounded-xl px-4 py-2.5">
+            <p role="alert" className="text-error-text text-sm leading-relaxed bg-[#f87171]/10 border border-error-text/30 rounded-control px-4 py-2.5">
               {error}
             </p>
           )}
 
           <div className="flex gap-3 pt-1">
-            <Button variant="secondary" onClick={requestClose} disabled={loading} className="flex-1 tap-target hover:scale-100">
+            <Button variant="secondary" onClick={requestClose} disabled={loading} className="flex-1 tap-target ">
               Hủy
             </Button>
-            <Button type="submit" loading={loading} className="flex-1 tap-target hover:scale-100">
+            <Button type="submit" loading={loading} className="flex-1 tap-target ">
               {loading ? 'Đang lưu...' : 'Lưu kết quả'}
             </Button>
           </div>

@@ -53,7 +53,7 @@ only ever talks to port 80/443.
 ## Production Deployment (single VM)
 
 Target: one self-managed Linux VM (any provider), sized for 30-100 users. No managed cloud IaC —
-see `.kiro/aidlc-docs/construction/U9-deployment/infrastructure-design/` for the full design.
+see `aidlc-docs/construction/U9-deployment/infrastructure-design/` for the full design.
 
 ### Prerequisites
 

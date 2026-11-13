@@ -225,7 +225,7 @@ export function AdminDashboardPage() {
               data-testid="bookings-show-agenda"
               onClick={showAgenda}
               aria-label="Xem theo ngày"
-              className="tap-target inline-flex items-center gap-1.5 px-3 rounded-full border border-white/10 text-sm text-white/80 bg-white/5 active:bg-white/10 transition-colors"
+              className="tap-target inline-flex items-center gap-1.5 px-3 rounded-full border border-line text-sm text-white/80 bg-white/5 active:bg-white/10 transition-colors"
             >
               <CalendarRange className="w-4 h-4" aria-hidden="true" /> Theo ngày
             </button>

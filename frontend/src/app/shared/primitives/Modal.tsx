@@ -7,7 +7,7 @@ import { useBodyScrollLock } from './useBodyScrollLock';
 
 /**
  * Modal primitive (U1 Foundation) — desktop-oriented centered dialog.
- * DESIGN.md: dark overlay + backdrop-blur, glassmorphism panel, viewport-safe.
+ * DESIGN.md v2: dark scrim (the only place blur is allowed) + opaque overlay panel, viewport-safe.
  * On mobile prefer <Sheet> instead.
  *
  * U8 Accessibility: focus moves into the dialog on open, Tab is trapped
@@ -44,7 +44,7 @@ export function Modal({ open, onClose, title, className, ops = false, children }
   return createPortal(
     <div
       data-testid="modal-overlay"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overscroll-contain"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-[2px] overscroll-contain"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
@@ -54,7 +54,7 @@ export function Modal({ open, onClose, title, className, ops = false, children }
         aria-label={title}
         tabIndex={-1}
         className={cn(
-          'w-full max-w-md rounded-3xl border border-white/10 bg-[#0F0F0F]/95 backdrop-blur-xl p-8 shadow-2xl',
+          'w-full max-w-md rounded-panel border border-line bg-overlay p-6 shadow-[0_16px_48px_rgba(0,0,0,0.5)]',
           'max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain',
           ops && 'ops-surface',
           className,
@@ -62,12 +62,12 @@ export function Modal({ open, onClose, title, className, ops = false, children }
       >
         {title && (
           <div className="flex items-start justify-between mb-5">
-            <h3 className="text-white font-bold text-xl leading-relaxed">{title}</h3>
+            <h3 className="text-white font-semibold text-lg leading-relaxed">{title}</h3>
             <button
               type="button"
               data-testid="modal-close"
               onClick={onClose}
-              className="tap-target inline-flex items-center justify-center text-white/60 hover:text-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A] rounded"
+              className="tap-target inline-flex items-center justify-center text-white/64 hover:text-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary-text rounded"
               aria-label="Đóng"
             >
               <X className="w-5 h-5" />

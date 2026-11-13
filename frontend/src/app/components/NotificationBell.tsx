@@ -114,26 +114,26 @@ export function NotificationBell({ customerId, onNavigate }: NotificationBellPro
       <button
         type="button"
         onClick={handleToggle}
-        className="relative w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors"
+        className="relative w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 border border-line flex items-center justify-center transition-colors"
         aria-label="Thông báo"
       >
         <Bell className={`w-[18px] h-[18px] text-white/80 ${ringing ? 'animate-bell-ring' : ''}`} />
         {unread > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#0F6B3E] border-2 border-black text-[10px] font-bold text-white flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary border-2 border-black text-xs font-bold text-white flex items-center justify-center">
             {unread > 9 ? '9+' : unread}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-2rem))] max-h-96 overflow-y-auto bg-[#141414] border border-white/10 rounded-2xl shadow-2xl z-50">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+        <div className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-2rem))] max-h-96 overflow-y-auto bg-[#141414] border border-line rounded-panel shadow-2xl z-50">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-line">
             <span className="text-white text-sm font-semibold">Thông báo</span>
             {notifications.some((n) => !n.read) && (
               <button
                 type="button"
                 onClick={handleMarkAllRead}
-                className="text-[#0F6B3E] text-xs hover:underline"
+                className="text-primary-text text-xs hover:underline"
               >
                 Đánh dấu đã đọc tất cả
               </button>
@@ -143,12 +143,12 @@ export function NotificationBell({ customerId, onNavigate }: NotificationBellPro
           {loading ? (
             <p className="text-white/40 text-sm text-center py-8">Đang tải...</p>
           ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center py-8 text-white/25 gap-1.5">
+            <div className="flex flex-col items-center py-8 text-white/40 gap-1.5">
               <Bell className="w-6 h-6" />
               <p className="text-sm">Không có thông báo mới.</p>
             </div>
           ) : (
-            <div className="divide-y divide-white/5">
+            <div className="divide-y divide-line">
               {notifications.map((n) => {
                 const Icon = ICON_BY_TYPE[n.type] ?? Bell;
                 return (
@@ -160,15 +160,15 @@ export function NotificationBell({ customerId, onNavigate }: NotificationBellPro
                       !n.read ? 'border-l-2 border-[#0F6B3E] bg-[#0F6B3E]/5' : ''
                     }`}
                   >
-                    <div className="w-8 h-8 rounded-full bg-[#0F6B3E]/15 flex items-center justify-center shrink-0 mt-0.5">
-                      <Icon className="w-4 h-4 text-[#0F6B3E]" />
+                    <div className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center shrink-0 mt-0.5">
+                      <Icon className="w-4 h-4 text-primary-text" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className={`text-sm ${!n.read ? 'text-white font-medium' : 'text-white/70'}`}>
                         {n.title}
                       </p>
-                      <p className="text-white/50 text-xs mt-0.5 leading-relaxed">{n.message}</p>
-                      <p className="text-white/30 text-[11px] mt-1">{relativeTime(n.created_at)}</p>
+                      <p className="text-white/64 text-xs mt-0.5 leading-relaxed">{n.message}</p>
+                      <p className="text-white/64 text-xs mt-1">{relativeTime(n.created_at)}</p>
                     </div>
                   </button>
                 );

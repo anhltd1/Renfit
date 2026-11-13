@@ -22,7 +22,7 @@ export function SuggestedReplies({ suggestions, onSelect }: SuggestedRepliesProp
           key={text}
           type="button"
           onClick={() => onSelect(text)}
-          className="px-4 py-2 bg-white/5 hover:bg-[#0F6B3E]/20 text-white/80 hover:text-white text-sm rounded-full border border-white/10 hover:border-[#0F6B3E]/50 transition-all duration-300"
+          className="px-3.5 py-2 bg-surface hover:bg-surface-2 text-white/80 hover:text-white text-sm rounded-control border border-line-strong transition-colors text-left"
         >
           {text}
         </button>

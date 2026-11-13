@@ -4,11 +4,9 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  CalendarCheck,
   Check,
   ChevronLeft,
   ChevronRight,
-  Clock,
   Loader2,
   RefreshCw,
   X,
@@ -16,6 +14,7 @@ import {
 import type { Availability, Slot, DayAvailability } from '../../lib/api/bookings';
 import { useFocusTrap } from '../shared/primitives/useFocusTrap';
 import { haptic } from '../shared/primitives/haptics';
+import { CapacityMarks } from '../shared/booking/CapacityMarks';
 import { StatusBadge } from '../shared/booking/StatusBadge';
 
 /** U8 Accessibility — see AdminBookings.tsx's identical helper for rationale. */
@@ -155,33 +154,30 @@ export function BookingCalendar({
     <div ref={calendarRef} className="flex flex-col gap-4 flex-1 min-h-0 scroll-mt-4">
       {/* Legend + navigation row */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Legend */}
-        <div className="flex flex-wrap items-center gap-4 text-sm text-white/70">
-          <LegendDot cls="bg-white/5 border border-white/15" label="Còn trống" />
-          <LegendDot cls="bg-white/15 border border-white/40" label="Chờ duyệt" />
-          <LegendDot cls="bg-[#0F6B3E]/30 border border-[#0F6B3E]" label="Đã duyệt" />
-          <LegendDot cls="bg-red-500/20 border border-red-500/50" label="Từ chối" />
-          <LegendDot cls="bg-white/[0.03] border border-white/8" label="Đầy / đã qua" />
+        {/* Legend — each swatch is the mark it explains */}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/64">
+          <span className="inline-flex items-center gap-2"><CapacityMarks taken={2} /> Mỗi giờ 4 chỗ: đã đặt / còn trống</span>
+          <span className="inline-flex items-center gap-2"><CapacityMarks taken={1} capacity={1} mine /> Chỗ của bạn</span>
         </div>
         {/* Navigation */}
         <div className="flex items-center gap-2">
           <button type="button" onClick={onRefresh} title="Làm mới" aria-label="Làm mới"
-            className="p-2 rounded-xl text-white/50 hover:text-white hover:bg-white/5 transition-all">
+            className="p-2 rounded-control text-white/64 hover:text-white hover:bg-surface-2 transition-colors">
             <RefreshCw className={`w-4 h-4 ${loading && !data ? 'animate-spin' : ''}`} />
           </button>
           <button type="button" disabled={!canLeft} onClick={() => { setSlideDir('right'); setSlideKey((k) => k + 1); setOffset((o) => o - 1); }}
             aria-label="Xem ngày trước"
-            className="p-2 rounded-xl border border-white/15 text-white/60 hover:text-white hover:border-[#0F6B3E]/60 disabled:opacity-25 disabled:cursor-not-allowed transition-all">
+            className="p-2 rounded-control border border-line-strong text-white/64 hover:text-white hover:bg-surface-2 disabled:opacity-25 disabled:cursor-not-allowed transition-colors">
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-white/50 text-sm min-w-[100px] text-center font-medium">
+          <span className="text-white/80 text-sm min-w-[110px] text-center font-medium tabular-nums">
             {visibleDays[0] && visibleDays[visibleDays.length - 1]
               ? `${fmtDayLabel(visibleDays[0].date)} → ${fmtDayLabel(visibleDays[visibleDays.length - 1].date)}`
               : '—'}
           </span>
           <button type="button" disabled={!canRight} onClick={() => { setSlideDir('left'); setSlideKey((k) => k + 1); setOffset((o) => o + 1); }}
             aria-label="Xem ngày sau"
-            className="p-2 rounded-xl border border-white/15 text-white/60 hover:text-white hover:border-[#0F6B3E]/60 disabled:opacity-25 disabled:cursor-not-allowed transition-all">
+            className="p-2 rounded-control border border-line-strong text-white/64 hover:text-white hover:bg-surface-2 disabled:opacity-25 disabled:cursor-not-allowed transition-colors">
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
@@ -194,9 +190,9 @@ export function BookingCalendar({
           <p className="text-base">Đang tải lịch...</p>
         </div>
       ) : error ? (
-        <div className="bg-red-400/10 border border-red-400/25 text-red-300 rounded-2xl px-5 py-4 text-base">{error}</div>
+        <div className="border border-error-text/30 bg-[#f87171]/[0.06] text-error-text rounded-panel px-5 py-4 text-sm">{error}</div>
       ) : data ? (
-        <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#0D0D0D] pb-1">
+        <div className="overflow-x-auto rounded-panel border border-line bg-surface">
           <div
             key={slideKey}
             className={slideDir === 'left' ? 'animate-slide-in-left' : slideDir === 'right' ? 'animate-slide-in-right' : ''}
@@ -204,19 +200,14 @@ export function BookingCalendar({
           >
             {/* Day header row */}
             <div className="grid" style={{ gridTemplateColumns: `72px repeat(${renderDays.length}, 1fr)` }}>
-              <div className="bg-[#0A0A0A] border-b border-r border-white/10 p-3 flex items-center justify-center">
-                <Clock className="w-4 h-4 text-white/30" />
-              </div>
+              <div className="border-b border-r border-line p-3" aria-hidden="true" />
               {renderDays.map((entry) => {
                 if (entry.kind === 'sunday') {
                   return (
-                    <div key={entry.date} className="border-b border-white/10 p-3 text-center bg-[#0A0A0A] relative overflow-hidden">
-                      <div className="absolute inset-0 opacity-[0.07]" style={{ background: 'repeating-linear-gradient(-45deg, #fff 0px, #fff 1px, transparent 1px, transparent 8px)' }} />
-                      <p className="font-bold text-base leading-tight text-red-400/50">CN</p>
-                      <p className="text-sm mt-0.5 font-medium text-white/25">{fmtDayLabel(entry.date)}</p>
-                      <span className="inline-block mt-1 text-[11px] bg-red-500/10 text-red-400/60 px-2 py-0.5 rounded-full font-semibold border border-red-500/15">
-                        Nghỉ
-                      </span>
+                    <div key={entry.date} className="border-b border-line p-3 text-center">
+                      <p className="font-semibold text-sm leading-tight text-white/64">CN</p>
+                      <p className="text-xs mt-0.5 text-white/64 tabular-nums">{fmtDayLabel(entry.date)}</p>
+                      <p className="text-xs mt-1 text-white/64">Nghỉ</p>
                     </div>
                   );
                 }
@@ -225,20 +216,15 @@ export function BookingCalendar({
                 const dowIdx = new Date(day.date).getDay();
                 return (
                   <div key={day.date}
-                    className={`border-b border-white/10 p-3 text-center transition-colors ${
-                      isToday ? 'bg-[#0F6B3E] border-b-[#0F6B3E]' : 'bg-[#0A0A0A]'
-                    }`}>
-                    <p className={`font-bold text-base leading-tight ${isToday ? 'text-white' : 'text-white/90'}`}>
+                    aria-current={isToday ? 'date' : undefined}
+                    className={`border-b p-3 text-center ${isToday ? 'border-b-primary-text border-b-2' : 'border-line'}`}>
+                    <p className="font-semibold text-sm leading-tight text-white">
                       {VIET_DAYS[dowIdx]}
                     </p>
-                    <p className={`text-sm mt-0.5 font-medium ${isToday ? 'text-white/80' : 'text-white/50'}`}>
+                    <p className="text-xs mt-0.5 text-white/64 tabular-nums">
                       {fmtDayLabel(day.date)}
                     </p>
-                    {isToday && (
-                      <span className="inline-block mt-1 text-[11px] bg-white/20 text-white px-2 py-0.5 rounded-full font-semibold">
-                        Hôm nay
-                      </span>
-                    )}
+                    {isToday && <p className="text-xs mt-1 text-primary-text font-medium">Hôm nay</p>}
                   </div>
                 );
               })}
@@ -248,7 +234,7 @@ export function BookingCalendar({
             {hours.map((hour, rowIdx) => (
               <div key={hour} className="grid" style={{ gridTemplateColumns: `72px repeat(${renderDays.length}, 1fr)` }}>
                 {/* Hour label */}
-                <div className={`border-r border-white/10 px-3 py-0 flex items-center justify-center text-sm font-semibold text-white/70 ${rowIdx % 2 === 0 ? 'bg-white/[0.02]' : ''}`}>
+                <div className="border-r border-line px-3 py-0 flex items-start justify-end pt-2 text-xs font-medium text-white/64 tabular-nums">
                   {String(hour).padStart(2, '0')}:00
                 </div>
                 {/* Slot cells */}
@@ -256,8 +242,9 @@ export function BookingCalendar({
                   if (entry.kind === 'sunday') {
                     return (
                       <div key={entry.date + hour}
-                        className={`h-[72px] border-b border-r border-white/8 relative overflow-hidden ${rowIdx % 2 === 0 ? 'bg-white/[0.01]' : ''}`}>
-                        <div className="absolute inset-0" style={{ background: 'repeating-linear-gradient(-45deg, transparent 0px, transparent 6px, rgba(255,255,255,0.03) 6px, rgba(255,255,255,0.03) 7px)' }} />
+                        className="h-16 border-b border-r border-line relative overflow-hidden" aria-hidden="true">
+                        {/* 1px hatch = closed day (Sunday) */}
+                        <div className="absolute inset-0" style={{ background: 'repeating-linear-gradient(-45deg, transparent 0px, transparent 7px, rgba(255,255,255,0.05) 7px, rgba(255,255,255,0.05) 8px)' }} />
                       </div>
                     );
                   }
@@ -285,44 +272,47 @@ export function BookingCalendar({
           onClick={(e) => e.target === e.currentTarget && setPending(null)}>
           <div ref={confirmDialogRef} role="dialog" aria-modal="true"
             aria-label={pending.mode === 'book' ? 'Xác nhận đặt lịch' : 'Hủy lịch đặt'} tabIndex={-1}
-            className="bg-[#111] border border-white/12 rounded-2xl w-full max-w-sm shadow-2xl p-6">
+            className="bg-overlay border border-white/12 rounded-panel w-full max-w-sm shadow-2xl p-6">
             <div className="flex items-start justify-between mb-5">
-              <h3 className="text-white font-bold text-xl">
+              <h3 className="text-white font-semibold text-lg">
                 {pending.mode === 'book' ? 'Xác nhận đặt lịch' : 'Hủy lịch đặt'}
               </h3>
               <button type="button" onClick={() => setPending(null)} aria-label="Đóng" className="text-white/40 hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="bg-[#0F6B3E]/10 border border-[#0F6B3E]/25 rounded-xl p-4 mb-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-[#0F6B3E]/25 flex items-center justify-center shrink-0">
-                <CalendarCheck className="w-6 h-6 text-[#0F6B3E]" />
-              </div>
+            <div className="border border-line rounded-control bg-surface-2 p-4 mb-5 flex items-center justify-between gap-4">
               <div>
-                <p className="text-white font-semibold text-base">
-                  {VIET_DAYS_FULL[new Date(pending.dateIso).getDay()]} · {fmtDayLabel(pending.dateIso)}
-                </p>
-                <p className="text-white/60 text-sm mt-0.5 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5" />
+                <p className="text-white text-2xl font-semibold tabular-nums leading-tight">
                   {String(pending.slot.hour).padStart(2, '0')}:00 – {String(pending.slot.hour + 1).padStart(2, '0')}:00
                 </p>
+                <p className="text-white/64 text-sm mt-1">
+                  {VIET_DAYS_FULL[new Date(pending.dateIso).getDay()]} · {fmtDayLabel(pending.dateIso)}
+                </p>
               </div>
+              <CapacityMarks
+                taken={pending.mode === 'book' ? pending.slot.count : pending.slot.count}
+                capacity={data?.capacity ?? 4}
+                mine={pending.mode === 'cancel'}
+                showLabel
+                labelStyle="remaining"
+              />
             </div>
-            <p className="text-white/60 text-sm mb-6 leading-relaxed">
+            <p className="text-white/64 text-sm mb-6 leading-relaxed">
               {pending.mode === 'book'
                 ? 'Sau khi đặt, lịch sẽ ở trạng thái "Chờ duyệt" cho đến khi huấn luyện viên xác nhận.'
                 : 'Bạn có chắc muốn hủy? Khung giờ sẽ được mở lại cho người khác.'}
             </p>
             <div className="flex gap-3">
               <button type="button" onClick={() => setPending(null)}
-                className="flex-1 bg-white/5 hover:bg-white/10 border border-white/12 text-white/70 hover:text-white py-3 rounded-xl text-base transition-all">
+                className="flex-1 bg-surface-2 hover:bg-surface-3 border border-line-strong text-white py-3 rounded-control text-sm font-medium transition-colors">
                 Quay lại
               </button>
               <button type="button" onClick={confirmAction} disabled={acting}
-                className={`flex-1 py-3 rounded-xl text-base font-semibold text-white disabled:opacity-60 transition-all ${
+                className={`flex-1 py-3 text-sm font-semibold disabled:opacity-60 transition-colors ${
                   pending.mode === 'book'
-                    ? 'bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 hover:shadow-[0_0_20px_rgba(15,107,62,0.4)]'
-                    : 'bg-red-500 hover:bg-red-400'
+                    ? 'rounded-full bg-primary hover:bg-primary-hover text-white'
+                    : 'rounded-control border border-error-text/35 text-error-text hover:bg-error-text/10'
                 }`}>
                 {acting ? 'Đang xử lý...' : pending.mode === 'book' ? 'Đặt lịch' : 'Hủy lịch'}
               </button>
@@ -334,23 +324,14 @@ export function BookingCalendar({
       {/* Toast */}
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 w-full max-w-sm flex justify-center animate-toast-in">
-          <div className={`w-full px-6 py-3.5 rounded-xl border shadow-2xl flex items-center gap-2.5 text-base font-medium ${
-            toast.kind === 'ok' ? 'bg-[#0F6B3E] border-[#0F6B3E]/60 text-white' : 'bg-red-500 border-red-500/60 text-white'
+          <div role="status" className={`w-full px-4 py-3 rounded-control border bg-overlay text-white shadow-[0_16px_48px_rgba(0,0,0,0.5)] flex items-center gap-2.5 text-sm font-medium ${
+            toast.kind === 'ok' ? 'border-line' : 'border-error-text/40'
           }`}>
-            {toast.kind === 'ok' ? <Check className="w-5 h-5 shrink-0" /> : <X className="w-5 h-5 shrink-0" />}
+            {toast.kind === 'ok' ? <Check className="w-5 h-5 shrink-0 text-primary-text" /> : <X className="w-5 h-5 shrink-0 text-error-text" />}
             {toast.text}
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function LegendDot({ cls, label }: { cls: string; label: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className={`w-4 h-4 rounded-md shrink-0 ${cls}`} />
-      <span>{label}</span>
     </div>
   );
 }
@@ -361,29 +342,22 @@ const SlotCell = React.memo(function SlotCell({
   slot: Slot; capacity: number; striped: boolean; isToday: boolean;
   onBook: () => void; onCancel: () => void;
 }) {
-  // Today column gets a stronger left border highlight
-  const todayColCls = isToday
-    ? 'border-l-2 border-l-[#0F6B3E]/50 bg-[#0F6B3E]/[0.06]'
-    : '';
-  const base = `min-h-[72px] border-b border-r border-white/8 flex flex-col items-center justify-center gap-1 px-1.5 py-1.5 transition-all ${
-    striped && !isToday ? 'bg-white/[0.02]' : ''
-  } ${todayColCls}`;
+  const time = `${String(slot.hour).padStart(2, '0')}:00`;
+  const base = `h-16 border-b border-r border-line flex flex-col items-center justify-center gap-1.5 px-1.5 transition-colors duration-[var(--motion-fast)] ${
+    isToday ? 'bg-white/[0.025]' : ''
+  }`;
+  void striped;
 
-  // My booking: pending or approved
+  // My booking: pending or approved — tap to cancel.
   if (slot.my_status === 'pending' || slot.my_status === 'approved') {
-    const approved = slot.my_status === 'approved';
     return (
-      <button type="button" onClick={onCancel} title="Nhấn để hủy"
-        className={`${base} group cursor-pointer ${
-          approved
-            ? 'bg-[#0F6B3E]/20 hover:bg-[#0F6B3E]/30'
-            : 'bg-white/8 hover:bg-white/12'
-        }`}>
-        <span className={`text-sm font-bold leading-tight ${approved ? 'text-[#0F6B3E]' : 'text-white/90'}`}>
-          {approved ? '✓ Đã duyệt' : '⏳ Chờ duyệt'}
-        </span>
-        <span className="text-xs text-red-400/70 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
-          Nhấn để hủy
+      <button type="button" onClick={onCancel}
+        aria-label={`Lịch của bạn lúc ${time}, ${slot.my_status === 'approved' ? 'đã duyệt' : 'chờ duyệt'}. Nhấn để hủy`}
+        className={`${base} group cursor-pointer bg-primary-tint hover:bg-[#0F6B3E]/25`}>
+        <StatusBadge status={slot.my_status} />
+        <span className="flex items-center gap-1.5">
+          <CapacityMarks taken={slot.count} capacity={capacity} mine />
+          <span className="text-xs text-error-text opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">Hủy</span>
         </span>
       </button>
     );
@@ -400,17 +374,15 @@ const SlotCell = React.memo(function SlotCell({
 
   // Past slot
   if (slot.past) {
-    return (
-      <div className={`${base} text-white/20 text-sm`}>—</div>
-    );
+    return <div className={`${base} text-white/40 text-sm`} aria-label={`${time} đã qua`}>—</div>;
   }
 
   // Full slot
   if (slot.full) {
     return (
-      <div className={`${base} bg-white/[0.025]`}>
-        <span className="text-white/35 text-sm font-medium">Đã đầy</span>
-        <span className="text-white/20 text-xs">0 / {capacity}</span>
+      <div className={base} aria-label={`${time} hết chỗ`}>
+        <CapacityMarks taken={capacity} capacity={capacity} />
+        <span className="text-white/64 text-xs">Hết chỗ</span>
       </div>
     );
   }
@@ -419,18 +391,17 @@ const SlotCell = React.memo(function SlotCell({
   const remaining = capacity - slot.count;
   return (
     <button type="button" onClick={onBook}
-      className={`${base} hover:bg-[#0F6B3E]/12 group cursor-pointer`}>
+      aria-label={`Đặt lịch lúc ${time}, còn ${remaining} chỗ`}
+      className={`${base} group cursor-pointer hover:bg-surface-2`}>
+      <CapacityMarks taken={slot.count} capacity={capacity} />
       {slot.my_status === 'rejected' ? (
-        <span className="text-red-400 text-sm font-semibold">Bị từ chối</span>
+        <span className="text-error-text text-xs font-medium">Bị từ chối · đặt lại</span>
       ) : (
-        <span className="text-white/65 text-sm font-medium">
-          Còn {remaining} chỗ
+        <span className="text-xs tabular-nums">
+          <span className="text-white/80 group-hover:hidden">Còn {remaining} chỗ</span>
+          <span className="text-primary-text font-semibold hidden group-hover:inline">+ Đặt lịch</span>
         </span>
       )}
-      {/* Always-visible "Đặt lịch" button */}
-      <span className="inline-flex items-center gap-1 bg-[#0F6B3E]/25 group-hover:bg-[#0F6B3E]/50 border border-[#0F6B3E]/40 group-hover:border-[#0F6B3E]/70 text-[#0F6B3E] text-xs font-semibold px-3 py-0.5 rounded-lg transition-all">
-        + Đặt lịch
-      </span>
     </button>
   );
 });

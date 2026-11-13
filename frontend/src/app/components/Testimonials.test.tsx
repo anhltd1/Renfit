@@ -25,11 +25,10 @@ const CONTENT: TestimonialsContent = {
 };
 
 describe('Testimonials', () => {
-  it('renders the section title with the emerald highlight and each complete testimonial', () => {
+  it('renders the section title and each complete testimonial', () => {
     render(<Testimonials content={CONTENT} />);
     const heading = screen.getByRole('heading', { level: 2 });
     expect(heading).toHaveTextContent('Khách hàng ở Renfit nói gì');
-    expect(screen.getByText('nói gì')).toHaveClass('text-[#0F6B3E]');
     expect(screen.getByText('Chia sẻ thật từ hội viên.')).toBeInTheDocument();
 
     const items = screen.getByTestId('testimonials-list').querySelectorAll('li');

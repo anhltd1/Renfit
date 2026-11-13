@@ -80,7 +80,7 @@ export function PhotoLightbox({ open, photos, initialIndex = 0, title, onClose }
         <div className="flex-1 min-w-0">
           {title && <p className="text-white font-semibold truncate leading-relaxed">{title}</p>}
           {count > 1 && (
-            <p className="text-white/60 text-sm leading-relaxed" data-testid="lightbox-counter">
+            <p className="text-white/64 text-sm leading-relaxed" data-testid="lightbox-counter">
               {index + 1} / {count}
             </p>
           )}
@@ -118,7 +118,7 @@ export function PhotoLightbox({ open, photos, initialIndex = 0, title, onClose }
           src={current}
           alt={title ? `${title} — ảnh ${index + 1}` : `Ảnh ${index + 1}`}
           data-testid="lightbox-image"
-          className="max-w-full max-h-full object-contain rounded-2xl select-none animate-content-in"
+          className="max-w-full max-h-full object-contain rounded-panel select-none animate-content-in"
           draggable={false}
         />
 
@@ -129,7 +129,7 @@ export function PhotoLightbox({ open, photos, initialIndex = 0, title, onClose }
               onClick={() => go(-1)}
               aria-label="Ảnh trước"
               data-testid="lightbox-prev"
-              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 border border-white/10 hover:bg-white/15 flex items-center justify-center text-white transition-colors active:scale-[0.97]"
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 border border-line hover:bg-white/15 flex items-center justify-center text-white transition-colors active:scale-[0.97]"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
@@ -138,7 +138,7 @@ export function PhotoLightbox({ open, photos, initialIndex = 0, title, onClose }
               onClick={() => go(1)}
               aria-label="Ảnh tiếp theo"
               data-testid="lightbox-next"
-              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 border border-white/10 hover:bg-white/15 flex items-center justify-center text-white transition-colors active:scale-[0.97]"
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 border border-line hover:bg-white/15 flex items-center justify-center text-white transition-colors active:scale-[0.97]"
             >
               <ChevronRight className="w-6 h-6" />
             </button>
@@ -158,7 +158,7 @@ export function PhotoLightbox({ open, photos, initialIndex = 0, title, onClose }
               aria-current={i === index}
               data-testid="lightbox-thumb"
               className={cn(
-                'w-14 h-14 shrink-0 rounded-xl overflow-hidden border-2 transition-all duration-[var(--motion-fast)]',
+                'w-14 h-14 shrink-0 rounded-control overflow-hidden border-2 transition-all duration-[var(--motion-fast)]',
                 i === index ? 'border-[#0F6B3E] opacity-100' : 'border-transparent opacity-50 hover:opacity-80',
               )}
             >

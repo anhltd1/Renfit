@@ -38,7 +38,7 @@ Indexes: unique on `id`, unique on `phone_number`.
 
 ### `Personal_Trainer`
 
-Trainer / admin accounts. Login via `name` (username) + bcrypt `password`. A default account (`admin` / `123`) is seeded on startup.
+Trainer / admin accounts. Login via `name` (username) + bcrypt `password`. The coach account (internal `id` `admin`) is created and synced on every startup from `ADMIN_USERNAME` / `ADMIN_PASSWORD` in `backend/env/.env` (see `src/init_db/seed.py`); with those unset, no account is created.
 
 | Field | Type | Notes |
 |---|---|---|

@@ -25,7 +25,7 @@ settings = get_settings()
 
 app = FastAPI(
     title="Renfit API",
-    description="Backend API for Renfit — AI Fitness Coach (GPT-5.6-luna)",
+    description="Backend API for Renfit — AI Fitness Coach (gpt-6-luna)",
     version="0.1.0",
 )
 
@@ -121,11 +121,13 @@ def _ensure_inbody_photo_indexes() -> None:
 
 @app.on_event("startup")
 def _seed_defaults() -> None:
-    """Ensure the default admin coach exists (idempotent, best-effort)."""
+    """Create/sync the coach account from ADMIN_USERNAME / ADMIN_PASSWORD (best-effort)."""
     try:
         seed_admin_trainer()
-    except Exception:  # noqa: BLE001 — never block startup on seeding
-        pass
+    except Exception as exc:  # noqa: BLE001 — never block startup on seeding
+        import logging
+
+        logging.getLogger(__name__).error("Coach account seeding failed: %s", exc)
 
 
 @app.on_event("startup")

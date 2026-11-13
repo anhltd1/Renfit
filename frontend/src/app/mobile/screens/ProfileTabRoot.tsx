@@ -25,14 +25,11 @@ export function ProfileTabRoot({ onOpenProfile, onOpenProgress, onLogout }: Prof
           data-testid="profile-tab-root-profile-entry"
           className="cursor-pointer flex items-center gap-3"
         >
-          <div className="w-10 h-10 rounded-full bg-[#0F6B3E]/20 border border-[#0F6B3E]/30 flex items-center justify-center shrink-0">
-            <User className="w-5 h-5 text-[#0F6B3E]" />
-          </div>
           <div className="flex-1">
             <p className="text-white font-semibold text-sm">Hồ sơ cá nhân</p>
             <p className="text-white/40 text-xs mt-0.5">Mục tiêu, sức khỏe, số đo cơ thể</p>
           </div>
-          <ChevronRight className="w-4 h-4 text-white/30" />
+          <ChevronRight className="w-4 h-4 text-white/64" />
         </Card>
 
         <Card
@@ -42,21 +39,18 @@ export function ProfileTabRoot({ onOpenProfile, onOpenProgress, onLogout }: Prof
           data-testid="profile-tab-root-progress-entry"
           className="cursor-pointer flex items-center gap-3"
         >
-          <div className="w-10 h-10 rounded-full bg-[#0F6B3E]/20 border border-[#0F6B3E]/30 flex items-center justify-center shrink-0">
-            <Activity className="w-5 h-5 text-[#0F6B3E]" />
-          </div>
           <div className="flex-1">
             <p className="text-white font-semibold text-sm">Chỉ số InBody</p>
             <p className="text-white/40 text-xs mt-0.5">Theo dõi tiến độ theo thời gian</p>
           </div>
-          <ChevronRight className="w-4 h-4 text-white/30" />
+          <ChevronRight className="w-4 h-4 text-white/64" />
         </Card>
 
         <button
           type="button"
           data-testid="profile-tab-root-logout"
           onClick={onLogout}
-          className="w-full flex items-center justify-center gap-2 text-white/40 hover:text-red-400 py-3 text-sm transition-colors rounded-xl hover:bg-red-400/5 mt-2"
+          className="w-full flex items-center justify-center gap-2 text-white/40 hover:text-error-text py-3 text-sm transition-colors rounded-control hover:bg-red-400/5 mt-2"
         >
           <LogOut className="w-4 h-4" /> Đăng xuất
         </button>

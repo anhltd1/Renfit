@@ -1,8 +1,10 @@
-import { SectionAtmosphere } from './landing/SectionAtmosphere';
-import { Card } from '../shared/primitives/Card';
+import { ArrowRight } from 'lucide-react';
 import { cn } from '../shared/primitives/cn';
-import { useInView } from '../shared/hooks/useInView';
+import { CapacityMarks } from '../shared/booking/CapacityMarks';
 import { resolveIcon } from '../../lib/icons/iconAllowlist';
+import { getAuthUser } from '../../lib/auth';
+import { Link } from './Link';
+import { useInView } from '../shared/hooks/useInView';
 import type { ServicesContent } from '../../lib/api/siteContent';
 
 interface ServicesProps {
@@ -49,69 +51,55 @@ const DEFAULT_SERVICES: ServicesContent = {
 export function Services({ content }: ServicesProps) {
   const { ref, isRevealed } = useInView<HTMLElement>();
   const data = content ?? DEFAULT_SERVICES;
+  const bookTo = getAuthUser() ? '/dashboard' : '/signup';
 
-  // Split title for emerald highlight on last words
-  const titleParts = data.title.split(' ');
-  // Original: "Dịch Vụ" white, "Của Chúng Tôi" emerald — split at first 2 words
-  const titleFirst = titleParts.slice(0, 2).join(' ');
-  const titleRest = titleParts.slice(2).join(' ');
-
+  // DESIGN.md v2 marketing: the services as one bordered sheet split into
+  // cells by 1px lines — the same panel language as the hero's live board and
+  // the AI Coach panel. Each cell: a quiet 20px icon (the CMS icon, grey, no
+  // chip), the name, one line. Heading column left with the one action.
   return (
-    <section id="services" className="scroll-mt-24 relative py-12 sm:py-16 lg:py-24 px-4 sm:px-6 bg-[#0B0B0B]" ref={ref}>
-      <SectionAtmosphere glows={2} positions={[{ x: 30, y: 20 }, { x: 70, y: 70 }]} />
-
-      <div className="relative z-10 max-w-7xl mx-auto">
-        {/* Section Header */}
-        <div className={cn(
-          'text-center mb-6 sm:mb-10 lg:mb-16 opacity-0 translate-y-2',
-          isRevealed && 'animate-fade-up',
-        )}>
-          <h2 className="text-xl sm:text-3xl lg:text-5xl font-bold text-white mb-3 sm:mb-6 leading-relaxed">
-            {titleFirst}{titleRest ? ' ' : ''}<span className="text-[#0F6B3E]">{titleRest}</span>
-          </h2>
-          <p className="text-sm sm:text-base lg:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed">
-            {data.subtitle}
+    <section id="services" className="scroll-mt-24 bg-surface py-16 sm:py-24 px-4 sm:px-6 lg:px-10" ref={ref}>
+      <div className="max-w-7xl mx-auto grid gap-10 lg:gap-12 lg:grid-cols-12 items-start">
+        <div className={cn('lg:col-span-4 lg:sticky lg:top-28 opacity-0 translate-y-2', isRevealed && 'animate-fade-up')}>
+          <h2 className="text-white font-bold leading-[1.15] text-[clamp(1.75rem,3.5vw,2.75rem)]">{data.title}</h2>
+          <p className="mt-4 text-white/80 text-base sm:text-lg leading-relaxed max-w-[40ch]">{data.subtitle}</p>
+          <p className="mt-6 flex items-center gap-2.5 text-white/64 text-sm">
+            <CapacityMarks taken={2} /> Mọi dịch vụ đều trong khung giờ tối đa 4 người.
           </p>
+          <Link
+            to={bookTo}
+            className="mt-8 inline-flex items-center gap-2 text-white text-sm font-semibold underline underline-offset-4 decoration-white/30 hover:decoration-white"
+          >
+            Đặt buổi tập đầu tiên <ArrowRight className="w-4 h-4" aria-hidden="true" />
+          </Link>
         </div>
 
-        {/* Services: 2-col grid on mobile, 3-col desktop — compact cards */}
-        <div className={cn(
-          'grid grid-cols-2 gap-2.5',
-          'sm:gap-4',
-          'lg:grid-cols-3 lg:gap-6',
-        )}>
+        <ul
+          data-testid="services-list"
+          className={cn(
+            'lg:col-span-8 grid sm:grid-cols-2 gap-px bg-line border border-line rounded-panel overflow-hidden opacity-0 translate-y-2',
+            isRevealed && 'animate-fade-up',
+          )}
+          style={{ '--stagger': 1 } as React.CSSProperties}
+        >
           {data.items.map((service, index) => {
             const Icon = resolveIcon(service.icon);
             return (
-              <div
+              <li
                 key={index}
                 className={cn(
-                  'opacity-0 translate-y-2',
-                  isRevealed && 'animate-fade-up',
+                  'bg-[#0B0B0B] p-5 sm:p-7 flex flex-col sm:min-h-[11rem]',
+                  // An odd last cell takes the full row instead of leaving a hole.
+                  data.items.length % 2 === 1 && index === data.items.length - 1 && 'sm:col-span-2',
                 )}
-                style={{ '--stagger': Math.min(index + 1, 7) } as React.CSSProperties}
               >
-                <Card
-                  tier="card"
-                  compact
-                  className="h-full transition-all duration-[var(--motion-base)] hover:border-[#0F6B3E]/50 hover:-translate-y-0.5 active:scale-[0.97]"
-                >
-                  <div className="w-8 h-8 sm:w-12 sm:h-12 lg:w-16 lg:h-16 rounded-xl sm:rounded-2xl bg-[#0F6B3E]/20 flex items-center justify-center mb-2 sm:mb-4 lg:mb-6">
-                    {Icon && <Icon className="w-4 h-4 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-[#0F6B3E]" />}
-                  </div>
-
-                  <h3 className="text-xs sm:text-base lg:text-xl font-bold text-white mb-1 sm:mb-2 lg:mb-4 leading-relaxed">
-                    {service.title}
-                  </h3>
-
-                  <p className="text-white/70 text-[10px] sm:text-xs lg:text-sm leading-relaxed">
-                    {service.description}
-                  </p>
-                </Card>
-              </div>
+                {Icon && <Icon className="w-5 h-5 text-white/64" aria-hidden="true" strokeWidth={1.5} />}
+                <h3 className="mt-auto pt-5 sm:pt-8 text-white text-lg font-semibold leading-snug">{service.title}</h3>
+                <p className="mt-1.5 text-white/64 text-sm sm:text-base leading-relaxed">{service.description}</p>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </div>
     </section>
   );

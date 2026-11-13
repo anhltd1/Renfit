@@ -16,11 +16,11 @@ import {
   LogOut,
   MoreVertical,
   RefreshCw,
-  ShieldCheck,
   Smartphone,
   Users,
   Wand2,
 } from 'lucide-react';
+import { BrandMark } from '../../shared/components/BrandMark';
 import { LiveClock } from '../../components/LiveClock';
 import { TrainerNotificationBell } from '../../components/TrainerNotificationBell';
 import { DeviceContext } from '../../device/DeviceContext';
@@ -45,7 +45,7 @@ const TABS: { key: AdminView; label: string; Icon: typeof Home }[] = [
 ];
 
 const MENU_ITEM_CLS =
-  'w-full min-h-8 pointer-coarse:min-h-11 flex items-center gap-3 px-4 py-2.5 text-left text-sm leading-relaxed text-white/80 hover:bg-white/5 focus-visible:outline-none focus-visible:bg-white/10 transition-colors';
+  'w-full min-h-8 pointer-coarse:min-h-11 flex items-center gap-3 px-4 py-2.5 text-left text-sm leading-relaxed text-white/80 hover:bg-surface-2 focus-visible:outline-none focus-visible:bg-white/10 transition-colors';
 
 /** Overflow menu: interface (phone tree / auto) choice. */
 function InterfaceMenu() {
@@ -103,7 +103,7 @@ function InterfaceMenu() {
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((o) => !o)}
-        className="tap-target flex items-center justify-center rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]"
+        className="tap-target flex items-center justify-center rounded-control text-white/64 hover:text-white hover:bg-surface-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-text"
       >
         <MoreVertical className="w-4 h-4" aria-hidden="true" />
       </button>
@@ -114,9 +114,9 @@ function InterfaceMenu() {
           role="menu"
           aria-label="Tuỳ chọn"
           data-testid="admin-header-menu-list"
-          className="absolute right-0 top-full mt-2 z-40 w-64 py-1 rounded-2xl border border-white/10 bg-[#111] shadow-2xl"
+          className="absolute right-0 top-full mt-2 z-40 w-64 py-1 rounded-control border border-line bg-overlay shadow-[0_16px_48px_rgba(0,0,0,0.5)]"
         >
-          <p className="px-4 pt-1 pb-0.5 text-xs text-white/60 leading-relaxed">Giao diện</p>
+          <p className="px-4 pt-1 pb-0.5 text-xs text-white/64 leading-relaxed">Giao diện</p>
           <button
             type="button"
             role="menuitemradio"
@@ -157,20 +157,17 @@ export function DesktopAdminHeader({
 }: DesktopAdminHeaderProps) {
   return (
     <header
-      className="shrink-0 bg-[#0B0B0B] border-b border-white/10 px-4 py-2.5 flex items-center justify-between gap-2"
-      style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}
+      className="shrink-0 bg-[#0B0B0B] border-b border-line px-4 lg:px-5 h-14 flex items-center justify-between gap-2"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       {/* Left */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        <div className="w-8 h-8 shrink-0 rounded-lg bg-[#0F6B3E]/20 border border-[#0F6B3E]/30 flex items-center justify-center">
-          <ShieldCheck className="w-4 h-4 text-primary-text" aria-hidden="true" />
-        </div>
-        <span className="text-white font-bold text-sm whitespace-nowrap">Renfit Admin</span>
+        <BrandMark scope="Huấn luyện viên" size="sm" className="shrink-0" />
 
         {/* View tabs */}
         <nav
           aria-label="Điều hướng quản trị"
-          className="flex items-center gap-1 ml-4 bg-white/5 border border-white/10 rounded-lg p-0.5 shrink-0"
+          className="flex items-center gap-0.5 ml-6 shrink-0"
         >
           {TABS.map(({ key, label, Icon }) => {
             const active = view === key;
@@ -182,9 +179,9 @@ export function DesktopAdminHeader({
                 aria-current={active ? 'page' : undefined}
                 onClick={() => onViewChange(key)}
                 className={cn(
-                  'tap-target flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-md text-sm transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]',
-                  active ? 'bg-[#0F6B3E]/20 text-primary-text' : 'text-white/70 hover:text-white',
+                  'tap-target flex items-center justify-center gap-1.5 px-3 py-1 rounded-control text-sm transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-text',
+                  active ? 'bg-surface-2 text-white font-medium' : 'text-white/64 hover:text-white hover:bg-surface',
                 )}
               >
                 <Icon className="w-3.5 h-3.5" aria-hidden="true" />
@@ -203,24 +200,23 @@ export function DesktopAdminHeader({
       {/* Right */}
       <div className="flex items-center gap-2 justify-end shrink-0">
         {view === 'clients' && (
-          <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 mr-2">
-            <Users className="w-3.5 h-3.5 text-primary-text" aria-hidden="true" />
-            <span className="text-white/60 text-sm">
+          <div className="flex items-center mr-2">
+            <span className="text-white/64 text-sm">
               <span className="text-white font-semibold tabular-nums">{customerCount}</span> hội viên
             </span>
           </div>
         )}
         {view === 'clients' && (
-          <button
-            type="button"
-            data-testid="button-refresh"
-            onClick={onRefresh}
-            disabled={refreshing}
-            className="tap-target flex items-center justify-center rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]"
-            title="Làm mới"
-            aria-label="Làm mới"
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+ <button
+ type="button"
+ data-testid="button-refresh"
+ onClick={onRefresh}
+ disabled={refreshing}
+ className="tap-target flex items-center justify-center rounded-control text-white/64 hover:text-white hover:bg-surface-2 transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-text"
+ title="Làm mới"
+ aria-label="Làm mới"
+ >
+ <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
           </button>
         )}
         <TrainerNotificationBell
@@ -233,7 +229,7 @@ export function DesktopAdminHeader({
           type="button"
           data-testid="button-logout"
           onClick={onLogout}
-          className="tap-target flex items-center gap-1.5 text-white/70 hover:text-error-text transition-colors text-sm px-2 py-2 rounded-xl hover:bg-red-400/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]"
+          className="tap-target flex items-center gap-1.5 text-white/64 hover:text-error-text transition-colors text-sm px-2 py-2 rounded-control hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-text"
         >
           <LogOut className="w-4 h-4" aria-hidden="true" />
           <span>Đăng xuất</span>

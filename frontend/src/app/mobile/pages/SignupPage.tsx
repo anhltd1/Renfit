@@ -6,7 +6,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import {
-  Bot,
   Eye,
   EyeOff,
   Lock,
@@ -52,11 +51,11 @@ function Field({ label, icon, hint, children }: { label: string; icon?: React.Re
   return (
     <div>
       <label className="flex items-center gap-1.5 text-white/70 text-sm mb-2">
-        {icon && <span className="text-[#0F6B3E]">{icon}</span>}
+        {icon && <span className="text-primary-text">{icon}</span>}
         {label}
       </label>
       {children}
-      {hint && <p className="text-white/30 text-xs mt-1">{hint}</p>}
+      {hint && <p className="text-white/64 text-xs mt-1">{hint}</p>}
     </div>
   );
 }
@@ -69,7 +68,7 @@ function NumberStepper({
 }) {
   const num = parseFloat(value) || 0;
   return (
-    <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl overflow-hidden focus-within:border-[#0F6B3E] transition-colors">
+    <div className="flex items-center bg-surface-2 border border-line-strong rounded-control overflow-hidden focus-within:border-[#0F6B3E] transition-colors">
       <button type="button" onClick={() => onChange(String(Math.max(min, parseFloat((num - step).toFixed(2)))))}
         disabled={num <= min && value !== ''} className="px-4 py-3 text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-20 transition-all shrink-0">
         <Minus className="w-3.5 h-3.5" />
@@ -79,11 +78,11 @@ function NumberStepper({
           onChange={(e) => onChange(e.target.value.replace(/[^\d.]/g, ''))}
           onBlur={() => { if (!value) return; onChange(String(Math.min(max, Math.max(min, parseFloat(value) || min)))); }}
           placeholder={placeholder}
-          className="w-16 bg-transparent text-center text-white placeholder:text-white/25 outline-none text-sm font-medium" />
-        {unit && <span className="text-white/30 text-xs shrink-0">{unit}</span>}
+          className="w-16 bg-transparent text-center text-white placeholder:text-white/40 outline-none text-sm font-medium" />
+        {unit && <span className="text-white/64 text-xs shrink-0">{unit}</span>}
       </div>
       <button type="button" onClick={() => onChange(String(Math.min(max, parseFloat((num + step).toFixed(2)))))}
-        disabled={num >= max && value !== ''} className="px-4 py-3 text-white/40 hover:text-[#0F6B3E] hover:bg-white/5 disabled:opacity-20 transition-all shrink-0">
+        disabled={num >= max && value !== ''} className="px-4 py-3 text-white/40 hover:text-primary-text hover:bg-white/5 disabled:opacity-20 transition-all shrink-0">
         <Plus className="w-3.5 h-3.5" />
       </button>
     </div>
@@ -133,7 +132,7 @@ export function SignupPage() {
     }
   };
 
-  const inputCls = 'w-full bg-white/5 border border-white/10 focus:border-[#0F6B3E] rounded-2xl px-4 py-3 text-white placeholder:text-white/30 outline-none transition-colors text-sm';
+  const inputCls = 'w-full bg-surface-2 border border-line-strong focus:border-primary-text focus:ring-2 focus:ring-primary-text/30 rounded-control px-4 py-3 text-white placeholder:text-white/40 outline-none transition-colors text-sm';
 
   return (
     <div
@@ -144,21 +143,17 @@ export function SignupPage() {
         <Link to="/">
           <ImageWithFallback src={logoImage} alt="Renfit" className="h-12 w-auto mb-4" />
         </Link>
-        <div className="flex items-center gap-2 bg-[#0F6B3E]/20 px-4 py-2 rounded-full border border-[#0F6B3E]/30">
-          <Bot className="w-4 h-4 text-[#0F6B3E]" />
-          <span className="text-[#0F6B3E] text-sm font-medium">AI Fitness Coach</span>
-        </div>
       </div>
 
-      <h1 className="text-2xl font-bold text-white mb-6">Tạo tài khoản</h1>
+      <h1 className="text-2xl font-semibold text-white mb-6">Tạo tài khoản</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5" data-testid="signup-form">
-        <div className="flex flex-col items-center gap-2 pb-5 border-b border-white/8">
+        <div className="flex flex-col items-center gap-2 pb-5 border-b border-line">
           <AvatarUpload value={form.avatar} onChange={(b64) => setForm((f) => ({ ...f, avatar: b64 }))} size={110} disabled={loading} />
         </div>
 
-        <div className="space-y-4 pb-5 border-b border-white/8">
-          <p className="text-white/40 text-xs uppercase tracking-widest">Tài khoản</p>
+        <div className="space-y-4 pb-5 border-b border-line">
+          <p className="text-white/40 text-xs ">Tài khoản</p>
           <Field label="Họ và tên" icon={<User className="w-3.5 h-3.5" />}>
             <input type="text" value={form.name} onChange={set('name')} placeholder="Nguyễn Văn An" autoComplete="name" data-testid="input-name" className={inputCls} />
           </Field>
@@ -168,7 +163,7 @@ export function SignupPage() {
           <Field label="Mật khẩu" icon={<Lock className="w-3.5 h-3.5" />} hint="Ít nhất 6 ký tự">
             <div className="relative">
               <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={set('password')} placeholder="••••••••" autoComplete="new-password" data-testid="input-password" className={`${inputCls} pr-12`} />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30">
+              <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/64">
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
@@ -176,15 +171,15 @@ export function SignupPage() {
           <Field label="Nhập lại mật khẩu" icon={<Lock className="w-3.5 h-3.5" />}>
             <div className="relative">
               <input type={showConfirm ? 'text' : 'password'} value={form.confirm_password} onChange={set('confirm_password')} placeholder="••••••••" autoComplete="new-password" data-testid="input-confirm-password" className={`${inputCls} pr-12`} />
-              <button type="button" onClick={() => setShowConfirm(!showConfirm)} aria-label={showConfirm ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30">
+              <button type="button" onClick={() => setShowConfirm(!showConfirm)} aria-label={showConfirm ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/64">
                 {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </Field>
         </div>
 
-        <div className="space-y-4 pb-5 border-b border-white/8">
-          <p className="text-white/40 text-xs uppercase tracking-widest">Thông tin cá nhân</p>
+        <div className="space-y-4 pb-5 border-b border-line">
+          <p className="text-white/40 text-xs ">Thông tin cá nhân</p>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Tuổi">
               <NumberStepper value={form.age} onChange={(v) => setForm((f) => ({ ...f, age: v }))} min={10} max={100} placeholder="25" unit="tuổi" />
@@ -197,7 +192,7 @@ export function SignupPage() {
             <div className="flex flex-wrap gap-2">
               {[...PRESET_GOALS, 'Khác'].map((g) => (
                 <button key={g} type="button" onClick={() => setForm((f) => ({ ...f, goal: g, customGoal: g === 'Khác' ? f.customGoal : '' }))}
-                  className={`px-3 py-1.5 rounded-xl text-sm border transition-all duration-200 ${form.goal === g ? 'bg-[#0F6B3E] border-[#0F6B3E] text-white' : 'bg-white/5 border-white/10 text-white/60'}`}>
+                  className={`px-3 py-1.5 rounded-control text-sm border transition-all duration-200 ${form.goal === g ? 'bg-primary border-[#0F6B3E] text-white' : 'bg-white/5 border-line text-white/64'}`}>
                   {g}
                 </button>
               ))}
@@ -212,7 +207,7 @@ export function SignupPage() {
         </div>
 
         <div className="space-y-4">
-          <p className="text-white/40 text-xs uppercase tracking-widest">Số đo cơ thể</p>
+          <p className="text-white/40 text-xs ">Số đo cơ thể</p>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Chiều cao" icon={<Weight className="w-3.5 h-3.5" />}>
               <NumberStepper value={form.height} onChange={(v) => setForm((f) => ({ ...f, height: v }))} min={100} max={250} placeholder="170" unit="cm" />
@@ -224,20 +219,20 @@ export function SignupPage() {
         </div>
 
         {error && (
-          <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-2.5" data-testid="signup-error">
+          <p className="text-error-text text-sm bg-[#f87171]/[0.06] border border-error-text/30 rounded-control px-4 py-2.5" data-testid="signup-error">
             {error}
           </p>
         )}
 
         <button type="submit" disabled={loading} data-testid="signup-submit-button"
-          className="w-full bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 disabled:opacity-60 text-white font-semibold py-3.5 rounded-2xl transition-all duration-300">
+          className="w-full bg-primary hover:bg-primary-hover disabled:opacity-60 text-white font-semibold py-3.5 rounded-full transition-colors">
           {loading ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
         </button>
       </form>
 
-      <p className="text-center text-white/40 text-sm mt-6">
+      <p className="text-center text-white/64 text-sm mt-6">
         Đã có tài khoản?{' '}
-        <Link to={`/login${redirect !== '/dashboard' ? `?redirect=${redirect}` : ''}`} className="text-[#0F6B3E] hover:text-[#0F6B3E]/80 font-medium transition-colors">
+        <Link to={`/login${redirect !== '/dashboard' ? `?redirect=${redirect}` : ''}`} className="text-primary-text hover:text-white font-medium transition-colors">
           Đăng nhập
         </Link>
       </p>

@@ -32,14 +32,14 @@ export function DayScroller({ days, selected, onSelect }: DayScrollerProps) {
             data-testid={`day-scroller-${day.date}`}
             onClick={() => onSelect(day.date)}
             className={cn(
-              'shrink-0 snap-start flex flex-col items-center justify-center rounded-2xl px-4 py-2.5 min-w-[64px] transition-all',
+              'shrink-0 snap-start flex flex-col items-center justify-center rounded-control px-4 py-2 min-w-[60px] min-h-[52px] border transition-colors',
               isSelected
-                ? 'bg-[#0F6B3E] text-white'
-                : 'bg-white/5 text-white/60 border border-white/10 hover:border-white/20',
+                ? 'bg-white text-[#0B0B0B] border-white'
+                : 'bg-surface text-white/80 border-line',
             )}
           >
-            <span className="text-xs font-semibold">{VIET_DAYS[dowIdx]}</span>
-            <span className="text-sm font-bold mt-0.5">{fmtDayLabel(day.date)}</span>
+            <span className="text-xs font-medium">{VIET_DAYS[dowIdx]}</span>
+            <span className="text-sm font-semibold mt-0.5 tabular-nums">{fmtDayLabel(day.date)}</span>
           </button>
         );
       })}

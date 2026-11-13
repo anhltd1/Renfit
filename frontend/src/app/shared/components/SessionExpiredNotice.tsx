@@ -11,9 +11,9 @@ export function SessionExpiredNotice() {
     <div
       role="status"
       data-testid="admin-session-expired"
-      className="flex items-start gap-2.5 text-sm leading-relaxed text-white/90 bg-amber-400/10 border border-amber-400/30 rounded-xl px-4 py-2.5 mb-4"
+      className="flex items-start gap-2.5 text-sm leading-relaxed text-white/90 bg-amber-400/10 border border-amber-400/30 rounded-control px-4 py-2.5 mb-4"
     >
-      <Clock className="w-4 h-4 mt-1 shrink-0 text-amber-400" aria-hidden="true" />
+      <Clock className="w-4 h-4 mt-1 shrink-0 text-warning-text" aria-hidden="true" />
       <span>{SESSION_EXPIRED_MESSAGE}</span>
     </div>
   );

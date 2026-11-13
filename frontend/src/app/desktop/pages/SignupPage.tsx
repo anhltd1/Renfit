@@ -7,7 +7,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import {
-  Bot,
   Eye,
   EyeOff,
   Lock,
@@ -72,11 +71,11 @@ function Field({
   return (
     <div>
       <label className="flex items-center gap-1.5 text-white/70 text-sm mb-2">
-        {icon && <span className="text-[#0F6B3E]">{icon}</span>}
+        {icon && <span className="text-primary-text">{icon}</span>}
         {label}
       </label>
       {children}
-      {hint && <p className="text-white/30 text-xs mt-1">{hint}</p>}
+      {hint && <p className="text-white/64 text-xs mt-1">{hint}</p>}
     </div>
   );
 }
@@ -111,7 +110,7 @@ function NumberStepper({
   };
 
   return (
-    <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl overflow-hidden focus-within:border-[#0F6B3E] transition-colors">
+    <div className="flex items-center bg-surface-2 border border-line-strong rounded-control overflow-hidden focus-within:border-[#0F6B3E] transition-colors">
       <button
         type="button"
         onClick={decrement}
@@ -136,16 +135,16 @@ function NumberStepper({
             onChange(String(clamped));
           }}
           placeholder={placeholder}
-          className="w-16 bg-transparent text-center text-white placeholder:text-white/25 outline-none text-sm font-medium"
+          className="w-16 bg-transparent text-center text-white placeholder:text-white/40 outline-none text-sm font-medium"
         />
-        {unit && <span className="text-white/30 text-xs shrink-0">{unit}</span>}
+        {unit && <span className="text-white/64 text-xs shrink-0">{unit}</span>}
       </div>
 
       <button
         type="button"
         onClick={increment}
         disabled={num >= max && value !== ''}
-        className="px-4 py-3 text-white/40 hover:text-[#0F6B3E] hover:bg-white/5 disabled:opacity-20 transition-all shrink-0"
+        className="px-4 py-3 text-white/40 hover:text-primary-text hover:bg-white/5 disabled:opacity-20 transition-all shrink-0"
       >
         <Plus className="w-3.5 h-3.5" />
       </button>
@@ -204,30 +203,23 @@ export function SignupPage() {
   };
 
   const inputCls =
-    'w-full bg-white/5 border border-white/10 focus:border-[#0F6B3E] rounded-2xl px-4 py-3 text-white placeholder:text-white/30 outline-none transition-colors text-sm';
+    'w-full bg-surface-2 border border-line-strong focus:border-primary-text focus:ring-2 focus:ring-primary-text/30 rounded-control px-4 py-3 text-white placeholder:text-white/40 outline-none transition-colors text-sm';
 
   return (
     <div className="min-h-screen bg-[#0B0B0B] flex items-start justify-center px-4 py-12">
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-[#0F6B3E]/8 rounded-full blur-3xl" />
-      </div>
 
       <div className="relative w-full max-w-lg">
         <div className="flex flex-col items-center mb-8">
           <Link to="/">
             <ImageWithFallback src={logoImage} alt="Renfit" className="h-14 w-auto mb-4" />
           </Link>
-          <div className="flex items-center gap-2 bg-[#0F6B3E]/20 px-4 py-2 rounded-full border border-[#0F6B3E]/30">
-            <Bot className="w-4 h-4 text-[#0F6B3E]" />
-            <span className="text-[#0F6B3E] text-sm font-medium">AI Fitness Coach</span>
-          </div>
         </div>
 
-        <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 shadow-[0_0_50px_rgba(15,107,62,0.15)]">
-          <h1 className="text-2xl font-bold text-white mb-6">Tạo tài khoản</h1>
+        <div className="bg-surface rounded-panel border border-line p-6 sm:p-8">
+          <h1 className="text-2xl font-semibold text-white mb-6">Tạo tài khoản</h1>
 
           <form onSubmit={handleSubmit} className="space-y-5" data-testid="signup-form">
-            <div className="flex flex-col items-center gap-2 pb-5 border-b border-white/8">
+            <div className="flex flex-col items-center gap-2 pb-5 border-b border-line">
               <AvatarUpload
                 value={form.avatar}
                 onChange={(b64) => setForm((f) => ({ ...f, avatar: b64 }))}
@@ -236,8 +228,8 @@ export function SignupPage() {
               />
             </div>
 
-            <div className="space-y-4 pb-5 border-b border-white/8">
-              <p className="text-white/40 text-xs uppercase tracking-widest">Tài khoản</p>
+            <div className="space-y-4 pb-5 border-b border-line">
+              <p className="text-white/40 text-xs ">Tài khoản</p>
 
               <Field label="Họ và tên" icon={<User className="w-3.5 h-3.5" />}>
                 <input
@@ -278,7 +270,7 @@ export function SignupPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/64 hover:text-white transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -300,7 +292,7 @@ export function SignupPage() {
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
                     aria-label={showConfirm ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/64 hover:text-white transition-colors"
                   >
                     {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -308,8 +300,8 @@ export function SignupPage() {
               </Field>
             </div>
 
-            <div className="space-y-4 pb-5 border-b border-white/8">
-              <p className="text-white/40 text-xs uppercase tracking-widest">Thông tin cá nhân</p>
+            <div className="space-y-4 pb-5 border-b border-line">
+              <p className="text-white/40 text-xs ">Thông tin cá nhân</p>
 
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Tuổi">
@@ -341,11 +333,11 @@ export function SignupPage() {
                       key={g}
                       type="button"
                       onClick={() => setForm((f) => ({ ...f, goal: g, customGoal: g === 'Khác' ? f.customGoal : '' }))}
-                      className={`px-3 py-1.5 rounded-xl text-sm border transition-all duration-200 ${
-                        form.goal === g
-                          ? 'bg-[#0F6B3E] border-[#0F6B3E] text-white'
-                          : 'bg-white/5 border-white/10 text-white/60 hover:border-white/30 hover:text-white'
-                      }`}
+                      className={`px-3 py-1.5 rounded-control text-sm border transition-all duration-200 ${
+ form.goal === g
+ ? 'bg-primary border-[#0F6B3E] text-white'
+ : 'bg-white/5 border-line text-white/64 hover:border-white/30 hover:text-white'
+ }`}
                     >
                       {g}
                     </button>
@@ -378,7 +370,7 @@ export function SignupPage() {
             </div>
 
             <div className="space-y-4">
-              <p className="text-white/40 text-xs uppercase tracking-widest">Số đo cơ thể</p>
+              <p className="text-white/40 text-xs ">Số đo cơ thể</p>
 
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Chiều cao" icon={<Weight className="w-3.5 h-3.5" />}>
@@ -406,7 +398,7 @@ export function SignupPage() {
             </div>
 
             {error && (
-              <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-2.5" data-testid="signup-error">
+              <p className="text-error-text text-sm bg-[#f87171]/[0.06] border border-error-text/30 rounded-control px-4 py-2.5" data-testid="signup-error">
                 {error}
               </p>
             )}
@@ -415,25 +407,25 @@ export function SignupPage() {
               type="submit"
               disabled={loading}
               data-testid="signup-submit-button"
-              className="w-full bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 disabled:opacity-60 text-white font-semibold py-3.5 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(15,107,62,0.4)]"
+              className="w-full bg-primary hover:bg-primary-hover disabled:opacity-60 text-white font-semibold py-3.5 rounded-full transition-colors "
             >
               {loading ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
             </button>
           </form>
 
-          <p className="text-center text-white/40 text-sm mt-6">
+          <p className="text-center text-white/64 text-sm mt-6">
             Đã có tài khoản?{' '}
             <Link
               to={`/login${redirect !== '/dashboard' ? `?redirect=${redirect}` : ''}`}
-              className="text-[#0F6B3E] hover:text-[#0F6B3E]/80 font-medium transition-colors"
+              className="text-primary-text hover:text-white font-medium transition-colors"
             >
               Đăng nhập
             </Link>
           </p>
         </div>
 
-        <p className="text-center text-white/20 text-xs mt-6">
-          <Link to="/" className="hover:text-white/40 transition-colors">
+        <p className="text-center text-white/64 text-sm mt-6">
+          <Link to="/" className="hover:text-white transition-colors">
             ← Về trang chủ
           </Link>
         </p>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CalendarCheck, CalendarX, ChevronDown, Loader2, Sparkles, User, X } from 'lucide-react';
 import type { ChatArtifact } from '../../../lib/api/chat';
 import { cancelBooking, createBooking } from '../../../lib/api/bookings';
+import { formatSigned, formatVi } from '../../shared/member/memberHomeModel';
 
 /**
  * Renders a panel from the latest tool result. Profile/InBody artifacts are
@@ -32,10 +33,10 @@ function formatSlotLabel(time: string): string {
 }
 
 const cardClass =
-  'mt-3 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden';
+  'mt-3 bg-surface rounded-panel border border-line overflow-hidden';
 const headerClass =
-  'flex items-center gap-2 px-4 py-2.5 border-b border-white/10 bg-white/[0.03]';
-const labelClass = 'text-white/50 text-xs';
+  'flex items-center gap-2 px-4 py-2.5 border-b border-line';
+const labelClass = 'text-white/64 text-xs';
 const valueClass = 'text-white text-sm font-medium';
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -48,15 +49,18 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-function ChangeBadge({ value, unit }: { value: number | undefined; unit: string }) {
+function ChangeBadge({ value, unit, goodWhen }: { value: number | undefined; unit: string; goodWhen: 'up' | 'down' | 'neutral' }) {
   if (value === undefined || value === null) return null;
-  const positive = value > 0;
-  const zero = value === 0;
-  const color = zero ? 'text-white/50' : positive ? 'text-red-400' : 'text-emerald-400';
-  const arrow = zero ? '' : positive ? '▲' : '▼';
+  const r = Number(value.toFixed(1));
+  const color =
+    r === 0 || goodWhen === 'neutral'
+      ? 'text-white/64'
+      : (goodWhen === 'down') === r < 0
+        ? 'text-primary-text'
+        : 'text-error-text';
   return (
-    <span className={`text-xs font-semibold tabular-nums ${color}`}>
-      {arrow} {Math.abs(value).toFixed(1)} {unit}
+    <span className={`block text-xs font-medium tabular-nums mt-0.5 ${color}`}>
+      {formatSigned(r)} {unit}
     </span>
   );
 }
@@ -65,7 +69,7 @@ function ProfileArtifact({ data }: { data: Record<string, any> }) {
   const customer = data.customer ?? {};
   if (!data.found) {
     return (
-      <p className="px-4 py-3 text-white/60 text-sm">
+      <p className="px-4 py-3 text-white/64 text-sm">
         Chưa tìm thấy hồ sơ của bạn trong hệ thống.
       </p>
     );
@@ -79,9 +83,9 @@ function ProfileArtifact({ data }: { data: Record<string, any> }) {
       <Row label="Cân nặng" value={customer.weight ? `${customer.weight} kg` : ''} />
       <Row label="Tuổi" value={customer.age} />
       <Row label="Ghi chú sức khỏe" value={customer.health_note} />
-      <p className="text-white/30 text-[11px] mt-2 leading-relaxed">
+      <p className="text-white/64 text-xs mt-2 leading-relaxed">
         Muốn cập nhật thông tin? Vào trang{' '}
-        <span className="text-[#0F6B3E]">Hồ sơ</span> để chỉnh sửa nhé.
+        <span className="text-primary-text">Hồ sơ</span> để chỉnh sửa nhé.
       </p>
     </div>
   );
@@ -94,7 +98,7 @@ function InbodyProgressArtifact({ data }: { data: Record<string, any> }) {
 
   if (!recordCount || !latest) {
     return (
-      <p className="px-4 py-3 text-white/60 text-sm">
+      <p className="px-4 py-3 text-white/64 text-sm">
         Bạn chưa có số liệu InBody nào — hãy đặt lịch để HLV đo cho bạn nhé!
       </p>
     );
@@ -102,26 +106,25 @@ function InbodyProgressArtifact({ data }: { data: Record<string, any> }) {
 
   return (
     <div className="px-4 py-3">
-      <p className="text-white/40 text-xs mb-2">
-        Lần đo gần nhất: {latest.date_recorded} · {recordCount} lần đo
+      <p className="text-white/64 text-xs mb-3 tabular-nums">
+        Lần đo gần nhất {latest.date_recorded} · {recordCount} lần đo · thay đổi so với lần đầu
       </p>
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white/5 rounded-xl p-3 text-center">
-          <p className="text-white text-lg font-bold">{latest.weight}</p>
-          <p className="text-white/40 text-[11px] mb-1">kg — Cân nặng</p>
-          <ChangeBadge value={progress.weight_change} unit="kg" />
-        </div>
-        <div className="bg-white/5 rounded-xl p-3 text-center">
-          <p className="text-white text-lg font-bold">{latest.SMM}</p>
-          <p className="text-white/40 text-[11px] mb-1">kg — Khối cơ (SMM)</p>
-          <ChangeBadge value={progress.SMM_change} unit="kg" />
-        </div>
-        <div className="bg-white/5 rounded-xl p-3 text-center">
-          <p className="text-white text-lg font-bold">{latest.BFM}</p>
-          <p className="text-white/40 text-[11px] mb-1">kg — Khối mỡ (BFM)</p>
-          <ChangeBadge value={progress.BFM_change} unit="kg" />
-        </div>
-      </div>
+      <dl className="grid grid-cols-3 divide-x divide-line">
+        {([
+          ['Cân nặng', latest.weight, progress.weight_change, 'neutral'],
+          ['Cơ xương', latest.SMM, progress.SMM_change, 'up'],
+          ['Mỡ cơ thể', latest.BFM, progress.BFM_change, 'down'],
+        ] as const).map(([label, value, change, goodWhen]) => (
+          <div key={label} className="px-3 first:pl-0 last:pr-0">
+            <dt className="text-white/64 text-xs">{label}</dt>
+            <dd className="mt-0.5">
+              <span className="text-white text-lg font-semibold tabular-nums">{formatVi(value)}</span>
+              <span className="text-white/64 text-xs ml-1">kg</span>
+              <ChangeBadge value={change} unit="kg" goodWhen={goodWhen} />
+            </dd>
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }
@@ -213,7 +216,7 @@ function BookingAvailabilityArtifact({
           <button
             type="button"
             onClick={() => setShowMyBookings((v) => !v)}
-            className="flex items-center gap-1.5 text-white/50 text-xs hover:text-white/80 transition-colors"
+            className="flex items-center gap-1.5 text-white/64 text-xs hover:text-white/80 transition-colors"
           >
             Bạn có {myBookings.length} lịch tập sắp tới
             <ChevronDown
@@ -225,13 +228,13 @@ function BookingAvailabilityArtifact({
               {myBookings.map((b) => (
                 <div
                   key={b.booking_id || b.time}
-                  className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-1.5"
+                  className="flex items-center justify-between bg-surface-2 rounded-control px-3 py-1.5"
                 >
                   <span className="text-white text-sm">{b.time.replace('T', ' ')}</span>
                   <div className="flex items-center gap-2">
                     <span
                       className={`text-xs font-medium ${
-                        b.status === 'approved' ? 'text-emerald-400' : 'text-amber-400'
+                        b.status === 'approved' ? 'text-primary-text' : 'text-warning-text'
                       }`}
                     >
                       {STATUS_LABEL[b.status] ?? b.status}
@@ -241,7 +244,7 @@ function BookingAvailabilityArtifact({
                         type="button"
                         onClick={() => handleCancel(b.booking_id)}
                         disabled={pendingSlot === b.booking_id}
-                        className="text-white/30 hover:text-red-400 transition-colors disabled:opacity-40"
+                        className="text-white/64 hover:text-error-text transition-colors disabled:opacity-40"
                         title="Hủy lịch"
                         aria-label="Hủy lịch"
                       >
@@ -262,17 +265,17 @@ function BookingAvailabilityArtifact({
 
       <div className={done ? 'opacity-40 pointer-events-none' : ''}>
         {!dateInRange ? (
-          <p className="text-white/40 text-sm">
+          <p className="text-white/64 text-sm">
             Ngày này nằm ngoài thời gian có thể đặt lịch
             {windowStart && windowEnd ? ` (chỉ mở từ ${windowStart} đến ${windowEnd})` : ''}.
           </p>
         ) : days.length === 0 ? (
-          <p className="text-white/40 text-sm">Không còn khung giờ trống.</p>
+          <p className="text-white/64 text-sm">Không còn khung giờ trống.</p>
         ) : (
           <div className="space-y-2.5">
             {days.map((d) => (
               <div key={d.date}>
-                <p className="text-white/50 text-xs mb-1.5">
+                <p className="text-white/64 text-xs mb-1.5">
                   {d.weekday} {d.date.slice(5)}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -285,7 +288,7 @@ function BookingAvailabilityArtifact({
                         type="button"
                         onClick={() => handleBook(d.date, h)}
                         disabled={!customerId || pendingSlot !== null || done}
-                        className="text-[#0F6B3E] bg-[#0F6B3E]/10 border border-[#0F6B3E]/30 rounded-lg px-2.5 py-1 text-xs font-medium hover:bg-[#0F6B3E]/25 hover:border-[#0F6B3E] transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1"
+                        className="text-white bg-surface-2 border border-line-strong rounded-control px-2.5 py-1 text-xs font-medium tabular-nums hover:bg-surface-3 hover:border-primary-text/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1"
                       >
                         {isPending && <Loader2 className="w-3 h-3 animate-spin" />}
                         {h}
@@ -299,11 +302,11 @@ function BookingAvailabilityArtifact({
         )}
       </div>
 
-      {actionError && <p className="text-red-400 text-xs">{actionError}</p>}
+      {actionError && <p className="text-error-text text-xs">{actionError}</p>}
       {done ? (
-        <p className="text-white/30 text-[11px]">Xem xác nhận ở tin nhắn mới nhất bên dưới ↓</p>
+        <p className="text-white/64 text-xs">Xem xác nhận ở tin nhắn mới nhất bên dưới ↓</p>
       ) : (
-        <p className="text-white/30 text-[11px]">Nhấn vào giờ trống để đặt lịch ngay.</p>
+        <p className="text-white/64 text-xs">Nhấn vào giờ trống để đặt lịch ngay.</p>
       )}
     </div>
   );
@@ -341,7 +344,7 @@ export function ChatArtifactCard({ artifact, customerId, onBookingAction }: Chat
   return (
     <div className={cardClass}>
       <div className={headerClass}>
-        <Icon className="w-4 h-4 text-[#0F6B3E]" />
+        <Icon className="w-4 h-4 text-white/64" />
         <span className="text-white text-sm font-semibold">{artifact.title}</span>
       </div>
       {artifact.kind === 'profile' && <ProfileArtifact data={artifact.data} />}

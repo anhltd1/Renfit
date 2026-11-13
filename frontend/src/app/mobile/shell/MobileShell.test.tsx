@@ -51,7 +51,7 @@ describe('MobileShell', () => {
     vi.spyOn(useProfileModule, 'useProfile').mockReturnValue({ user, update: vi.fn() });
     vi.spyOn(authLib, 'consumeNewAccountFlag').mockReturnValue(false);
     renderShell();
-    expect(screen.getByText(/Xin chào, A/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Tổng quan');
     expect(screen.getByTestId('mobile-tab-overview')).toBeInTheDocument();
   });
 

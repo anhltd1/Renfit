@@ -43,7 +43,7 @@ export function Sheet({ open, onClose, title, className, ops = false, children }
   return createPortal(
     <div
       data-testid="sheet-overlay"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm overscroll-contain"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-[2px] overscroll-contain"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
@@ -53,18 +53,18 @@ export function Sheet({ open, onClose, title, className, ops = false, children }
         aria-label={title}
         tabIndex={-1}
         className={cn(
-          'w-full max-w-lg rounded-t-3xl border-t border-x border-white/10 bg-[#0F0F0F]/95 backdrop-blur-xl',
+          'w-full max-w-lg rounded-t-panel border-t border-x border-line bg-overlay',
           // Tall forms scroll inside the sheet instead of running off-screen
           // (matters most with the keyboard open, where --app-height shrinks).
           'max-h-[calc(var(--app-height,100dvh)-1.5rem)] overflow-y-auto overscroll-contain',
-          'p-6 pb-[calc(1.5rem+var(--safe-bottom,0px))] shadow-2xl animate-slide-up',
+          'p-5 pb-[calc(1.25rem+var(--safe-bottom,0px))] shadow-[0_-16px_48px_rgba(0,0,0,0.5)] animate-slide-up',
           ops && 'ops-surface',
           className,
         )}
       >
         {/* Grab handle */}
-        <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-white/20" aria-hidden />
-        {title && <h3 className="text-white font-bold text-lg mb-4 leading-relaxed">{title}</h3>}
+        <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-white/20" aria-hidden />
+        {title && <h3 className="text-white font-semibold text-lg mb-4 leading-relaxed">{title}</h3>}
         {children}
       </div>
     </div>,

@@ -6,22 +6,36 @@ describe('InbodyStatCard', () => {
   it('renders label, value, and unit', () => {
     render(<InbodyStatCard label="Cân nặng" value={65} unit="kg" delta={null} />);
     expect(screen.getByText('Cân nặng')).toBeInTheDocument();
-    expect(screen.getByText('65')).toBeInTheDocument();
+    expect(screen.getByText('65,0')).toBeInTheDocument();
   });
 
-  it('shows an up arrow in red for a positive delta', () => {
-    render(<InbodyStatCard label="Cân nặng" value={65} unit="kg" delta={1.5} />);
-    expect(screen.getByText(/▲/)).toHaveClass('text-red-400');
+  it('shows a body-fat rise as a signed delta in red', () => {
+    render(<InbodyStatCard label="BFM" value={14} unit="kg" delta={1.5} goodWhen="down" />);
+    const d = screen.getByTestId('inbody-stat-delta');
+    expect(d).toHaveTextContent('+1,5 kg');
+    expect(d).toHaveClass('text-error-text');
   });
 
-  it('shows a down arrow in emerald for a negative delta', () => {
-    render(<InbodyStatCard label="BFM" value={12} unit="kg" delta={-2} />);
-    expect(screen.getByText(/▼/)).toHaveClass('text-emerald-400');
+  it('keeps a weight change neutral grey', () => {
+    render(<InbodyStatCard label="Cân nặng" value={65} unit="kg" delta={1.5} goodWhen="neutral" />);
+    expect(screen.getByTestId('inbody-stat-delta')).toHaveClass('text-white/64');
+  });
+
+  it('shows a signed delta in the good green when body fat goes down', () => {
+    render(<InbodyStatCard label="BFM" value={12} unit="kg" delta={-2} goodWhen="down" />);
+    const d = screen.getByTestId('inbody-stat-delta');
+    expect(d).toHaveTextContent('−2,0 kg');
+    expect(d).toHaveClass('text-primary-text');
+  });
+
+  it('marks a drop in muscle as bad', () => {
+    render(<InbodyStatCard label="SMM" value={30} unit="kg" delta={-1} goodWhen="up" />);
+    expect(screen.getByTestId('inbody-stat-delta')).toHaveClass('text-error-text');
   });
 
   it('omits the delta line when delta is null', () => {
     render(<InbodyStatCard label="Chiều cao" value={170} unit="cm" delta={null} />);
-    expect(screen.queryByText(/▲|▼/)).toBeNull();
+    expect(screen.queryByTestId('inbody-stat-delta')).toBeNull();
   });
 
   it('calls onClick when tapped', () => {

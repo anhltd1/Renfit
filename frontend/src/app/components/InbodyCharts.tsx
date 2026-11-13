@@ -6,12 +6,12 @@ import {
   CartesianGrid,
   Line,
   LineChart,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
+import { formatSigned } from '../shared/member/memberHomeModel';
 import { useState } from 'react';
 import { fmtDate } from './inbodyFormat';
 import { InbodyPhotoTick, PHOTO_TICK_EXTRA } from './InbodyPhotoTick';
@@ -43,13 +43,18 @@ interface MetricDef {
   label: string;
   unit: string;
   color: string;
+  /** Which direction is an improvement — colours the delta, not the line. */
+  goodWhen: 'up' | 'down' | 'neutral';
 }
 
+// DESIGN.md v2: one hue per chart, on the data. Every metric row draws its
+// line in the data green; meaning comes from the label and the signed delta.
+const DATA_HUE = '#3dbe7a';
 const METRICS: MetricDef[] = [
-  { key: 'height', label: 'Chiều cao', unit: 'cm', color: '#818cf8' },
-  { key: 'weight', label: 'Cân nặng',  unit: 'kg', color: '#22c55e' },
-  { key: 'SMM',    label: 'SMM',        unit: 'kg', color: '#f59e0b' },
-  { key: 'BFM',    label: 'BFM',        unit: 'kg', color: '#ef4444' },
+  { key: 'weight', label: 'Cân nặng',  unit: 'kg', color: DATA_HUE, goodWhen: 'neutral' },
+  { key: 'BFM',    label: 'Mỡ cơ thể', unit: 'kg', color: DATA_HUE, goodWhen: 'down' },
+  { key: 'SMM',    label: 'Cơ xương',  unit: 'kg', color: DATA_HUE, goodWhen: 'up' },
+  { key: 'height', label: 'Chiều cao', unit: 'cm', color: DATA_HUE, goodWhen: 'neutral' },
 ];
 
 const MIN_CHART_POINTS = 5;
@@ -58,80 +63,84 @@ const PHANTOM = '__ph_';
 export { fmtDate };
 
 function fmtVal(v: number): string {
-  return Number.isInteger(v) ? String(v) : v.toFixed(1);
+ return v.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+}
+
+function deltaTone(delta: number, goodWhen: MetricDef['goodWhen']): string {
+  const r = Number(delta.toFixed(1));
+  if (r === 0 || goodWhen === 'neutral') return 'text-white/64';
+  return (goodWhen === 'down') === r < 0 ? 'text-primary-text' : 'text-error-text';
 }
 
 // ── Custom tooltip ──────────────────────────────────────────────────────────
 function MetricTooltip({
-  active,
-  payload,
-  metric,
+ active,
+ payload,
+ metric,
 }: {
-  active?: boolean;
-  payload?: { payload: ChartRow; value: number }[];
-  metric: MetricDef;
+ active?: boolean;
+ payload?: { payload: ChartRow; value: number }[];
+ metric: MetricDef;
 }) {
-  if (!active || !payload?.length || payload[0].value == null) return null;
-  const row = payload[0].payload;
-  return (
-    <div className="bg-[#161616] border border-white/12 rounded-xl px-3.5 py-2.5 shadow-2xl pointer-events-none">
-      <p className="text-white/40 text-[11px] mb-1">{row.displayDate}</p>
-      <p className="font-bold text-base leading-none" style={{ color: metric.color }}>
-        {fmtVal(payload[0].value)}
-        <span className="text-white/40 text-xs font-normal ml-1">{metric.unit}</span>
-      </p>
-    </div>
-  );
+ if (!active || !payload?.length || payload[0].value == null) return null;
+ const row = payload[0].payload;
+ return (
+ <div className="bg-overlay border border-line rounded-control px-3 py-2 shadow-[0_16px_48px_rgba(0,0,0,0.5)] pointer-events-none">
+ <p className="text-white/64 text-xs mb-1 tabular-nums">{row.displayDate}</p>
+ <p className="font-semibold text-base leading-none text-white tabular-nums">
+ {fmtVal(payload[0].value)}
+ <span className="text-white/64 text-xs font-normal ml-1">{metric.unit}</span>
+ </p>
+ </div>
+ );
 }
 
 // ── Single metric row ───────────────────────────────────────────────────────
 function MetricRow({
-  data,
-  metric,
-  chartWidth,
-  isLast,
+ data,
+ metric,
+ chartWidth,
+ isLast,
 }: {
-  data: ChartRow[];
-  metric: MetricDef;
-  chartWidth: number;
-  isLast: boolean;
+ data: ChartRow[];
+ metric: MetricDef;
+ chartWidth: number;
+ isLast: boolean;
 }) {
-  const realValues = data
-    .filter((d) => d.value !== null && !d.date.startsWith(PHANTOM))
-    .map((d) => d.value as number);
+ const realValues = data
+ .filter((d) => d.value !== null && !d.date.startsWith(PHANTOM))
+ .map((d) => d.value as number);
 
-  const delta =
-    realValues.length >= 2
-      ? realValues[realValues.length - 1] - realValues[0]
-      : null;
+ const delta =
+ realValues.length >= 2
+ ? realValues[realValues.length - 1] - realValues[0]
+ : null;
 
-  const min = realValues.length ? Math.min(...realValues) : 0;
-  const max = realValues.length ? Math.max(...realValues) : 1;
-  const range = max - min || 1;
-  const pad = range * 0.45;
-  const yDomain: [number, number] = [
-    parseFloat((min - pad).toFixed(1)),
-    parseFloat((max + pad).toFixed(1)),
-  ];
+ const min = realValues.length ? Math.min(...realValues) : 0;
+ const max = realValues.length ? Math.max(...realValues) : 1;
+ const range = max - min || 1;
+ const pad = range * 0.45;
+ const yDomain: [number, number] = [
+ parseFloat((min - pad).toFixed(1)),
+ parseFloat((max + pad).toFixed(1)),
+ ];
 
-  // Reference line at the last real value for visual anchoring
-  const lastVal = realValues[realValues.length - 1];
+ // Reference line at the last real value for visual anchoring
+ const lastVal = realValues[realValues.length - 1];
 
-  return (
-    <div className={`flex items-stretch ${!isLast ? 'border-b border-white/[0.06]' : ''}`}>
+ return (
+ <div className={`flex items-stretch ${!isLast ? 'border-b border-line' : ''}`}>
       {/* Left label */}
-      <div className="w-32 shrink-0 flex flex-col justify-center px-4 py-3 border-r border-white/[0.06]">
-        <p className="font-bold text-sm leading-tight" style={{ color: metric.color }}>
-          {metric.label}
-        </p>
-        <p className="text-white/30 text-xs mt-0.5">({metric.unit})</p>
+      <div className="w-36 shrink-0 flex flex-col justify-center px-4 py-3 border-r border-line">
+        <p className="text-white text-sm font-semibold leading-tight">{metric.label}</p>
+        {lastVal != null && (
+          <p className="text-white/80 text-sm mt-1 tabular-nums">
+            {fmtVal(lastVal)} <span className="text-white/64 text-xs">{metric.unit}</span>
+          </p>
+        )}
         {delta !== null && (
-          <span
-            className={`text-xs mt-1.5 font-semibold tabular-nums ${
-              delta >= 0 ? 'text-emerald-400' : 'text-red-400'
-            }`}
-          >
-            {delta >= 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(1)} {metric.unit}
+          <span className={`text-xs mt-1 font-medium tabular-nums ${deltaTone(delta, metric.goodWhen)}`}>
+            {formatSigned(delta)} {metric.unit}
           </span>
         )}
       </div>
@@ -144,19 +153,10 @@ function MetricRow({
               <CartesianGrid
                 horizontal
                 vertical={false}
-                stroke="rgba(255,255,255,0.04)"
-                strokeDasharray="4 4"
+                stroke="rgba(255,255,255,0.06)"
               />
               <XAxis dataKey="date" hide padding={{ left: 20, right: 20 }} />
               <YAxis domain={yDomain} hide />
-              {lastVal != null && (
-                <ReferenceLine
-                  y={lastVal}
-                  stroke={metric.color}
-                  strokeOpacity={0.12}
-                  strokeDasharray="4 4"
-                />
-              )}
               <Tooltip
                 cursor={{ stroke: 'rgba(255,255,255,0.08)', strokeWidth: 1, strokeDasharray: '4 4' }}
                 content={({ active, payload }) => (
@@ -168,7 +168,7 @@ function MetricRow({
                 )}
               />
               <Line
-                type="monotone"
+                type="linear"
                 dataKey="value"
                 stroke={metric.color}
                 strokeWidth={2}
@@ -177,14 +177,14 @@ function MetricRow({
                   if (payload.date.startsWith(PHANTOM) || payload.value == null) return <g key={payload.date} />;
                   return (
                     <g key={payload.date}>
-                      <circle cx={cx} cy={cy} r={4} fill={metric.color} />
+                      <circle cx={cx} cy={cy} r={3} fill={metric.color} />
                       <text
                         x={cx}
-                        y={cy - 10}
+                        y={cy - 9}
                         textAnchor="middle"
-                        fill={metric.color}
-                        fontSize={11}
-                        fontWeight={700}
+                        fill="rgba(255,255,255,0.8)"
+                        fontSize={12}
+                        fontWeight={500}
                         fontFamily="inherit"
                       >
                         {fmtVal(payload.value)}
@@ -192,10 +192,9 @@ function MetricRow({
                     </g>
                   );
                 }}
-                activeDot={{ fill: metric.color, r: 6, strokeWidth: 2, stroke: '#fff' }}
+                activeDot={{ fill: metric.color, r: 5, strokeWidth: 2, stroke: '#131313' }}
                 connectNulls={false}
-                isAnimationActive={true}
-                animationDuration={600}
+                isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -225,7 +224,7 @@ function XAxisRow({
   return (
     <div className="flex items-stretch border-t border-white/[0.06]">
       <div className="w-32 shrink-0 flex items-end px-4 pb-4">
-        {hasPhotos && <span className="text-white/30 text-xs leading-relaxed">Ảnh buổi đo</span>}
+        {hasPhotos && <span className="text-white/64 text-xs leading-relaxed">Ảnh buổi đo</span>}
       </div>
       <div className="flex-1 min-w-0 overflow-x-auto">
         <div style={{ minWidth: chartWidth }}>
@@ -275,7 +274,7 @@ export function StackedInbodyChart({
 
   if (records.length === 0) {
     return (
-      <p className="text-white/20 text-xs text-center py-10">
+      <p className="text-white/64 text-sm text-center py-10">
         {emptyLabel ?? 'Chưa có dữ liệu InBody.'}
       </p>
     );
@@ -298,7 +297,7 @@ export function StackedInbodyChart({
   const opened = openIndex !== null ? records[openIndex] ?? null : null;
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-white/8 bg-[#0D0D0D]">
+    <div className="rounded-panel overflow-hidden border border-line bg-surface">
       {METRICS.map((m, i) => {
         const rowData: ChartRow[] = [
           ...records.map((r) => ({

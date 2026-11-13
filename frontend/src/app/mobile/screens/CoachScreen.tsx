@@ -24,7 +24,7 @@ export function CoachScreen({ chatKey, onNewChat }: CoachScreenProps) {
             data-testid="coach-new-chat-button"
             onClick={onNewChat}
             aria-label="Cuộc trò chuyện mới"
-            className="w-9 h-9 rounded-xl text-[#0F6B3E] hover:bg-[#0F6B3E]/10 flex items-center justify-center transition-colors"
+            className="w-9 h-9 rounded-control text-primary-text hover:bg-surface-2 flex items-center justify-center transition-colors"
           >
             <Plus className="w-5 h-5" />
           </button>

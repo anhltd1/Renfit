@@ -21,9 +21,9 @@ import type {
 } from '../../../lib/api/siteContent';
 
 const inputClass = cn(
-  'w-full rounded-2xl bg-white/5 border border-white/10 text-white',
-  'placeholder:text-white/30 py-3 px-4 leading-relaxed outline-none',
-  'transition-colors duration-300 focus:border-[#0F6B3E]',
+  'w-full rounded-panel bg-white/5 border border-line text-white',
+  'placeholder:text-white/40 py-3 px-4 leading-relaxed outline-none',
+  'transition-colors duration-300 focus:border-primary-text',
 );
 
 const textareaClass = cn(inputClass, 'min-h-[100px] resize-y');
@@ -45,7 +45,7 @@ function TextInput({
 }) {
   return (
     <div className="w-full space-y-1">
-      {label && <label className="block text-white/60 text-sm leading-relaxed">{label}</label>}
+      {label && <label className="block text-white/64 text-sm leading-relaxed">{label}</label>}
       <input
         type={type}
         value={value}
@@ -73,7 +73,7 @@ function TextArea({
 }) {
   return (
     <div className="w-full space-y-1">
-      {label && <label className="block text-white/60 text-sm leading-relaxed">{label}</label>}
+      {label && <label className="block text-white/64 text-sm leading-relaxed">{label}</label>}
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -110,7 +110,7 @@ export function CmsEditor() {
   if (error && !content) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <p className="text-red-400 text-sm leading-relaxed">{error}</p>
+        <p className="text-error-text text-sm leading-relaxed">{error}</p>
       </div>
     );
   }
@@ -129,7 +129,7 @@ export function CmsEditor() {
       />
 
       {error && (
-        <p className="text-red-400 text-sm leading-relaxed bg-red-400/10 rounded-xl px-4 py-2">
+        <p className="text-error-text text-sm leading-relaxed bg-red-400/10 rounded-control px-4 py-2">
           {error}
         </p>
       )}
@@ -333,7 +333,7 @@ export function CmsEditor() {
           renderItem={(item, _idx, onItemChange) => (
             <div className="space-y-3">
               <div className="w-full space-y-1">
-                <label className="block text-white/60 text-sm leading-relaxed">Loại</label>
+                <label className="block text-white/64 text-sm leading-relaxed">Loại</label>
                 <select
                   value={item.type}
                   onChange={(e) => onItemChange({ ...item, type: e.target.value as 'user' | 'ai' })}

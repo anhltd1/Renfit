@@ -90,7 +90,7 @@ describe('AdminDashboardPage (mobile) — U24 parity', { timeout: 15000 }, () =>
     expect(screen.getByTestId('admin-day-agenda')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('agenda-show-grid'));
     expect(screen.queryByTestId('admin-day-agenda')).toBeNull();
-    expect(await screen.findByText('Lịch đặt — 2 tuần')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Lịch đặt/ })).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('bookings-show-agenda'));
     expect(screen.getByTestId('admin-day-agenda')).toBeInTheDocument();
   });

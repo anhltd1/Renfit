@@ -17,7 +17,7 @@ export function StackHeader({ title, onBack, right }: StackHeaderProps) {
   return (
     // `app-chrome`: a drag that starts on the header must not pan/bounce anything.
     <header
-      className="app-chrome shrink-0 relative z-10 bg-black/80 backdrop-blur-md border-b border-white/10 px-4 py-2 min-h-14 flex items-center gap-2"
+      className="app-chrome shrink-0 relative z-10 bg-[#0B0B0B] border-b border-line px-4 py-2 min-h-14 flex items-center gap-2"
       style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
     >
       {onBack && (
@@ -26,12 +26,12 @@ export function StackHeader({ title, onBack, right }: StackHeaderProps) {
           data-testid="stack-header-back"
           onClick={onBack}
           aria-label="Quay lại"
-          className="w-11 h-11 -ml-2 shrink-0 rounded-xl text-white/70 hover:text-white hover:bg-white/5 flex items-center justify-center transition-[color,background-color,transform] duration-[var(--motion-fast)] active:scale-[0.92]"
+          className="w-11 h-11 -ml-2 shrink-0 rounded-control text-white/70 hover:text-white hover:bg-surface-2 flex items-center justify-center transition-[color,background-color,transform] duration-[var(--motion-fast)] active:scale-[0.92]"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
       )}
-      <h1 className="text-white font-bold truncate flex-1 min-w-0 leading-relaxed">{title}</h1>
+      <h1 className="text-white text-xl font-semibold truncate flex-1 min-w-0 leading-relaxed">{title}</h1>
       {right && <div className="shrink-0">{right}</div>}
     </header>
   );

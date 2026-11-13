@@ -11,19 +11,18 @@ vi.mock('../../../lib/api/notifications', () => ({
 }));
 
 describe('DesktopHeader', () => {
-  it('shows the overview title on the overview tab', () => {
-    render(<DesktopHeader tab="overview" customerId="cust-1" onNavigateFromNotification={() => {}} />);
-    expect(screen.getByText('Hồ sơ & Thể trạng')).toBeInTheDocument();
+  it.each([
+    ['home', 'Tổng quan'],
+    ['overview', 'Hồ sơ & InBody'],
+    ['chat', 'AI Coach'],
+    ['bookings', 'Đặt lịch tập'],
+  ] as const)('shows a noun title as the h1 on the %s tab', (tab, title) => {
+    render(<DesktopHeader tab={tab} customerId="cust-1" onNavigateFromNotification={() => {}} />);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(title);
   });
 
-  it('shows the AI Coach title + badge on the chat tab', () => {
+  it('carries no marketing badge on the chat tab', () => {
     render(<DesktopHeader tab="chat" customerId="cust-1" onNavigateFromNotification={() => {}} />);
-    expect(screen.getByText('Renfit AI Coach')).toBeInTheDocument();
-    expect(screen.getByText('AI-Powered')).toBeInTheDocument();
-  });
-
-  it('shows the booking title on the bookings tab', () => {
-    render(<DesktopHeader tab="bookings" customerId="cust-1" onNavigateFromNotification={() => {}} />);
-    expect(screen.getByText('Đặt Lịch Tập')).toBeInTheDocument();
+    expect(screen.queryByText('AI-Powered')).not.toBeInTheDocument();
   });
 });

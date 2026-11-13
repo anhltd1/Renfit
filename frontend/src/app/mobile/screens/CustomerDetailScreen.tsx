@@ -39,11 +39,11 @@ function DetailFieldMobile({
 }) {
   return (
     <div className="flex gap-3 py-3 border-b border-white/6 last:border-0">
-      <div className="w-8 h-8 rounded-xl bg-[#0F6B3E]/12 flex items-center justify-center shrink-0 mt-0.5">
+      <div className="w-8 h-8 rounded-control bg-surface-2 flex items-center justify-center shrink-0 mt-0.5">
         <span className="text-primary-text">{icon}</span>
       </div>
       <div>
-        <p className="text-white/60 text-xs leading-relaxed mb-0.5">{label}</p>
+        <p className="text-white/64 text-xs leading-relaxed mb-0.5">{label}</p>
         <p className="text-white/90 text-sm leading-relaxed">{value}</p>
       </div>
     </div>
@@ -96,7 +96,7 @@ export function CustomerDetailScreen({ customer, onBack, onChanged }: CustomerDe
       <StackHeader title={customer.id} onBack={onBack} />
       <div className="flex-1 overflow-y-auto overscroll-y-contain">
         {/* Hero */}
-        <div className="flex flex-col items-center gap-3 py-6 px-6 border-b border-white/8">
+        <div className="flex flex-col items-center gap-3 py-6 px-6 border-b border-line">
           {customer.avatar ? (
             <img
               src={customer.avatar}
@@ -110,7 +110,7 @@ export function CustomerDetailScreen({ customer, onBack, onChanged }: CustomerDe
           )}
           <div className="text-center">
             <h2 className="text-xl font-bold text-white leading-relaxed">{customer.id}</h2>
-            <p className="text-white/60 text-sm flex items-center justify-center gap-1.5 mt-1 tabular-nums">
+            <p className="text-white/64 text-sm flex items-center justify-center gap-1.5 mt-1 tabular-nums">
               <Phone className="w-3.5 h-3.5" aria-hidden="true" />
               {customer.phone_number}
             </p>
@@ -134,7 +134,7 @@ export function CustomerDetailScreen({ customer, onBack, onChanged }: CustomerDe
               data-testid="customer-detail-edit"
               onClick={() => setEditing(true)}
               aria-label={`Chỉnh sửa ${customer.id}`}
-              className="tap-target flex items-center gap-1.5 px-4 py-2 rounded-full text-sm text-white/80 bg-white/5 active:bg-white/10 border border-white/10 transition-colors"
+              className="tap-target flex items-center gap-1.5 px-4 py-2 rounded-full text-sm text-white/80 bg-white/5 active:bg-white/10 border border-line transition-colors"
             >
               <Pencil className="w-4 h-4" aria-hidden="true" /> Sửa
             </button>
@@ -148,7 +148,7 @@ export function CustomerDetailScreen({ customer, onBack, onChanged }: CustomerDe
                 'tap-target flex items-center gap-1.5 px-4 py-2 rounded-full text-sm border transition-colors disabled:opacity-60',
                 archived
                   ? 'text-primary-text bg-[#0F6B3E]/10 border-[#0F6B3E]/30 active:bg-[#0F6B3E]/20'
-                  : 'text-white/80 bg-white/5 border-white/10 active:bg-[#f87171]/10',
+                  : 'text-white/80 bg-white/5 border-line active:bg-[#f87171]/10',
               )}
             >
               {statusBusy && archived ? (
@@ -162,7 +162,7 @@ export function CustomerDetailScreen({ customer, onBack, onChanged }: CustomerDe
         </div>
 
         {/* Basic info fields */}
-        <div className="px-4 py-4 border-b border-white/8">
+        <div className="px-4 py-4 border-b border-line">
           {customer.age != null && (
             <DetailFieldMobile icon={<User className="w-4 h-4" />} label="Tuổi" value={`${customer.age} tuổi`} />
           )}
@@ -182,7 +182,7 @@ export function CustomerDetailScreen({ customer, onBack, onChanged }: CustomerDe
             <DetailFieldMobile icon={<Activity className="w-4 h-4" />} label="Tình trạng sức khỏe" value={customer.health_note} />
           )}
           {!customer.age && !customer.address && !customer.height && !customer.weight && !customer.health_note && (
-            <p className="text-white/60 text-sm text-center py-4">Hội viên chưa cập nhật thông tin.</p>
+            <p className="text-white/64 text-sm text-center py-4">Hội viên chưa cập nhật thông tin.</p>
           )}
         </div>
 

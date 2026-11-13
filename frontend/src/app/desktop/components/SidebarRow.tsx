@@ -26,10 +26,10 @@ export const SidebarRow = React.memo(function SidebarRow({ customer, selected, o
       type="button"
       data-testid={`sidebar-row-${customer.id}`}
       aria-current={selected ? 'true' : undefined}
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors rounded-xl border ${
-        selected
-          ? 'bg-[#0F6B3E]/20 border-[#0F6B3E]/30'
+ onClick={onClick}
+ className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors rounded-control border ${
+ selected
+ ? 'bg-[#0F6B3E]/20 border-[#0F6B3E]/30'
           : 'border-transparent hover:bg-white/5'
       }`}
     >
@@ -37,10 +37,10 @@ export const SidebarRow = React.memo(function SidebarRow({ customer, selected, o
         <img
           src={customer.avatar}
           alt=""
-          className="w-9 h-9 rounded-full object-cover shrink-0 border border-white/10"
+          className="w-9 h-9 rounded-full object-cover shrink-0 border border-line"
         />
       ) : (
-        <div className="w-9 h-9 rounded-full bg-[#0F6B3E]/12 border border-[#0F6B3E]/20 flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-full bg-surface-2 border border-line flex items-center justify-center shrink-0">
           <User className="w-4 h-4 text-primary-text" aria-hidden="true" />
         </div>
       )}
@@ -51,10 +51,10 @@ export const SidebarRow = React.memo(function SidebarRow({ customer, selected, o
           </p>
           {archived && <span className="text-xs text-error-text shrink-0">Đã nghỉ</span>}
         </div>
-        <p className="text-white/60 text-xs truncate mt-0.5">{customer.goal || 'Chưa đặt mục tiêu'}</p>
+        <p className="text-white/64 text-xs truncate mt-0.5">{customer.goal || 'Chưa đặt mục tiêu'}</p>
       </div>
       {customer.last_session && (
-        <span className="text-white/60 text-xs tabular-nums shrink-0">
+        <span className="text-white/64 text-xs tabular-nums shrink-0">
           <span className="sr-only">Buổi gần nhất </span>
           {shortDate(customer.last_session)}
         </span>

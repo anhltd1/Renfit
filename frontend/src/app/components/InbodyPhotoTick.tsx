@@ -62,7 +62,7 @@ export function InbodyPhotoTick({
             data-testid="inbody-photo-thumb"
             aria-label={`Xem ${list.length} ảnh ngày ${label}`}
             title={`${list.length} ảnh · nhấn để xem`}
-            className="relative block rounded-lg overflow-hidden border border-white/20 hover:border-[#0F6B3E] bg-white/5 transition-[border-color,transform] duration-[var(--motion-fast)] hover:scale-110 active:scale-[0.95] focus-visible:ring-2 focus-visible:ring-[#0F6B3E]"
+            className="relative block rounded-lg overflow-hidden border border-white/20 hover:border-[#0F6B3E] bg-white/5 transition-[border-color,transform] duration-[var(--motion-fast)] active:scale-[0.95] focus-visible:ring-2 focus-visible:ring-primary-text"
             style={{ width: size, height: size, padding: 0 }}
           >
             <img
@@ -74,7 +74,7 @@ export function InbodyPhotoTick({
               draggable={false}
             />
             {extra > 0 && (
-              <span className="absolute bottom-0 right-0 rounded-tl-md bg-black/75 px-1 text-white text-[10px] font-semibold leading-tight">
+              <span className="absolute bottom-0 right-0 rounded-tl-md bg-black/75 px-1 text-white text-xs font-semibold leading-tight">
                 +{extra}
               </span>
             )}

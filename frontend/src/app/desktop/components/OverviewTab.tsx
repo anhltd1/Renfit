@@ -35,7 +35,7 @@ function NumberStepper({
 }) {
   const num = parseFloat(value) || 0;
   return (
-    <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl overflow-hidden focus-within:border-[#0F6B3E] transition-colors">
+    <div className="flex items-center bg-white/5 border border-line rounded-panel overflow-hidden focus-within:border-[#0F6B3E] transition-colors">
       <button type="button" onClick={() => onChange(String(Math.max(min, parseFloat((num - step).toFixed(2)))))}
         disabled={num <= min} data-testid="stepper-decrement"
         className="px-4 py-3 text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-20 transition-all shrink-0">
@@ -46,12 +46,12 @@ function NumberStepper({
           onChange={(e) => onChange(e.target.value.replace(/[^\d.]/g, ''))}
           onBlur={() => { if (!value) return; onChange(String(Math.min(max, Math.max(min, parseFloat(value) || min)))); }}
           placeholder={placeholder}
-          className="w-16 bg-transparent text-center text-white placeholder:text-white/25 outline-none text-sm font-medium" />
-        {unit && <span className="text-white/30 text-xs shrink-0">{unit}</span>}
+          className="w-16 bg-transparent text-center text-white placeholder:text-white/40 outline-none text-sm font-medium" />
+        {unit && <span className="text-white/64 text-xs shrink-0">{unit}</span>}
       </div>
       <button type="button" onClick={() => onChange(String(Math.min(max, parseFloat((num + step).toFixed(2)))))}
         disabled={num >= max} data-testid="stepper-increment"
-        className="px-4 py-3 text-white/40 hover:text-[#0F6B3E] hover:bg-white/5 disabled:opacity-20 transition-all shrink-0">
+        className="px-4 py-3 text-white/40 hover:text-primary-text hover:bg-white/5 disabled:opacity-20 transition-all shrink-0">
         <Plus className="w-3.5 h-3.5" />
       </button>
     </div>
@@ -82,7 +82,7 @@ export function OverviewTab() {
 
   if (!user) return null;
 
-  const inputCls = 'w-full bg-white/5 border border-white/10 focus:border-[#0F6B3E] rounded-2xl px-4 py-3 text-white placeholder:text-white/30 outline-none transition-colors text-sm';
+  const inputCls = 'w-full bg-white/5 border border-line focus:border-primary-text rounded-panel px-4 py-3 text-white placeholder:text-white/40 outline-none transition-colors text-sm';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,13 +113,13 @@ export function OverviewTab() {
   return (
     <div className="p-6 lg:p-8 max-w-4xl mx-auto space-y-8">
       {/* Profile form */}
-      <div data-tour="profile-form" className="bg-white/[0.03] border border-white/8 rounded-2xl p-6">
+      <div data-tour="profile-form" className="bg-white/[0.03] border border-line rounded-panel p-6">
         <h2 className="text-white font-bold text-lg mb-6 flex items-center gap-2">
-          <User className="w-5 h-5 text-[#0F6B3E]" /> Hồ sơ cá nhân
+          <User className="w-5 h-5 text-primary-text" /> Hồ sơ cá nhân
         </h2>
         <form onSubmit={handleSubmit} className="space-y-5" data-testid="overview-profile-form">
           {/* Avatar + name */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 pb-5 border-b border-white/8">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 pb-5 border-b border-line">
             <AvatarUpload value={avatar} onChange={setAvatar} size={100} disabled={loading} />
             <div className="flex-1 min-w-0 text-center sm:text-left">
               <h3 className="text-white font-bold text-xl">{user.id}</h3>
@@ -132,12 +132,12 @@ export function OverviewTab() {
           {/* Grid: age + address */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-white/60 text-xs uppercase tracking-widest mb-2 block">Tuổi</label>
+              <label className="text-white/64 text-xs mb-2 block">Tuổi</label>
               <NumberStepper value={age} onChange={setAge} min={10} max={100} placeholder="20" unit="tuổi" />
             </div>
             <div>
-              <label className="text-white/60 text-xs uppercase tracking-widest mb-2 flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-[#0F6B3E]" /> Địa chỉ
+              <label className="text-white/64 text-xs mb-2 flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-primary-text" /> Địa chỉ
               </label>
               <input type="text" value={address} onChange={(e) => setAddress(e.target.value)}
                 placeholder="TP. Hồ Chí Minh" className={inputCls} data-testid="input-address" />
@@ -146,15 +146,15 @@ export function OverviewTab() {
 
           {/* Goal */}
           <div>
-            <label className="text-white/60 text-xs uppercase tracking-widest mb-2 flex items-center gap-1">
-              <Target className="w-3 h-3 text-[#0F6B3E]" /> Mục tiêu tập luyện
+            <label className="text-white/64 text-xs mb-2 flex items-center gap-1">
+              <Target className="w-3 h-3 text-primary-text" /> Mục tiêu tập luyện
             </label>
             <div className="flex flex-wrap gap-2">
               {[...PRESET_GOALS, 'Khác'].map((g) => (
                 <button key={g} type="button" onClick={() => setGoal(g)} data-testid={`goal-option-${g}`}
-                  className={`px-3 py-1.5 rounded-xl text-sm border transition-all duration-200 ${
-                    goal === g ? 'bg-[#0F6B3E] border-[#0F6B3E] text-white' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/30 hover:text-white'
-                  }`}>{g}</button>
+                  className={`px-3 py-1.5 rounded-control text-sm border transition-all duration-200 ${
+ goal === g ? 'bg-primary border-[#0F6B3E] text-white' : 'bg-white/5 border-line text-white/64 hover:border-white/30 hover:text-white'
+ }`}>{g}</button>
               ))}
             </div>
             {goal === 'Khác' && (
@@ -165,8 +165,8 @@ export function OverviewTab() {
 
           {/* Health note */}
           <div>
-            <label className="text-white/60 text-xs uppercase tracking-widest mb-2 flex items-center gap-1">
-              <Activity className="w-3 h-3 text-[#0F6B3E]" /> Tình trạng sức khỏe
+            <label className="text-white/64 text-xs mb-2 flex items-center gap-1">
+              <Activity className="w-3 h-3 text-primary-text" /> Tình trạng sức khỏe
             </label>
             <textarea value={healthNote} onChange={(e) => setHealthNote(e.target.value)}
               placeholder="Bệnh lý, chấn thương hoặc lưu ý (nếu có)..."
@@ -177,8 +177,8 @@ export function OverviewTab() {
 
           {/* Password change */}
           <details className="group">
-            <summary className="text-white/40 text-xs uppercase tracking-widest cursor-pointer hover:text-white/70 transition-colors select-none">
-              Đổi mật khẩu <span className="normal-case text-white/20">(bỏ trống nếu không đổi)</span>
+            <summary className="text-white/40 text-xs cursor-pointer hover:text-white/70 transition-colors select-none">
+              Đổi mật khẩu <span className="normal-case text-white/40">(bỏ trống nếu không đổi)</span>
             </summary>
             <div className="mt-4 space-y-3">
               <div className="relative">
@@ -187,7 +187,7 @@ export function OverviewTab() {
                   autoComplete="current-password" className={`${inputCls} pr-12`} data-testid="input-current-password" />
                 <button type="button" onClick={() => setShowCurPw(!showCurPw)}
                   aria-label={showCurPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/64 hover:text-white/64">
                   {showCurPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -198,7 +198,7 @@ export function OverviewTab() {
                     autoComplete="new-password" className={`${inputCls} pr-10`} data-testid="input-new-password" />
                   <button type="button" onClick={() => setShowNewPw(!showNewPw)}
                     aria-label={showNewPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/64 hover:text-white/64">
                     {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -208,34 +208,34 @@ export function OverviewTab() {
             </div>
           </details>
 
-          {error && <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-2.5" data-testid="overview-error">{error}</p>}
+          {error && <p className="text-error-text text-sm bg-[#f87171]/[0.06] border border-error-text/30 rounded-control px-4 py-2.5" data-testid="overview-error">{error}</p>}
           {success && (
-            <p className="text-green-400 text-sm bg-green-400/10 border border-green-400/20 rounded-xl px-4 py-2.5 flex items-center gap-2" data-testid="overview-success">
+            <p className="text-primary-text text-sm bg-primary-text/10 border border-primary-text/20 rounded-control px-4 py-2.5 flex items-center gap-2" data-testid="overview-success">
               <Check className="w-4 h-4 shrink-0" />{success}
             </p>
           )}
 
           <button type="submit" disabled={loading} data-testid="overview-save-button"
-            className="w-full bg-[#0F6B3E] hover:bg-[#0F6B3E]/90 disabled:opacity-60 text-white font-semibold py-3.5 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(15,107,62,0.4)]">
+            className="w-full bg-primary hover:bg-primary-hover disabled:opacity-60 text-white font-semibold py-3.5 rounded-panel transition-all duration-300 ">
             {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
           </button>
         </form>
       </div>
 
       {/* InBody section — read only */}
-      <div data-tour="inbody-section" className="bg-white/[0.03] border border-white/8 rounded-2xl p-6">
+      <div data-tour="inbody-section" className="bg-white/[0.03] border border-line rounded-panel p-6">
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-white font-bold text-lg flex items-center gap-2">
-              <Activity className="w-5 h-5 text-[#0F6B3E]" /> Chỉ số InBody
+              <Activity className="w-5 h-5 text-primary-text" /> Chỉ số InBody
             </h2>
-            <p className="text-white/35 text-xs mt-0.5">
+            <p className="text-white/64 text-xs mt-0.5">
               {inbodyRecords.length} lần đo · Chỉ HLV có thể thêm chỉ số mới
             </p>
           </div>
         </div>
         {inbodyLoading ? (
-          <div className="flex justify-center py-8 text-white/25">
+          <div className="flex justify-center py-8 text-white/40">
             <RefreshCw className="w-5 h-5 animate-spin" />
           </div>
         ) : (

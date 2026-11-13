@@ -24,12 +24,12 @@ export function ContentGroupSection({
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          'flex items-center gap-3 w-full bg-white/5 rounded-xl px-4 py-3',
+          'flex items-center gap-3 w-full bg-white/5 rounded-control px-4 py-3',
           'text-left transition-colors duration-300 hover:bg-white/10',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F6B3E]',
         )}
       >
-        {icon && <span className="text-[#0F6B3E]">{icon}</span>}
+        {icon && <span className="text-primary-text">{icon}</span>}
         <span className="flex-1 text-white font-medium text-sm leading-relaxed">{title}</span>
         <ChevronDown
           className={cn(

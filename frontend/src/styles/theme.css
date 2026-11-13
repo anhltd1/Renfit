@@ -14,41 +14,55 @@
     sans-serif;
   --background: #0b0b0b;
   --foreground: #ffffff;
-  --card: rgba(15, 15, 15, 0.8);
+  --card: #131313;
   --card-foreground: #ffffff;
-  --popover: rgba(15, 15, 15, 0.95);
+  --popover: #161616;
   --popover-foreground: #ffffff;
   --primary: #0f6b3e;
   --primary-foreground: #ffffff;
-  --secondary: rgba(255, 255, 255, 0.1);
+  --secondary: #1a1a1a;
   --secondary-foreground: #ffffff;
-  --muted: rgba(255, 255, 255, 0.05);
-  --muted-foreground: rgba(255, 255, 255, 0.6);
+  --muted: #1a1a1a;
+  --muted-foreground: rgba(255, 255, 255, 0.64);
   --accent: #0f6b3e;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.05);
-  --input-background: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.08);
+  --input: #1a1a1a;
+  --input-background: #1a1a1a;
   --switch-background: rgba(255, 255, 255, 0.2);
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #0f6b3e;
-  --chart-1: #0f6b3e;
-  --chart-2: #22c55e;
-  --chart-3: #86efac;
-  --chart-4: #ffffff;
-  --chart-5: rgba(255, 255, 255, 0.6);
-  --radius: 1rem;
+  --ring: #3dbe7a;
+  /* DESIGN.md v2: one hue per chart, on the data; everything else neutral. */
+  --chart-1: #3dbe7a;
+  --chart-2: #0f6b3e;
+  --chart-3: rgba(255, 255, 255, 0.64);
+  --chart-4: rgba(255, 255, 255, 0.4);
+  --chart-5: rgba(255, 255, 255, 0.2);
+  --radius: 0.875rem;
   --sidebar: #0b0b0b;
   --sidebar-foreground: #ffffff;
-  --sidebar-primary: #0f6b3e;
+  --sidebar-primary: #1a1a1a;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(255, 255, 255, 0.05);
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: #0f6b3e;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #3dbe7a;
+
+  /* ── v2 surfaces (DESIGN.md 2.0) ───────────────────────────────────────
+     Opaque, true-neutral steps one tone apart. Resting surfaces never use
+     translucency or blur — only overlays (modal, sheet, popover, toast) may. */
+  --surface: #131313;
+  --surface-2: #1a1a1a;
+  --surface-3: #222222;
+  --overlay: #161616;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --primary-hover: #12804a;
+  --primary-tint: rgba(15, 107, 62, 0.16);
+  --warning-text: #fbbf24;
 
   /* ── Motion tokens ────────────────────────────────────────────────────
      Three durations only. Everything animated in the app picks one of them
@@ -76,11 +90,11 @@
 
   /* Booking status tones (DESIGN.md `booking_status`). Consumed through
      `shared/booking/statusMeta.ts` — don't hand-roll status colours. */
-  --status-pending: #f59e0b;
+  --status-pending: #fbbf24;
   --status-approved: #3dbe7a;
-  --status-completed: rgba(255, 255, 255, 0.6);
+  --status-completed: rgba(255, 255, 255, 0.64);
   --status-no-show: #f87171;
-  --status-rejected: rgba(255, 255, 255, 0.6);
+  --status-rejected: rgba(255, 255, 255, 0.64);
 
   /* View/tab switch duration. Base everywhere; `.ops-surface` drops it to
      `--motion-fast` (DESIGN.md ops_surface.motion.view_switch). */
@@ -135,6 +149,22 @@
      same-named :root properties above. */
   --color-primary-text: #3dbe7a;
   --color-error-text: #f87171;
+  --color-warning-text: #fbbf24;
+
+  /* v2 surfaces + lines → bg-surface, bg-surface-2, border-line, … */
+  --color-surface: #131313;
+  --color-surface-2: #1a1a1a;
+  --color-surface-3: #222222;
+  --color-overlay: #161616;
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-strong: rgba(255, 255, 255, 0.14);
+  --color-primary-hover: #12804a;
+  --color-primary-tint: rgba(15, 107, 62, 0.16);
+
+  /* v2 radius scale → rounded-panel / rounded-control / rounded-chip */
+  --radius-panel: 14px;
+  --radius-control: 10px;
+  --radius-chip: 6px;
 }
 
 @layer base {
@@ -160,7 +190,7 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(15, 107, 62, 0.8);
+    background: rgba(255, 255, 255, 0.32);
   }
 
   ::-webkit-scrollbar-corner {

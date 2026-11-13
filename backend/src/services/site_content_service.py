@@ -36,24 +36,24 @@ def build_default_content() -> SiteContentTree:
         brand=BrandContent(
             logo_url="",
             name="Renfit",
-            tagline="Nâng Tầm Thể Chất. Kiến Tạo Phiên Bản Tốt Nhất Của Bạn.",
+            tagline="Phòng tập riêng. Mỗi khung giờ tối đa 4 người.",
         ),
         hero=HeroContent(
-            headline_line1="Nâng Tầm Thể Chất.",
-            headline_line2="Kiến Tạo Phiên Bản",
-            headline_line3="Tốt Nhất Của Bạn.",
+            headline_line1="Phòng tập riêng.",
+            headline_line2="4 người",
+            headline_line3="mỗi giờ.",
             description=(
-                "Phòng gym riêng tư cao cấp với huấn luyện viên cá nhân chuyên nghiệp, "
-                "hỗ trợ AI thông minh và chương trình tập luyện được cá nhân hóa hoàn toàn."
+                "Tập cùng huấn luyện viên cá nhân trong một phòng tập không bao giờ đông, "
+                "đo InBody để thấy tiến độ thật, và đặt lịch trên ứng dụng chỉ trong vài giây."
             ),
             background_image=(
                 "https://images.unsplash.com/photo-1637666062717-1c6bcfa4a4df"
                 "?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920"
             ),
             stats=[
-                HeroStat(icon="Users", value="100+", label="Hội viên"),
-                HeroStat(icon="Dumbbell", value="10+", label="Huấn luyện viên"),
-                HeroStat(icon="Star", value="95%", label="Hài lòng"),
+                HeroStat(icon="Users", value="4", label="người tối đa mỗi khung giờ"),
+                HeroStat(icon="Dumbbell", value="08–21", label="mở cửa Thứ 2 – Thứ 7"),
+                HeroStat(icon="Star", value="12", label="ngày đặt lịch trước"),
             ],
         ),
         about=AboutContent(
@@ -66,7 +66,7 @@ def build_default_content() -> SiteContentTree:
                 "https://images.unsplash.com/photo-1637430308606-86576d8fef3c"
                 "?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
             ),
-            main_image_title="Không Gian Tập Luyện Đẳng Cấp",
+            main_image_title="Không gian tập luyện riêng",
             main_image_description=(
                 "Thiết bị cao cấp từ các thương hiệu hàng đầu thế giới, "
                 "đáp ứng mọi nhu cầu tập luyện của bạn."
@@ -74,28 +74,28 @@ def build_default_content() -> SiteContentTree:
             features=[
                 AboutFeature(
                     icon="Target",
-                    title="Mục Tiêu Cá Nhân",
+                    title="Mục tiêu cá nhân",
                     description="Chương trình tập luyện được thiết kế riêng dựa trên mục tiêu và thể trạng của bạn.",
                 ),
                 AboutFeature(
                     icon="Award",
-                    title="HLV Chuyên Nghiệp",
+                    title="Huấn luyện viên theo sát",
                     description="Đội ngũ HLV được chứng nhận quốc tế với kinh nghiệm nhiều năm.",
                 ),
                 AboutFeature(
                     icon="Heart",
-                    title="Theo Dõi Sức Khỏe",
+                    title="Đo InBody định kỳ",
                     description="Giám sát tiến trình và sức khỏe toàn diện với công nghệ hiện đại.",
                 ),
                 AboutFeature(
                     icon="Zap",
-                    title="Kết Quả Nhanh",
-                    description="Phương pháp khoa học giúp bạn đạt mục tiêu trong thời gian ngắn nhất.",
+                    title="Tiến độ đo được",
+                    description="Mỗi lần đo được so với lần trước, để bài tập được điều chỉnh theo số liệu thật.",
                 ),
             ],
         ),
         services=ServicesContent(
-            title="Dịch Vụ Của Chúng Tôi",
+            title="Dịch vụ",
             subtitle="Giải pháp tập luyện toàn diện với sự kết hợp của công nghệ và chuyên môn.",
             items=[
                 ServiceItem(
@@ -110,7 +110,7 @@ def build_default_content() -> SiteContentTree:
                 ),
                 ServiceItem(
                     icon="Apple",
-                    title="Tư Vấn Dinh Dưỡng",
+                    title="Tư vấn dinh dưỡng",
                     description="Chế độ ăn uống khoa học, cân đối dinh dưỡng phù hợp với mục tiêu.",
                 ),
                 ServiceItem(
@@ -120,19 +120,19 @@ def build_default_content() -> SiteContentTree:
                 ),
                 ServiceItem(
                     icon="Scale",
-                    title="Giảm Cân",
+                    title="Giảm cân",
                     description="Chương trình giảm cân khoa học, an toàn và hiệu quả lâu dài.",
                 ),
                 ServiceItem(
                     icon="Flame",
-                    title="Tăng Cơ",
+                    title="Tăng cơ",
                     description="Phát triển khối lượng cơ bắp với phương pháp tập luyện tối ưu.",
                 ),
             ],
         ),
         ai_coach=AiCoachContent(
             badge_text="AI-Powered",
-            title="Trợ Lý AI Fitness Coach",
+            title="AI Coach giữa các buổi tập",
             subtitle=(
                 "Chat với AI Coach thông minh để nhận tư vấn tập luyện, "
                 "dinh dưỡng và đặt lịch hẹn mọi lúc, mọi nơi."
@@ -158,16 +158,16 @@ def build_default_content() -> SiteContentTree:
                     type="ai",
                     message=(
                         "Tuyệt vời! Đây là kế hoạch dành cho bạn:\n\n"
-                        "✓ Tập 4-5 buổi/tuần với trọng tâm compound exercises\n"
-                        "✓ Protein 2g/kg cân nặng mỗi ngày\n"
-                        "✓ Thặng dư calories 300-500 kcal\n\n"
+                        "– Tập 4-5 buổi/tuần với trọng tâm compound exercises\n"
+                        "– Protein 2g/kg cân nặng mỗi ngày\n"
+                        "– Thặng dư calories 300-500 kcal\n\n"
                         "Bạn có muốn đặt lịch với HLV để hướng dẫn chi tiết không?"
                     ),
                 ),
             ],
         ),
         trainers=TrainersContent(
-            title="Đội Ngũ Huấn Luyện Viên",
+            title="Đội ngũ huấn luyện viên",
             subtitle=(
                 "Các chuyên gia được chứng nhận quốc tế, sẵn sàng đồng hành "
                 "cùng bạn trên con đường chinh phục mục tiêu."
@@ -198,7 +198,7 @@ def build_default_content() -> SiteContentTree:
                     name="Phạm Thu Trang",
                     specialty="Functional Training",
                     experience="5 năm kinh nghiệm",
-                    image="https://images.unsplash.com/photo-1548542031-0b26d8ba1e0a?w=400",
+                    image="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400",
                     certifications="NASM-CPT, TRX",
                 ),
             ],
@@ -237,19 +237,19 @@ def build_default_content() -> SiteContentTree:
             ],
         ),
         closing_cta=ClosingCtaContent(
-            title="Sẵn Sàng Bắt Đầu?",
+            title="Đặt buổi tập đầu tiên",
             subtitle=(
-                "Tham gia cùng hơn 100 hội viên đã tin tưởng Renfit cho hành trình "
-                "nâng tầm thể chất của họ. Đặt lịch hôm nay."
+                "Chọn một khung giờ còn chỗ — huấn luyện viên sẽ xác nhận "
+                "và liên hệ với bạn trước buổi tập."
             ),
-            primary_button_label="Bắt Đầu Hành Trình",
-            secondary_button_label="Gặp Đội Ngũ HLV",
+            primary_button_label="Đặt lịch tập",
+            secondary_button_label="Gặp huấn luyện viên",
         ),
         contact=ContactContent(
             address="123 Đường ABC, Quận 1, TP. Hồ Chí Minh",
             phone="+84 123 456 789",
             email="contact@renfit.vn",
-            hours="Thứ 2 - Thứ 6: 6:00 - 22:00\nThứ 7 - Chủ Nhật: 7:00 - 21:00",
+            hours="Thứ 2 – Thứ 7: 08:00 – 21:00\nChủ nhật: nghỉ",
         ),
         social=SocialContent(
             facebook_url="https://facebook.com",
@@ -258,13 +258,13 @@ def build_default_content() -> SiteContentTree:
         ),
         footer=FooterContent(
             brand_description=(
-                "Phòng gym riêng tư cao cấp, nơi bạn kiến tạo phiên bản tốt nhất của chính mình."
+                "Phòng tập riêng với huấn luyện viên cá nhân. Mỗi khung giờ tối đa 4 người."
             ),
             copyright="© 2026 Renfit. Tất cả quyền được bảo lưu.",
-            nav_about_label="Về Chúng Tôi",
-            nav_services_label="Dịch Vụ",
-            nav_trainers_label="Huấn Luyện Viên",
-            nav_contact_label="Liên Hệ",
+            nav_about_label="Về Renfit",
+            nav_services_label="Dịch vụ",
+            nav_trainers_label="Huấn luyện viên",
+            nav_contact_label="Liên hệ",
         ),
     )
 

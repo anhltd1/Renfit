@@ -78,7 +78,7 @@ export function AdminHeaderActions({ onNavigate, onLogout, onRefresh, refreshing
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((o) => !o)}
-        className="tap-target flex items-center justify-center rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]"
+        className="tap-target flex items-center justify-center rounded-control text-white/70 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-text"
       >
         <MoreVertical className="w-5 h-5" aria-hidden="true" />
       </button>
@@ -90,7 +90,7 @@ export function AdminHeaderActions({ onNavigate, onLogout, onRefresh, refreshing
           role="menu"
           aria-label="Tuỳ chọn"
           data-testid="admin-header-menu-list"
-          className="absolute right-0 top-full mt-2 z-40 w-64 py-1 rounded-2xl border border-white/10 bg-[#111] shadow-2xl"
+          className="absolute right-0 top-full mt-2 z-40 w-64 py-1 rounded-panel border border-line bg-overlay shadow-2xl"
         >
           {onRefresh && (
             <button
@@ -107,8 +107,8 @@ export function AdminHeaderActions({ onNavigate, onLogout, onRefresh, refreshing
           )}
           {device && (
             <>
-              <div className="my-1 border-t border-white/10" role="separator" />
-              <p className="px-4 pt-1 pb-0.5 text-xs text-white/60 leading-relaxed">Giao diện</p>
+              <div className="my-1 border-t border-line" role="separator" />
+              <p className="px-4 pt-1 pb-0.5 text-xs text-white/64 leading-relaxed">Giao diện</p>
               <button
                 type="button"
                 role="menuitemradio"
@@ -135,7 +135,7 @@ export function AdminHeaderActions({ onNavigate, onLogout, onRefresh, refreshing
               </button>
             </>
           )}
-          <div className="my-1 border-t border-white/10" role="separator" />
+          <div className="my-1 border-t border-line" role="separator" />
           <button
             type="button"
             role="menuitem"

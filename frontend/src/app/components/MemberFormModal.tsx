@@ -51,7 +51,7 @@ type Values = Record<FieldKey, string>;
 type Errors = Partial<Record<FieldKey, string>>;
 
 const inputBase =
-  'w-full bg-white/5 border rounded-2xl px-4 py-3 text-white text-base leading-relaxed placeholder:text-white/40 outline-none focus:border-[#3DBE7A] transition-colors';
+  'w-full bg-white/5 border rounded-panel px-4 py-3 text-white text-base leading-relaxed placeholder:text-white/40 outline-none focus:border-[#3DBE7A] transition-colors';
 
 function initialValues(customer?: CustomerSummary): Values {
   return {
@@ -118,7 +118,7 @@ function Field({ id, label, required, error, children }: FieldProps) {
         'aria-invalid': error ? true : undefined,
         'aria-describedby': error ? errorId : undefined,
         'aria-required': required ? true : undefined,
-        className: cn(inputBase, error ? 'border-error-text/70' : 'border-white/10'),
+        className: cn(inputBase, error ? 'border-error-text/70' : 'border-line'),
       })}
       {error && (
         <p id={errorId} data-testid={`member-form-error-${id.split('-').pop()}`} className="text-error-text text-sm leading-relaxed mt-1.5">
@@ -235,7 +235,7 @@ export function MemberFormModal({ mode, customer, onClose, onSaved, showToast }:
             Mật khẩu tạm thời (gửi cho hội viên để đăng nhập lần đầu):
           </p>
           <div className="flex items-center gap-2">
-            <code className="flex-1 bg-white/10 border border-white/15 rounded-xl px-4 py-3 text-white font-mono text-lg tracking-wider text-center">
+            <code className="flex-1 bg-white/10 border border-white/15 rounded-control px-4 py-3 text-white font-mono text-lg text-center">
               {tempPassword}
             </code>
             <button
@@ -243,7 +243,7 @@ export function MemberFormModal({ mode, customer, onClose, onSaved, showToast }:
               onClick={handleCopy}
               data-testid="member-form-copy-password"
               aria-label="Sao chép mật khẩu"
-              className="tap-target flex items-center justify-center p-3 rounded-xl bg-[#0F6B3E]/20 border border-[#0F6B3E]/30 text-primary-text hover:bg-[#0F6B3E]/30 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]"
+              className="tap-target flex items-center justify-center p-3 rounded-control bg-[#0F6B3E]/20 border border-[#0F6B3E]/30 text-primary-text hover:bg-[#0F6B3E]/30 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary-text"
             >
               {copied ? <Check className="w-4 h-4" aria-hidden="true" /> : <Copy className="w-4 h-4" aria-hidden="true" />}
             </button>
@@ -324,9 +324,9 @@ export function MemberFormModal({ mode, customer, onClose, onSaved, showToast }:
                   aria-pressed={values.goal === g}
                   onClick={() => setField('goal')(g)}
                   className={cn(
-                    'tap-target px-3 py-1 rounded-full text-sm leading-relaxed border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]',
+                    'tap-target px-3 py-1 rounded-full text-sm leading-relaxed border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary-text',
                     values.goal === g
-                      ? 'bg-[#0F6B3E] border-[#0F6B3E] text-white'
+                      ? 'bg-primary border-[#0F6B3E] text-white'
                       : 'border-white/15 text-white/70 hover:border-white/30',
                   )}
                 >
@@ -339,7 +339,7 @@ export function MemberFormModal({ mode, customer, onClose, onSaved, showToast }:
               type="text"
               value={values.goal}
               onChange={onInput('goal')}
-              className={cn(inputBase, 'border-white/10')}
+              className={cn(inputBase, 'border-line')}
               placeholder="Hoặc nhập mục tiêu khác..."
             />
           </div>
@@ -401,7 +401,7 @@ export function MemberFormModal({ mode, customer, onClose, onSaved, showToast }:
             <p
               role="alert"
               data-testid="member-form-submit-error"
-              className="text-error-text text-sm leading-relaxed bg-[#f87171]/10 border border-error-text/30 rounded-xl px-4 py-2.5"
+              className="text-error-text text-sm leading-relaxed bg-[#f87171]/10 border border-error-text/30 rounded-control px-4 py-2.5"
             >
               {error}
             </p>
@@ -413,7 +413,7 @@ export function MemberFormModal({ mode, customer, onClose, onSaved, showToast }:
               onClick={requestClose}
               disabled={submitting}
               data-testid="member-form-cancel"
-              className={cn('tap-target hover:scale-100', isMobile ? 'w-full' : 'flex-1')}
+              className={cn('tap-target ', isMobile ? 'w-full' : 'flex-1')}
             >
               Huỷ
             </Button>
@@ -421,7 +421,7 @@ export function MemberFormModal({ mode, customer, onClose, onSaved, showToast }:
               type="submit"
               loading={submitting}
               data-testid="member-form-submit"
-              className={cn('tap-target hover:scale-100', isMobile ? 'w-full' : 'flex-1')}
+              className={cn('tap-target ', isMobile ? 'w-full' : 'flex-1')}
             >
               {mode === 'create' ? 'Tạo hội viên' : 'Lưu thay đổi'}
             </Button>

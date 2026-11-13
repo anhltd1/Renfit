@@ -34,10 +34,10 @@ export function ProgressChart({ data, color }: ProgressChartProps) {
   const opened = openIndex !== null ? data[openIndex] ?? null : null;
 
   return (
-    <div className="rounded-2xl border border-white/8 bg-[#0D0D0D] p-2" data-testid="progress-chart">
+    <div className="rounded-panel border border-line bg-surface p-2" data-testid="progress-chart">
       <ResponsiveContainer width="100%" height={180 + (hasPhotos ? PHOTO_TICK_EXTRA : 0)}>
         <LineChart data={data} margin={{ top: 12, right: 16, bottom: 4, left: 16 }}>
-          <CartesianGrid horizontal vertical={false} stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
+          <CartesianGrid horizontal vertical={false} stroke="rgba(255,255,255,0.06)" />
           <XAxis
             dataKey="date"
             axisLine={false}
@@ -63,7 +63,7 @@ export function ProgressChart({ data, color }: ProgressChartProps) {
             contentStyle={{ background: '#161616', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12 }}
             labelStyle={{ color: 'rgba(255,255,255,0.4)' }}
           />
-          <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={{ r: 3 }} />
+          <Line type="linear" dataKey="value" stroke={color} strokeWidth={2} dot={{ r: 3, fill: color, strokeWidth: 0 }} isAnimationActive={false} />
         </LineChart>
       </ResponsiveContainer>
 

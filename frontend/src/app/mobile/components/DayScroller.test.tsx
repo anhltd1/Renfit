@@ -16,7 +16,7 @@ describe('DayScroller', () => {
 
   it('highlights the selected day', () => {
     render(<DayScroller days={days} selected="2026-07-21" onSelect={vi.fn()} />);
-    expect(screen.getByTestId('day-scroller-2026-07-21')).toHaveClass('bg-[#0F6B3E]');
+    expect(screen.getByTestId('day-scroller-2026-07-21')).toHaveClass('bg-white');
   });
 
   it('calls onSelect with the tapped date', () => {

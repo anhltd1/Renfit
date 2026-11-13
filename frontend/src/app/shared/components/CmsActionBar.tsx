@@ -43,7 +43,7 @@ export function CmsActionBar({
         </Button>
         {isDirty && (
           <span
-            className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#0F6B3E] rounded-full"
+            className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full"
             aria-label="Có thay đổi chưa lưu"
           />
         )}

@@ -15,21 +15,24 @@ import type { InbodyRecordOut } from '../../../lib/api/profile';
 const ProgressChart = lazy(() => import('./ProgressChart').then((m) => ({ default: m.ProgressChart })));
 
 function ChartSkeleton() {
-  return <div className="h-[180px] rounded-2xl border border-white/8 bg-white/[0.02] animate-pulse" />;
+ return <div className="h-[180px] rounded-panel border border-line bg-surface animate-pulse" />;
 }
 
 export interface ProgressScreenProps {
-  customerId: string;
-  onBack: () => void;
+ customerId: string;
+ onBack: () => void;
 }
 
 type MetricKey = 'weight' | 'height' | 'SMM' | 'BFM';
 
-const METRIC_META: Record<MetricKey, { label: string; unit: string; color: string }> = {
-  weight: { label: 'Cân nặng', unit: 'kg', color: '#22c55e' },
-  height: { label: 'Chiều cao', unit: 'cm', color: '#818cf8' },
-  SMM: { label: 'SMM', unit: 'kg', color: '#f59e0b' },
-  BFM: { label: 'BFM', unit: 'kg', color: '#ef4444' },
+// DESIGN.md v2: one hue per chart, on the data — the selected metric is
+// always drawn in the data green; polarity says whether a rise is good.
+const DATA_HUE = '#3dbe7a';
+const METRIC_META: Record<MetricKey, { label: string; unit: string; goodWhen: 'up' | 'down' | 'neutral' }> = {
+  weight: { label: 'Cân nặng', unit: 'kg', goodWhen: 'neutral' },
+  height: { label: 'Chiều cao', unit: 'cm', goodWhen: 'neutral' },
+  SMM: { label: 'Cơ xương', unit: 'kg', goodWhen: 'up' },
+  BFM: { label: 'Mỡ cơ thể', unit: 'kg', goodWhen: 'down' },
 };
 
 function fmtDate(iso: string): string {
@@ -69,11 +72,11 @@ export function ProgressScreen({ customerId, onBack }: ProgressScreenProps) {
       <StackHeader title="Chỉ số InBody" onBack={onBack} />
       <div className="flex-1 overflow-y-auto overscroll-y-contain p-4 space-y-4">
         {loading ? (
-          <div className="flex justify-center py-8 text-white/25">
+          <div className="flex justify-center py-8 text-white/40">
             <RefreshCw className="w-5 h-5 animate-spin" />
           </div>
         ) : records.length === 0 ? (
-          <p className="text-white/40 text-sm text-center py-8">
+          <p className="text-white/64 text-sm text-center py-8 leading-relaxed">
             Chưa có dữ liệu InBody. Huấn luyện viên sẽ cập nhật sau mỗi lần đo tại phòng gym.
           </p>
         ) : (
@@ -82,10 +85,12 @@ export function ProgressScreen({ customerId, onBack }: ProgressScreenProps) {
               {(Object.keys(METRIC_META) as MetricKey[]).map((key) => (
                 <InbodyStatCard
                   key={key}
+                  testKey={key === 'weight' ? 'Cân nặng' : key === 'height' ? 'Chiều cao' : key}
                   label={METRIC_META[key].label}
                   value={latest[key]}
                   unit={METRIC_META[key].unit}
                   delta={deltas[key]}
+                  goodWhen={METRIC_META[key].goodWhen}
                   active={metric === key}
                   onClick={() => setMetric(key)}
                 />
@@ -93,7 +98,7 @@ export function ProgressScreen({ customerId, onBack }: ProgressScreenProps) {
             </div>
 
             <Suspense fallback={<ChartSkeleton />}>
-              <ProgressChart data={chartData} color={METRIC_META[metric].color} />
+              <ProgressChart data={chartData} color={DATA_HUE} />
             </Suspense>
           </>
         )}

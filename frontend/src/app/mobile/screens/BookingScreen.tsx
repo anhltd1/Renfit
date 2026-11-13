@@ -4,7 +4,8 @@
  * confirmation — no stack push, per the approved 2-tap flow.
  */
 import { useState } from 'react';
-import { CalendarCheck, Clock } from 'lucide-react';
+import { CapacityMarks } from '../../shared/booking/CapacityMarks';
+import { dayLabel } from '../../shared/member/memberHomeModel';
 import { useBookingAvailability, useCreateBooking, useCancelBooking } from '../../shared/hooks/useBookingAvailability';
 import { Sheet } from '../../shared/primitives/Sheet';
 import { Button } from '../../shared/primitives/Button';
@@ -62,13 +63,13 @@ export function BookingScreen({ customerId }: BookingScreenProps) {
       <StackHeader title="Đặt lịch tập" />
       <div className="flex-1 overflow-y-auto overscroll-y-contain p-4 space-y-4">
         {loading && !data ? (
-          <p className="text-white/40 text-sm text-center py-8">Đang tải lịch...</p>
+          <p className="text-white/64 text-sm text-center py-8">Đang tải lịch...</p>
         ) : error ? (
-          <p className="text-red-300 text-sm bg-red-400/10 border border-red-400/25 rounded-xl px-4 py-3">{error}</p>
+          <p className="text-error-text text-sm bg-[#f87171]/[0.06] border border-error-text/30 rounded-control px-4 py-3">{error}</p>
         ) : (
           <>
             <DayScroller days={days} selected={selectedDate} onSelect={setSelectedDate} />
-            <div className="space-y-2" data-testid="booking-hour-list">
+            <div className="bg-surface border border-line rounded-panel divide-y divide-line overflow-hidden" data-testid="booking-hour-list">
               {selectedDay?.slots.map((slot) => {
                 const isMine = slot.my_status === 'pending' || slot.my_status === 'approved';
                 // U22: attended / missed sessions are read-only (no cancel).
@@ -78,10 +79,9 @@ export function BookingScreen({ customerId }: BookingScreenProps) {
                     <div
                       key={slot.hour}
                       data-testid={`booking-slot-${slot.hour}`}
-                      className="w-full flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                      className="w-full flex items-center justify-between px-4 min-h-14"
                     >
-                      <span className="flex items-center gap-2 text-white text-sm font-medium tabular-nums">
-                        <Clock className="w-4 h-4 text-white/40" aria-hidden="true" />
+                      <span className="text-white/64 text-base font-semibold tabular-nums">
                         {String(slot.hour).padStart(2, '0')}:00
                       </span>
                       <StatusBadge status={attendance} />
@@ -95,23 +95,23 @@ export function BookingScreen({ customerId }: BookingScreenProps) {
                     data-testid={`booking-slot-${slot.hour}`}
                     disabled={slot.past || (slot.full && !isMine)}
                     onClick={() => setPending({ slot, mode: isMine ? 'cancel' : 'book' })}
-                    className="w-full flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left disabled:opacity-30 transition-all hover:border-[#0F6B3E]/40"
+                    className={`w-full flex items-center gap-3 px-4 min-h-14 text-left transition-colors active:bg-surface-2 disabled:active:bg-transparent ${isMine ? 'bg-primary-tint' : ''}`}
                   >
-                    <span className="flex items-center gap-2 text-white text-sm font-medium">
-                      <Clock className="w-4 h-4 text-white/40" />
+                    <span className={`text-base font-semibold tabular-nums w-14 ${slot.past ? 'text-white/40' : 'text-white'}`}>
                       {String(slot.hour).padStart(2, '0')}:00
                     </span>
-                    <span className="text-xs font-semibold">
+                    <span className="flex-1 flex items-center">
+                      {!slot.past && <CapacityMarks taken={slot.count} capacity={data?.capacity ?? 4} mine={isMine} />}
+                    </span>
+                    <span className="text-sm">
                       {isMine ? (
-                        <span className={slot.my_status === 'approved' ? 'text-[#0F6B3E]' : 'text-white/70'}>
-                          {slot.my_status === 'approved' ? '✓ Đã duyệt' : '⏳ Chờ duyệt'}
-                        </span>
-                      ) : slot.full ? (
-                        <span className="text-white/30">Đã đầy</span>
+                        <StatusBadge status={slot.my_status as string} />
                       ) : slot.past ? (
-                        <span className="text-white/20">—</span>
+                        <span className="text-white/40">Đã qua</span>
+                      ) : slot.full ? (
+                        <span className="text-white/64">Hết chỗ</span>
                       ) : (
-                        <span className="text-[#0F6B3E]">Còn {slot.remaining} chỗ</span>
+                        <span className="text-white/80 tabular-nums">Còn {slot.remaining} chỗ</span>
                       )}
                     </span>
                   </button>
@@ -129,12 +129,20 @@ export function BookingScreen({ customerId }: BookingScreenProps) {
       >
         {pending && (
           <div className="space-y-4">
-            <div className="bg-[#0F6B3E]/10 border border-[#0F6B3E]/25 rounded-xl p-4 flex items-center gap-3">
-              <CalendarCheck className="w-5 h-5 text-[#0F6B3E] shrink-0" />
-              <p className="text-white text-sm">
-                {String(pending.slot.hour).padStart(2, '0')}:00 – {String(pending.slot.hour + 1).padStart(2, '0')}:00
-              </p>
+            <div className="border border-line rounded-control bg-surface-2 p-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-white text-2xl font-semibold tabular-nums leading-tight">
+                  {String(pending.slot.hour).padStart(2, '0')}:00 – {String(pending.slot.hour + 1).padStart(2, '0')}:00
+                </p>
+                {selectedDay && <p className="text-white/64 text-sm mt-1">{dayLabel(selectedDay.date)}</p>}
+              </div>
+              <CapacityMarks taken={pending.slot.count} capacity={data?.capacity ?? 4} mine={pending.mode === 'cancel'} showLabel labelStyle="remaining" />
             </div>
+            <p className="text-white/64 text-sm leading-relaxed">
+              {pending.mode === 'book'
+                ? 'Lịch sẽ ở trạng thái "Chờ duyệt" cho đến khi huấn luyện viên xác nhận.'
+                : 'Khung giờ sẽ được mở lại cho người khác.'}
+            </p>
             <div className="flex gap-3">
               <Button variant="secondary" className="flex-1" onClick={() => setPending(null)}>
                 Quay lại

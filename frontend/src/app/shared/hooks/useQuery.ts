@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * primitive that every read hook in this folder builds on. Not exported
  * from the barrel — it's plumbing, not part of the public hook API.
  *
- * Rules (see .kiro/aidlc-docs/construction/U2-shared-data-layer/functional-design/business-rules.md):
+ * Rules (see aidlc-docs/construction/U2-shared-data-layer/functional-design/business-rules.md):
  *  - DR-2: `error` is passed through as-is (lib/api already normalizes to Vietnamese).
  *  - DR-3: refetch never clears `data` first — no flash-to-empty.
  */

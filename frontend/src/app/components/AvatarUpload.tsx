@@ -31,7 +31,7 @@ export function AvatarUpload({ value, onChange, size = 96, disabled }: AvatarUpl
         type="button"
         disabled={disabled}
         onClick={() => inputRef.current?.click()}
-        className="w-full h-full rounded-full overflow-hidden border-2 border-white/10 hover:border-[#0F6B3E] transition-all duration-300 group focus:outline-none focus:border-[#0F6B3E]"
+        className="w-full h-full rounded-full overflow-hidden border-2 border-line hover:border-[#0F6B3E] transition-all duration-300 group focus:outline-none focus:border-primary-text"
         style={{ width: size, height: size }}
         title="Chọn ảnh đại diện"
       >
@@ -43,14 +43,14 @@ export function AvatarUpload({ value, onChange, size = 96, disabled }: AvatarUpl
           />
         ) : (
           <div className="w-full h-full bg-white/5 flex items-center justify-center">
-            <User className="text-white/30" style={{ width: size * 0.4, height: size * 0.4 }} />
+            <User className="text-white/64" style={{ width: size * 0.4, height: size * 0.4 }} />
           </div>
         )}
 
         {/* overlay on hover */}
         <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 pointer-events-none">
           <Camera className="text-white" style={{ width: size * 0.28, height: size * 0.28 }} />
-          <span className="text-white text-[10px] font-medium">Thay ảnh</span>
+          <span className="text-white text-xs font-medium">Thay ảnh</span>
         </div>
       </button>
 

@@ -64,9 +64,9 @@ export function PullToRefresh({ onRefresh, children, className = '' }: PullToRef
           style={{ height: refreshing ? THRESHOLD * 0.6 : pullY }}
         >
           <Loader2
-            className={`w-5 h-5 text-[#0F6B3E] transition-transform ${
-              refreshing ? 'animate-ptr-spin' : ''
-            }`}
+            className={`w-5 h-5 text-primary-text transition-transform ${
+ refreshing ? 'animate-ptr-spin' : ''
+ }`}
             style={{ transform: refreshing ? undefined : `rotate(${pullY * 3}deg)` }}
           />
         </div>

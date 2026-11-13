@@ -55,7 +55,7 @@ export function ListFieldEditor<T>({
   return (
     <div className="w-full space-y-3">
       {label && (
-        <label className="block text-white/60 text-sm leading-relaxed">{label}</label>
+        <label className="block text-white/64 text-sm leading-relaxed">{label}</label>
       )}
 
       {items.length === 0 ? (
@@ -66,7 +66,7 @@ export function ListFieldEditor<T>({
             <div
               key={index}
               className={cn(
-                'rounded-xl border border-white/10 bg-white/[0.02] p-4',
+                'rounded-control border border-line bg-white/[0.02] p-4',
                 'space-y-3',
               )}
             >
@@ -101,8 +101,8 @@ export function ListFieldEditor<T>({
                   onClick={() => handleRemove(index)}
                   aria-label="Xoá"
                 >
-                  <Trash2 className="w-4 h-4 text-red-400" />
-                  <span className="text-red-400 leading-relaxed">Xoá</span>
+                  <Trash2 className="w-4 h-4 text-error-text" />
+                  <span className="text-error-text leading-relaxed">Xoá</span>
                 </Button>
               </div>
             </div>

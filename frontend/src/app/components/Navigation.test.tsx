@@ -35,7 +35,7 @@ describe('Navigation — Bug Condition Exploration (property-based)', () => {
    * Property 1: Bug Condition — Mobile Unauthenticated Menu Items Missing Block Display
    *
    * For the deterministic bug condition (user=null, mobile viewport, menu open),
-   * both "Đặt Lịch Ngay" and "Đăng nhập" links in the mobile menu should have
+   * both "Đặt lịch ngay" and "Đăng nhập" links in the mobile menu should have
    * the `block` class to participate in the parent's space-y-4 block-level flow.
    *
    * This test is EXPECTED TO FAIL on unfixed code, confirming the bug exists.
@@ -50,8 +50,8 @@ describe('Navigation — Bug Condition Exploration (property-based)', () => {
         // Find the mobile menu container (md:hidden, visible when open)
         const mobileMenu = document.querySelector('.md\\:hidden.mt-4');
 
-        // Query the "Đặt Lịch Ngay" link within the mobile menu
-        const bookNowLink = screen.getAllByText('Đặt Lịch Ngay')
+        // Query the "Đặt lịch ngay" link within the mobile menu
+        const bookNowLink = screen.getAllByText('Đặt lịch ngay')
           .find(el => {
             // Find the one inside the mobile menu (not the desktop hidden one)
             let parent = el.parentElement;
@@ -78,7 +78,7 @@ describe('Navigation — Bug Condition Exploration (property-based)', () => {
 
         // Assert both links have the `block` class for proper vertical stacking
         // On unfixed code, these will FAIL because:
-        // - "Đặt Lịch Ngay" has "w-full bg-[#0F6B3E] ... text-center" but no "block"
+        // - "Đặt lịch ngay" has "w-full bg-[#0F6B3E] ... text-center" but no "block"
         // - "Đăng nhập" has "flex items-center gap-2" but no "block"
         expect(bookNowLink!.className).toContain('block');
         expect(loginLink!.className).toContain('block');
@@ -111,8 +111,8 @@ describe('Navigation — Preservation (property-based)', () => {
           expect(desktopNav).not.toBeNull();
 
           if (variant === 'desktop-book-now') {
-            // Find "Đặt Lịch Ngay" inside the desktop container
-            const desktopBookLinks = screen.getAllByText('Đặt Lịch Ngay');
+            // Find "Đặt lịch ngay" inside the desktop container
+            const desktopBookLinks = screen.getAllByText('Đặt lịch ngay');
             const desktopBookLink = desktopBookLinks.find((el) => {
               let parent = el.parentElement;
               while (parent) {
@@ -127,7 +127,7 @@ describe('Navigation — Preservation (property-based)', () => {
             });
 
             expect(desktopBookLink).toBeDefined();
-            // Desktop "Đặt Lịch Ngay" must NOT have `block` — it's in a flex row
+            // Desktop "Đặt lịch ngay" must NOT have `block` — it's in a flex row
             expect(desktopBookLink!.className).not.toContain('block');
           }
 
@@ -162,9 +162,9 @@ describe('Navigation — Preservation (property-based)', () => {
     fc.assert(
       fc.property(
         fc.oneof(
-          fc.constant('Về Chúng Tôi'),
-          fc.constant('Dịch Vụ'),
-          fc.constant('Huấn Luyện Viên'),
+          fc.constant('Về Renfit'),
+          fc.constant('Dịch vụ'),
+          fc.constant('Huấn luyện viên'),
         ),
         (linkText) => {
           renderMobileMenuOpen();

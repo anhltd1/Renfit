@@ -101,13 +101,13 @@ export function AdminDayAgenda({ day, today, onDayChange, onShowGrid, headerActi
   const title = `${VIET_DAYS_FULL[weekdayOf(day)]} · ${fmtDayMonth(day)}`;
 
   const headerBtn =
-    'tap-target inline-flex items-center gap-1.5 px-3 rounded-full border border-white/10 text-sm text-white/80 bg-white/5 active:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]';
+    'tap-target inline-flex items-center gap-1.5 px-3 rounded-full border border-line text-sm text-white/80 bg-white/5 active:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-text';
 
   return (
     <div className="ops-surface flex flex-col h-full min-h-0 overflow-hidden" data-testid="admin-day-agenda">
       {/* Header */}
       <header
-        className="app-chrome shrink-0 bg-black border-b border-white/10 px-4 pb-2"
+        className="app-chrome shrink-0 bg-black border-b border-line px-4 pb-2"
         style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
       >
         <div className="min-h-12 flex items-center gap-2">
@@ -121,7 +121,7 @@ export function AdminDayAgenda({ day, today, onDayChange, onShowGrid, headerActi
             data-testid="agenda-pending-count"
             className={cn(
               'inline-flex items-center gap-1 px-3 py-1 rounded-full border text-sm tabular-nums leading-relaxed',
-              pendingCount > 0 ? 'border-[#f59e0b]/50 bg-[#f59e0b]/10 text-[#f59e0b]' : 'border-white/10 text-white/60',
+              pendingCount > 0 ? 'border-[#f59e0b]/50 bg-[#f59e0b]/10 text-warning-text' : 'border-line text-white/64',
             )}
           >
             <Clock className="w-3.5 h-3.5" aria-hidden="true" />
@@ -143,7 +143,7 @@ export function AdminDayAgenda({ day, today, onDayChange, onShowGrid, headerActi
       </header>
 
       {scrollerDays.length > 0 && (
-        <div className="shrink-0 border-b border-white/10 bg-black">
+        <div className="shrink-0 border-b border-line bg-black">
           <AdminDayScroller days={scrollerDays} selected={day} today={today} onSelect={onDayChange} />
         </div>
       )}
@@ -151,21 +151,21 @@ export function AdminDayAgenda({ day, today, onDayChange, onShowGrid, headerActi
       {/* Hour list */}
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain">
         {loading && !data ? (
-          <div className="flex flex-col items-center justify-center py-20 text-white/60 gap-3">
+          <div className="flex flex-col items-center justify-center py-20 text-white/64 gap-3">
             <Loader2 className="w-6 h-6 animate-spin" aria-hidden="true" />
             <p className="text-sm">Đang tải...</p>
           </div>
         ) : error && !data ? (
-          <p className="m-4 rounded-2xl border border-error-text/30 bg-[#f87171]/10 px-4 py-3 text-sm text-error-text">{error}</p>
+          <p className="m-4 rounded-panel border border-error-text/30 bg-[#f87171]/10 px-4 py-3 text-sm text-error-text">{error}</p>
         ) : isSunday ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-2 text-white/60" data-testid="agenda-sunday">
+          <div className="flex flex-col items-center justify-center py-20 gap-2 text-white/64" data-testid="agenda-sunday">
             <p className="text-base font-semibold text-white/80">Chủ Nhật — phòng tập nghỉ</p>
             <p className="text-sm">Chọn ngày khác để xem lịch.</p>
           </div>
         ) : !dayData ? (
-          <p className="text-white/60 text-sm text-center py-20">Không có lịch cho ngày này.</p>
+          <p className="text-white/64 text-sm text-center py-20">Không có lịch cho ngày này.</p>
         ) : (
-          <ul className="divide-y divide-white/8" aria-label={`Lịch ${title}`}>
+          <ul className="divide-y divide-line" aria-label={`Lịch ${title}`}>
             {dayData.slots.map((slot) => {
               const occupied = occupiedCount(slot.bookings);
               const blocked = !!slot.blocked;
@@ -183,7 +183,7 @@ export function AdminDayAgenda({ day, today, onDayChange, onShowGrid, headerActi
                   <div className="w-14 shrink-0 pt-1">
                     <p className="text-white font-semibold text-sm tabular-nums">{pad(slot.hour)}:00</p>
                     {!blocked && (
-                      <p className="text-white/60 text-xs tabular-nums" data-testid={`agenda-count-${slot.hour}`}>
+                      <p className="text-white/64 text-xs tabular-nums" data-testid={`agenda-count-${slot.hour}`}>
                         {occupied}/{capacity}
                       </p>
                     )}
@@ -205,13 +205,13 @@ export function AdminDayAgenda({ day, today, onDayChange, onShowGrid, headerActi
                             data-testid={`agenda-booking-${b.id}`}
                             onClick={() => setSelected({ booking: b, time: slot.time, hour: slot.hour })}
                             aria-label={bookingAccessibleName({ customer_id: b.customer_id, time: slot.time, status: b.status })}
-                            className="w-full min-h-11 flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] active:bg-white/10 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]"
+                            className="w-full min-h-11 flex items-center gap-2 px-3 py-2 rounded-control border border-line bg-white/[0.03] active:bg-white/10 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-text"
                           >
                             <StatusBadge status={b.status} />
                             <span
                               className={cn(
                                 'flex-1 min-w-0 truncate text-sm font-medium',
-                                b.status === 'rejected' ? 'text-white/60 line-through' : 'text-white',
+                                b.status === 'rejected' ? 'text-white/64 line-through' : 'text-white',
                               )}
                             >
                               {b.customer_id}
@@ -224,7 +224,7 @@ export function AdminDayAgenda({ day, today, onDayChange, onShowGrid, headerActi
                             data-testid={`agenda-assign-${slot.hour}`}
                             onClick={() => setAssigning({ time: slot.time, hour: slot.hour })}
                             aria-label={`Đặt lịch lúc ${pad(slot.hour)}:00 ${fmtDayMonth(day)}`}
-                            className="tap-target self-start inline-flex items-center gap-1 px-3 rounded-full border border-dashed border-primary-text/40 text-primary-text text-sm font-semibold active:bg-[#0F6B3E]/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A]"
+                            className="tap-target self-start inline-flex items-center gap-1 px-3 rounded-full border border-dashed border-primary-text/40 text-primary-text text-sm font-semibold active:bg-[#0F6B3E]/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-text"
                           >
                             <Plus className="w-4 h-4" aria-hidden="true" /> Đặt lịch
                           </button>
@@ -243,7 +243,7 @@ export function AdminDayAgenda({ day, today, onDayChange, onShowGrid, headerActi
       <Sheet open={!!selected} onClose={() => setSelected(null)} title="Cập nhật lịch đặt" ops>
         {selected && (
           <div className="flex flex-col gap-4" data-testid="agenda-status-sheet">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 leading-relaxed">
+            <div className="rounded-panel border border-line bg-white/[0.03] p-4 leading-relaxed">
               <p className="text-white font-semibold text-base">{selected.booking.customer_id}</p>
               <p className="text-white/70 text-sm tabular-nums">
                 {title} · {pad(selected.hour)}:00 – {pad(selected.hour + 1)}:00

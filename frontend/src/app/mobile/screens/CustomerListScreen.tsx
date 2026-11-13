@@ -32,34 +32,34 @@ import { cn } from '../../shared/primitives/cn';
  * props haven't changed.
  */
 const CustomerRow = React.memo(function CustomerRow({
-  customer,
-  onSelect,
+ customer,
+ onSelect,
 }: {
-  customer: CustomerSummary;
-  onSelect: (customer: CustomerSummary) => void;
+ customer: CustomerSummary;
+ onSelect: (customer: CustomerSummary) => void;
 }) {
-  const archived = !isActiveClient(customer);
-  return (
-    <button
-      type="button"
-      data-testid={`admin-mobile-row-${customer.id}`}
-      onClick={() => onSelect(customer)}
-      className="w-full min-h-14 flex items-center gap-3 px-4 py-3 text-left rounded-xl hover:bg-white/5 active:bg-white/10 border border-transparent transition-colors"
-    >
-      {customer.avatar ? (
-        <img
-          src={customer.avatar}
-          alt=""
-          className={cn('w-10 h-10 rounded-full object-cover shrink-0 border border-white/10', archived && 'opacity-60')}
+ const archived = !isActiveClient(customer);
+ return (
+ <button
+ type="button"
+ data-testid={`admin-mobile-row-${customer.id}`}
+ onClick={() => onSelect(customer)}
+ className="w-full min-h-14 flex items-center gap-3 px-4 py-3 text-left rounded-control hover:bg-white/5 active:bg-white/10 border border-transparent transition-colors"
+ >
+ {customer.avatar ? (
+ <img
+ src={customer.avatar}
+ alt=""
+ className={cn('w-10 h-10 rounded-full object-cover shrink-0 border border-line', archived && 'opacity-60')}
         />
       ) : (
-        <div className="w-10 h-10 rounded-full bg-[#0F6B3E]/12 border border-[#0F6B3E]/20 flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-full bg-surface-2 border border-line flex items-center justify-center shrink-0">
           <User className="w-4.5 h-4.5 text-primary-text" aria-hidden="true" />
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <p className={cn('text-sm font-medium truncate', archived ? 'text-white/60' : 'text-white/90')}>{customer.id}</p>
-        <p className="text-white/60 text-xs truncate flex items-center gap-1 mt-0.5 tabular-nums">
+        <p className={cn('text-sm font-medium truncate', archived ? 'text-white/64' : 'text-white/90')}>{customer.id}</p>
+        <p className="text-white/64 text-xs truncate flex items-center gap-1 mt-0.5 tabular-nums">
           <Phone className="w-3 h-3 shrink-0" aria-hidden="true" />
           {customer.phone_number}
         </p>
@@ -74,7 +74,7 @@ const CustomerRow = React.memo(function CustomerRow({
         </span>
       ) : (
         customer.goal && (
-          <span className="text-xs px-2 py-0.5 rounded-full border shrink-0 max-w-[96px] truncate bg-white/5 border-white/10 text-white/60">
+          <span className="text-xs px-2 py-0.5 rounded-full border shrink-0 max-w-[96px] truncate bg-white/5 border-line text-white/64">
             {customer.goal}
           </span>
         )
@@ -110,42 +110,42 @@ export function CustomerListScreen({
   const [filter, setFilter] = useClientFilter();
   const [sort, setSort] = useState<SortMode>('alpha');
 
-  // U21 (FR-7): accent/case-insensitive Vietnamese match ("nguyen" finds "Nguyễn").
-  const filtered = sortClients(
-    filterClients(customers, filter).filter((c) => matchesQuery([c.id, c.phone_number, c.goal], search)),
-    sort,
-  );
-  const hasConstraint = !!search || filter !== DEFAULT_CLIENT_FILTER || filtered.length !== customers.length;
+ // U21 (FR-7): accent/case-insensitive Vietnamese match ("nguyen" finds "Nguyễn").
+ const filtered = sortClients(
+ filterClients(customers, filter).filter((c) => matchesQuery([c.id, c.phone_number, c.goal], search)),
+ sort,
+ );
+ const hasConstraint = !!search || filter !== DEFAULT_CLIENT_FILTER || filtered.length !== customers.length;
 
-  return (
-    <div className="flex flex-col min-h-0 flex-1">
-      <StackHeader title="Hội viên" right={headerActions} />
+ return (
+ <div className="flex flex-col min-h-0 flex-1">
+ <StackHeader title="Hội viên" right={headerActions} />
 
-      <div className="px-4 py-3 border-b border-white/6 space-y-2">
-        <input
-          type="text"
-          data-testid="admin-mobile-search"
-          aria-label="Tìm hội viên"
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Tìm hội viên..."
-          className="w-full bg-white/5 border border-white/10 focus:border-[#3DBE7A] rounded-xl px-4 py-2.5 text-white placeholder:text-white/40 outline-none transition-colors text-base"
-        />
-        <ClientFilterChips value={filter} onChange={setFilter} />
-        <div className="flex items-center gap-1.5" role="group" aria-label="Sắp xếp">
-          <span className="text-xs text-white/60 mr-1">Sắp xếp:</span>
-          {SORT_OPTIONS.map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              data-testid={`admin-mobile-sort-${key}`}
-              aria-pressed={sort === key}
-              onClick={() => setSort(key)}
-              className={cn(
-                'tap-target inline-flex items-center justify-center px-3 rounded-full border text-xs transition-colors',
+ <div className="px-4 py-3 border-b border-white/6 space-y-2">
+ <input
+ type="text"
+ data-testid="admin-mobile-search"
+ aria-label="Tìm hội viên"
+ value={search}
+ onChange={(e) => onSearchChange(e.target.value)}
+ placeholder="Tìm hội viên..."
+ className="w-full bg-white/5 border border-line focus:border-[#3DBE7A] rounded-control px-4 py-2.5 text-white placeholder:text-white/40 outline-none transition-colors text-base"
+ />
+ <ClientFilterChips value={filter} onChange={setFilter} />
+ <div className="flex items-center gap-1.5" role="group" aria-label="Sắp xếp">
+ <span className="text-xs text-white/64 mr-1">Sắp xếp:</span>
+ {SORT_OPTIONS.map(({ key, label }) => (
+ <button
+ key={key}
+ type="button"
+ data-testid={`admin-mobile-sort-${key}`}
+ aria-pressed={sort === key}
+ onClick={() => setSort(key)}
+ className={cn(
+ 'tap-target inline-flex items-center justify-center px-3 rounded-full border text-xs transition-colors',
                 sort === key
                   ? 'bg-[#0F6B3E]/20 border-primary-text/40 text-primary-text font-semibold'
-                  : 'border-white/10 text-white/60',
+                  : 'border-line text-white/64',
               )}
             >
               {label}
@@ -170,10 +170,10 @@ export function CustomerListScreen({
           </div>
         )}
         {!loading && error && (
-          <p className="text-error-text text-sm p-4 bg-[#f87171]/10 rounded-xl m-2">{error}</p>
+          <p className="text-error-text text-sm p-4 bg-[#f87171]/10 rounded-control m-2">{error}</p>
         )}
         {!loading && !error && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-white/60 gap-2">
+          <div className="flex flex-col items-center justify-center py-12 text-white/64 gap-2">
             <Users className="w-7 h-7" aria-hidden="true" />
             <p className="text-sm font-medium">{hasConstraint ? 'Không tìm thấy hội viên.' : 'Chưa có hội viên nào.'}</p>
           </div>
@@ -184,8 +184,8 @@ export function CustomerListScreen({
       </PullToRefresh>
 
       {!loading && (
-        <div className="app-chrome shrink-0 px-4 py-2.5 border-t border-white/6 bg-[#0A0A0A]/95 backdrop-blur-sm flex items-center justify-between">
-          <p className="text-white/60 text-xs tabular-nums">
+        <div className="app-chrome shrink-0 px-4 py-2.5 border-t border-white/6 bg-[#0B0B0B]/95 flex items-center justify-between">
+          <p className="text-white/64 text-xs tabular-nums">
             {hasConstraint ? `${filtered.length} / ${customers.length} hội viên` : `${customers.length} hội viên`}
           </p>
           {onCreateMember && (

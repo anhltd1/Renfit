@@ -15,7 +15,7 @@ export interface StatusBadgeProps {
 }
 
 const SIZE = {
-  sm: { pill: 'px-2.5 py-0.5 text-xs gap-1', icon: 'w-3.5 h-3.5' },
+  sm: { pill: 'px-2 py-0.5 text-xs gap-1', icon: 'w-3.5 h-3.5' },
   md: { pill: 'px-3 py-1 text-sm gap-1.5', icon: 'w-4 h-4' },
 } as const;
 
@@ -27,9 +27,9 @@ export function StatusBadge({ status, size = 'sm', className }: StatusBadgeProps
     <span
       data-testid={`status-badge-${status}`}
       className={cn(
-        'inline-flex items-center rounded-full font-medium leading-relaxed whitespace-nowrap',
+        'inline-flex items-center rounded-chip font-medium leading-relaxed whitespace-nowrap',
         s.pill,
-        meta ? meta.pillClass : 'bg-white/5 text-white/60 border border-white/20',
+        meta ? meta.pillClass : 'bg-surface-2 text-white/64 border border-line',
         className,
       )}
     >

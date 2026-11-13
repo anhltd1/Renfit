@@ -114,16 +114,19 @@ npm run dev                          # http://localhost:5173
 
 ---
 
-## Default Accounts
+## Coach (admin) account
 
-A trainer account is seeded on first startup (idempotent):
+There is no built-in default account. Set the coach login in `backend/env/.env`:
 
-| Field | Value |
-|---|---|
-| Username (name) | `admin` |
-| Password | `123` |
+```env
+ADMIN_USERNAME=your-coach-name
+ADMIN_PASSWORD=a-long-password
+```
 
-> **Change this before going to production.** The trainer account can be updated directly in MongoDB.
+On every backend startup the account is created if it doesn't exist, and its login name and
+password are synced to these values. To rename the account or rotate the password, edit the env
+file and restart the backend container (`docker compose up -d --force-recreate backend`). If the
+variables are empty, no coach account is created and a warning is logged.
 
 ---
 

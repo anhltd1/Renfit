@@ -98,7 +98,7 @@ export function CustomerDetail({ customer, onRefresh }: CustomerDetailProps) {
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Header — pinned */}
-      <header className="shrink-0 border-b border-white/8">
+      <header className="shrink-0 border-b border-line">
         <div className="mx-auto w-full max-w-3xl px-6 pt-5">
           <div className="flex items-start gap-4">
             {customer.avatar ? (
@@ -108,7 +108,7 @@ export function CustomerDetail({ customer, onRefresh }: CustomerDetailProps) {
                 className="w-14 h-14 rounded-full object-cover border-2 border-[#0F6B3E]/40 shrink-0"
               />
             ) : (
-              <div className="w-14 h-14 rounded-full bg-[#0F6B3E]/15 border-2 border-[#0F6B3E]/30 flex items-center justify-center shrink-0">
+              <div className="w-14 h-14 rounded-full bg-surface-2 border-2 border-line flex items-center justify-center shrink-0">
                 <User className="w-6 h-6 text-primary-text" aria-hidden="true" />
               </div>
             )}
@@ -126,7 +126,7 @@ export function CustomerDetail({ customer, onRefresh }: CustomerDetailProps) {
               {/* Quick facts — one wrapping line instead of a column of fields */}
               <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-white/70 leading-relaxed">
                 <span className="inline-flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-white/60" aria-hidden="true" />
+                  <Phone className="w-3.5 h-3.5 text-white/64" aria-hidden="true" />
                   <span>{customer.phone_number}</span>
                 </span>
                 {customer.age != null && (
@@ -165,7 +165,7 @@ export function CustomerDetail({ customer, onRefresh }: CustomerDetailProps) {
                 type="button"
                 onClick={() => setEditing(true)}
                 data-testid="customer-detail-edit"
-                className="tap-target flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm text-white/80 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                className="tap-target flex items-center gap-1.5 px-3 py-1.5 rounded-control text-sm text-white/80 hover:text-white bg-white/5 hover:bg-white/10 border border-line transition-colors"
                 aria-label={`Chỉnh sửa ${customer.id}`}
               >
                 <Pencil className="w-3.5 h-3.5" aria-hidden="true" /> Sửa
@@ -175,11 +175,11 @@ export function CustomerDetail({ customer, onRefresh }: CustomerDetailProps) {
                 data-testid={archived ? 'customer-detail-restore' : 'customer-detail-archive'}
                 disabled={statusBusy}
                 onClick={() => (archived ? void setActive(true) : setConfirmArchive(true))}
-                className={`tap-target flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border transition-colors disabled:opacity-60 ${
-                  archived
-                    ? 'text-primary-text bg-[#0F6B3E]/10 border-[#0F6B3E]/30 hover:bg-[#0F6B3E]/20'
-                    : 'text-white/70 hover:text-error-text bg-transparent hover:bg-[#f87171]/10 border-white/10 hover:border-error-text/30'
-                }`}
+                className={`tap-target flex items-center gap-1.5 px-3 py-1.5 rounded-control text-sm border transition-colors disabled:opacity-60 ${
+ archived
+ ? 'text-primary-text bg-[#0F6B3E]/10 border-[#0F6B3E]/30 hover:bg-[#0F6B3E]/20'
+ : 'text-white/70 hover:text-error-text bg-transparent hover:bg-[#f87171]/10 border-line hover:border-error-text/30'
+ }`}
                 aria-label={archived ? `Khôi phục ${customer.id}` : `Đánh dấu ${customer.id} đã nghỉ`}
               >
                 {statusBusy && archived ? (
@@ -196,11 +196,11 @@ export function CustomerDetail({ customer, onRefresh }: CustomerDetailProps) {
           {hasHealthConcern(customer.health_note) && (
             <div
               data-testid="customer-health-note"
-              className="mt-3 flex items-start gap-2 rounded-xl border border-[#f59e0b]/25 bg-[#f59e0b]/[0.06] px-3 py-2 text-sm leading-relaxed"
+              className="mt-3 flex items-start gap-2 rounded-control border border-[#f59e0b]/25 bg-[#f59e0b]/[0.06] px-3 py-2 text-sm leading-relaxed"
             >
-              <Activity className="w-4 h-4 mt-0.5 shrink-0 text-[#f59e0b]" aria-hidden="true" />
+              <Activity className="w-4 h-4 mt-0.5 shrink-0 text-warning-text" aria-hidden="true" />
               <p className="text-white/80">
-                <span className="font-medium text-[#f59e0b]">Sức khỏe: </span>
+                <span className="font-medium text-warning-text">Sức khỏe: </span>
                 {customer.health_note}
               </p>
             </div>
@@ -225,10 +225,10 @@ export function CustomerDetail({ customer, onRefresh }: CustomerDetailProps) {
                   data-testid={`detail-tab-${key}`}
                   onClick={() => setSection(key)}
                   onKeyDown={(e) => onTabKeyDown(e, index)}
-                  className={`tap-target -mb-px border-b-2 pb-3 pt-1 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DBE7A] rounded-t ${
+                  className={`tap-target -mb-px border-b-2 pb-3 pt-1 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-text rounded-t ${
                     active
                       ? 'border-primary-text text-white'
-                      : 'border-transparent text-white/60 hover:text-white'
+                      : 'border-transparent text-white/64 hover:text-white'
                   }`}
                 >
                   {DETAIL_SECTION_LABELS[key]}
