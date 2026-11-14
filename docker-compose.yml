@@ -87,6 +87,8 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
+      # Optional server-only Caddy settings (gitignored *.caddy files)
+      - ./caddy:/etc/caddy/conf.d:ro
     depends_on:
       backend:
         condition: service_healthy

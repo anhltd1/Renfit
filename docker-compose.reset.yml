@@ -74,6 +74,7 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
+      - ./caddy:/etc/caddy/conf.d:ro
     depends_on:
       backend:
         condition: service_healthy

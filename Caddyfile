@@ -14,6 +14,12 @@
 #   trust stores; that's unavailable in this Alpine image and breaks
 #   startup). A port-only address (":80") tells Caddy to serve plain HTTP
 #   with no certificate management at all.
+{
+	# Optional server-specific settings, e.g. DNS-01 certificate validation
+	# (caddy/acme-dns.caddy — see caddy/README.md). Matching no file is fine.
+	import /etc/caddy/conf.d/*.caddy
+}
+
 {$DOMAIN} {
 	# Serve the built SPA.
 	root * /usr/share/caddy

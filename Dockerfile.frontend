@@ -17,9 +17,18 @@ RUN npm ci
 COPY frontend/ .
 RUN npm run build
 
-# ── Stage 2: serve ───────────────────────────────────────────────────────
-FROM caddy:2-alpine
+# ── Stage 2: Caddy with the DuckDNS DNS module ──────────────────────────
+# Lets Caddy prove domain ownership via a DNS TXT record (ACME DNS-01)
+# instead of Let's Encrypt connecting to this server — needed when the host
+# blocks inbound traffic from abroad. Only used if caddy/*.caddy configures
+# it (see caddy/README.md); otherwise Caddy behaves exactly as stock.
+FROM caddy:2.11.9-builder-alpine AS caddy-build
+RUN xcaddy build --with github.com/caddy-dns/duckdns@v0.5.0
 
+# ── Stage 3: serve ───────────────────────────────────────────────────────
+FROM caddy:2.11.9-alpine
+
+COPY --from=caddy-build /usr/bin/caddy /usr/bin/caddy
 COPY --from=build /app/dist /usr/share/caddy
 COPY Caddyfile /etc/caddy/Caddyfile
 

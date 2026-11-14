@@ -58,3 +58,6 @@ desktop.ini
 
 # ── Database backups (scripts/backup.sh) — contain member data ────
 backups/
+
+# ── Server-only Caddy settings (may contain DNS API tokens) ───────
+caddy/*.caddy

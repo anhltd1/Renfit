@@ -249,6 +249,11 @@ curl https://your-domain.com/api/v1/health
 
 Caddy automatically obtains and renews a Let's Encrypt TLS certificate for your domain. No manual certbot or nginx config needed.
 
+**No domain yet, or HTTPS fails with "Connection reset by peer" in `docker compose logs frontend`?**
+Some (often Vietnamese) hosts block traffic from abroad, so Let's Encrypt can't check your server.
+Use a free [DuckDNS](https://www.duckdns.org) name (e.g. `renfit.duckdns.org` → your VPS IP) and
+let Caddy validate through DNS instead — see [`caddy/README.md`](caddy/README.md).
+
 ### Subsequent deploys (after code changes)
 
 ```bash

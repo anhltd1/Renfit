@@ -43,3 +43,6 @@ DOCKER.md
 
 # ── Database backups (scripts/backup.sh) — contain member data ────
 backups/
+
+# Server-only Caddy settings (secrets)
+caddy/*.caddy
